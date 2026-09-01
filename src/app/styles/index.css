@@ -1,0 +1,129 @@
+@import "tailwindcss" source("../..");
+
+@theme inline {
+  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --color-canvas: var(--app-color-canvas);
+  --color-sidebar: var(--app-color-sidebar);
+  --color-surface: var(--app-color-surface);
+  --color-surface-raised: var(--app-color-surface-raised);
+  --color-surface-hover: var(--app-color-surface-hover);
+  --color-primary: var(--app-color-text-primary);
+  --color-secondary: var(--app-color-text-secondary);
+  --color-muted: var(--app-color-text-muted);
+  --color-inverse: var(--app-color-text-inverse);
+  --color-subtle: var(--app-color-border-subtle);
+  --color-strong: var(--app-color-border-strong);
+  --color-brand: var(--app-color-brand);
+  --color-brand-start: var(--app-color-brand-start);
+  --color-brand-end: var(--app-color-brand-end);
+  --color-success: var(--app-color-success);
+  --color-warning: var(--app-color-warning);
+  --color-danger: var(--app-color-danger);
+  --color-focus: var(--app-color-focus);
+  --color-overlay: var(--app-color-overlay);
+
+  --radius-panel: 0.875rem;
+  --shadow-panel: var(--app-shadow-panel);
+  --shadow-drawer: var(--app-shadow-drawer);
+}
+
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --app-color-canvas: #090b0d;
+  --app-color-sidebar: #17191b;
+  --app-color-surface: #111315;
+  --app-color-surface-raised: #1d2023;
+  --app-color-surface-hover: #25292d;
+  --app-color-text-primary: #f4f7f8;
+  --app-color-text-secondary: #c1c7cb;
+  --app-color-text-muted: #848c91;
+  --app-color-text-inverse: #ffffff;
+  --app-color-border-subtle: #2a2e31;
+  --app-color-border-strong: #454a4e;
+  --app-color-brand: #14c98b;
+  --app-color-brand-start: #8256ff;
+  --app-color-brand-end: #00c981;
+  --app-color-success: #28d49a;
+  --app-color-warning: #ffbd3e;
+  --app-color-danger: #ff5d66;
+  --app-color-focus: #61dbae;
+  --app-color-overlay: rgb(0 0 0 / 68%);
+  --app-shadow-panel: 0 18px 50px rgb(0 0 0 / 24%);
+  --app-shadow-drawer: 18px 0 48px rgb(0 0 0 / 34%);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --app-color-canvas: #f3f5f4;
+  --app-color-sidebar: #ffffff;
+  --app-color-surface: #ffffff;
+  --app-color-surface-raised: #f6f8f7;
+  --app-color-surface-hover: #edf2f0;
+  --app-color-text-primary: #17201d;
+  --app-color-text-secondary: #46534f;
+  --app-color-text-muted: #74807c;
+  --app-color-text-inverse: #ffffff;
+  --app-color-border-subtle: #dde4e1;
+  --app-color-border-strong: #bdc9c4;
+  --app-color-brand: #078f64;
+  --app-color-brand-start: #6e4de6;
+  --app-color-brand-end: #009d6c;
+  --app-color-success: #078f64;
+  --app-color-warning: #ad7100;
+  --app-color-danger: #d83d49;
+  --app-color-focus: #087e5c;
+  --app-color-overlay: rgb(17 24 21 / 48%);
+  --app-shadow-panel: 0 18px 50px rgb(38 55 48 / 10%);
+  --app-shadow-drawer: 18px 0 48px rgb(38 55 48 / 16%);
+}
+
+@layer base {
+  html {
+    min-width: 20rem;
+    min-height: 100%;
+    background: var(--app-color-canvas);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+  }
+
+  body,
+  #root {
+    min-height: 100dvh;
+  }
+
+  body {
+    margin: 0;
+    background: var(--app-color-canvas);
+    color: var(--app-color-text-primary);
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--app-color-focus);
+    outline-offset: 2px;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
