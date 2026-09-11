@@ -1,129 +1,398 @@
 @import "tailwindcss" source("../..");
 
 @theme inline {
-  --font-sans: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-sans:
+        "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    --font-brand: "07NikumaruFont", "Arial Rounded MT Bold", ui-rounded, sans-serif;
+    --font-login: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 
-  --color-canvas: var(--app-color-canvas);
-  --color-sidebar: var(--app-color-sidebar);
-  --color-surface: var(--app-color-surface);
-  --color-surface-raised: var(--app-color-surface-raised);
-  --color-surface-hover: var(--app-color-surface-hover);
-  --color-primary: var(--app-color-text-primary);
-  --color-secondary: var(--app-color-text-secondary);
-  --color-muted: var(--app-color-text-muted);
-  --color-inverse: var(--app-color-text-inverse);
-  --color-subtle: var(--app-color-border-subtle);
-  --color-strong: var(--app-color-border-strong);
-  --color-brand: var(--app-color-brand);
-  --color-brand-start: var(--app-color-brand-start);
-  --color-brand-end: var(--app-color-brand-end);
-  --color-success: var(--app-color-success);
-  --color-warning: var(--app-color-warning);
-  --color-danger: var(--app-color-danger);
-  --color-focus: var(--app-color-focus);
-  --color-overlay: var(--app-color-overlay);
+    --text-page-title: var(--app-text-page-title);
+    --text-page-title--line-height: var(--app-leading-page-title);
+    --text-section-title: var(--app-text-section-title);
+    --text-section-title--line-height: var(--app-leading-section-title);
+    --text-card-title: var(--app-text-card-title);
+    --text-card-title--line-height: var(--app-leading-card-title);
+    --text-body: var(--app-text-body);
+    --text-body--line-height: var(--app-leading-body);
+    --text-label: var(--app-text-label);
+    --text-label--line-height: var(--app-leading-label);
+    --text-caption: var(--app-text-caption);
+    --text-caption--line-height: var(--app-leading-caption);
+    --text-tab-label: var(--app-text-tab-label);
+    --text-tab-label--line-height: var(--app-leading-tab-label);
+    --text-action-label: var(--app-text-action-label);
+    --text-action-label--line-height: var(--app-leading-action-label);
 
-  --radius-panel: 0.875rem;
-  --shadow-panel: var(--app-shadow-panel);
-  --shadow-drawer: var(--app-shadow-drawer);
+    --breakpoint-3xl: 112.5rem;
+
+    --color-canvas: var(--app-color-canvas);
+    --color-sidebar: var(--app-color-sidebar);
+    --color-surface: var(--app-color-surface);
+    --color-surface-raised: var(--app-color-surface-raised);
+    --color-surface-hover: var(--app-color-surface-hover);
+    --color-primary: var(--app-color-text-primary);
+    --color-secondary: var(--app-color-text-secondary);
+    --color-muted: var(--app-color-text-muted);
+    --color-inverse: var(--app-color-text-inverse);
+    --color-subtle: var(--app-color-border-subtle);
+    --color-strong: var(--app-color-border-strong);
+    --color-brand: var(--app-color-brand);
+    --color-brand-start: var(--app-color-brand-start);
+    --color-brand-end: var(--app-color-brand-end);
+    --color-accent-green: var(--app-color-accent-green);
+    --color-accent-cyan: var(--app-color-accent-cyan);
+    --color-accent-blue: var(--app-color-accent-blue);
+    --color-accent-orange: var(--app-color-accent-orange);
+    --color-accent-magenta: var(--app-color-accent-magenta);
+    --color-success: var(--app-color-success);
+    --color-warning: var(--app-color-warning);
+    --color-danger: var(--app-color-danger);
+    --color-danger-surface: var(--app-color-danger-surface);
+    --color-progress-track: var(--app-color-progress-track);
+    --color-icon-contrast: var(--app-color-icon-contrast);
+    --color-focus: var(--app-color-focus);
+    --color-overlay: var(--app-color-overlay);
+    --color-tooltip: var(--app-color-tooltip);
+    --color-tooltip-text: var(--app-color-tooltip-text);
+    --color-dialog-overlay: var(--app-color-dialog-overlay);
+    --color-dialog-surface: var(--app-color-dialog-surface);
+    --color-dialog-surface-accent: var(--app-color-dialog-surface-accent);
+    --color-login-canvas: var(--app-color-login-canvas);
+    --color-login-primary: var(--app-color-login-primary);
+    --color-login-secondary: var(--app-color-login-secondary);
+    --color-login-pill: var(--app-color-login-pill-border);
+    --color-login-pill-fill: var(--app-color-login-pill-fill);
+    --color-login-pill-text: var(--app-color-login-pill-text);
+    --color-login-action: var(--app-color-login-action);
+    --color-login-action-text: var(--app-color-login-action-text);
+    --color-login-accent-purple: var(--app-color-login-accent-purple);
+    --color-login-accent-blue: var(--app-color-login-accent-blue);
+    --color-login-accent-green: var(--app-color-login-accent-green);
+    --color-home-rank-blue: var(--app-color-home-rank-blue);
+    --color-home-rank-number: var(--app-color-home-rank-number);
+    --color-home-rank-number-text: var(--app-color-home-rank-number-text);
+    --color-home-podium-purple: var(--app-color-home-podium-purple);
+    --color-home-podium-purple-soft: var(--app-color-home-podium-purple-soft);
+    --color-home-podium-purple-text: var(--app-color-home-podium-purple-text);
+    --color-home-podium-gold: var(--app-color-home-podium-gold);
+    --color-home-podium-gold-soft: var(--app-color-home-podium-gold-soft);
+    --color-home-podium-gold-text: var(--app-color-home-podium-gold-text);
+    --color-home-podium-blue: var(--app-color-home-podium-blue);
+    --color-home-podium-blue-soft: var(--app-color-home-podium-blue-soft);
+    --color-home-podium-blue-text: var(--app-color-home-podium-blue-text);
+    --color-membership-gold-text: var(--app-color-membership-gold-text);
+    --color-membership-lifetime-text: var(--app-color-membership-lifetime-text);
+    --color-membership-angel-text: var(--app-color-membership-angel-text);
+    --background-image-membership-gold: var(--app-background-membership-gold);
+    --background-image-membership-lifetime: var(--app-background-membership-lifetime);
+    --background-image-membership-angel: var(--app-background-membership-angel);
+
+    --radius-panel: 0.875rem;
+    --shadow-panel: var(--app-shadow-panel);
+    --shadow-drawer: var(--app-shadow-drawer);
+}
+
+:root {
+    --app-text-page-title: 1.375rem;
+    --app-leading-page-title: 1.875rem;
+    --app-text-section-title: 1.125rem;
+    --app-leading-section-title: 1.625rem;
+    --app-text-card-title: 1rem;
+    --app-leading-card-title: 1.5rem;
+    --app-text-body: 0.875rem;
+    --app-leading-body: 1.375rem;
+    --app-text-label: 0.75rem;
+    --app-leading-label: 1.125rem;
+    --app-text-caption: 0.75rem;
+    --app-leading-caption: 1.125rem;
+    --app-text-tab-label: 1rem;
+    --app-leading-tab-label: 1.5rem;
+    --app-text-action-label: 1rem;
+    --app-leading-action-label: 1.5rem;
+}
+
+@media (min-width: 48rem) {
+    :root {
+        --app-text-page-title: 1.625rem;
+        --app-leading-page-title: 2.25rem;
+        --app-text-section-title: 1.25rem;
+        --app-leading-section-title: 1.75rem;
+        --app-text-card-title: 1.125rem;
+        --app-leading-card-title: 1.625rem;
+        --app-text-body: 1rem;
+        --app-leading-body: 1.5rem;
+        --app-text-label: 0.875rem;
+        --app-leading-label: 1.25rem;
+        --app-text-tab-label: 1.125rem;
+        --app-leading-tab-label: 1.625rem;
+        --app-text-action-label: 1.125rem;
+        --app-leading-action-label: 1.625rem;
+    }
+}
+
+@media (min-width: 80rem) {
+    :root {
+        --app-text-page-title: 1.75rem;
+    }
+}
+
+@media (min-width: 120rem) {
+    :root {
+        --app-text-page-title: 1.875rem;
+        --app-text-action-label: 1.25rem;
+        --app-leading-action-label: 1.75rem;
+    }
 }
 
 :root,
 :root[data-theme="dark"] {
-  color-scheme: dark;
-  --app-color-canvas: #090b0d;
-  --app-color-sidebar: #17191b;
-  --app-color-surface: #111315;
-  --app-color-surface-raised: #1d2023;
-  --app-color-surface-hover: #25292d;
-  --app-color-text-primary: #f4f7f8;
-  --app-color-text-secondary: #c1c7cb;
-  --app-color-text-muted: #848c91;
-  --app-color-text-inverse: #ffffff;
-  --app-color-border-subtle: #2a2e31;
-  --app-color-border-strong: #454a4e;
-  --app-color-brand: #14c98b;
-  --app-color-brand-start: #8256ff;
-  --app-color-brand-end: #00c981;
-  --app-color-success: #28d49a;
-  --app-color-warning: #ffbd3e;
-  --app-color-danger: #ff5d66;
-  --app-color-focus: #61dbae;
-  --app-color-overlay: rgb(0 0 0 / 68%);
-  --app-shadow-panel: 0 18px 50px rgb(0 0 0 / 24%);
-  --app-shadow-drawer: 18px 0 48px rgb(0 0 0 / 34%);
+    color-scheme: dark;
+    --app-color-canvas: #000000;
+    --app-color-sidebar: #000000;
+    --app-color-surface: #1a1a1a;
+    --app-color-surface-raised: #22232a;
+    --app-color-surface-hover: #25292d;
+    --app-color-text-primary: #f4f7f8;
+    --app-color-text-secondary: #c1c7cb;
+    --app-color-text-muted: #848c91;
+    --app-color-text-inverse: #ffffff;
+    --app-color-border-subtle: #2a2e31;
+    --app-color-border-strong: #454a4e;
+    --app-color-brand: #01f799;
+    --app-color-brand-start: #8c52ff;
+    --app-color-brand-end: #01f799;
+    --app-color-accent-green: #00bf63;
+    --app-color-accent-cyan: #52fffc;
+    --app-color-accent-blue: #52a3ff;
+    --app-color-accent-orange: #ffa852;
+    --app-color-accent-magenta: #dc52ff;
+    --app-color-success: #28d49a;
+    --app-color-warning: #ffbd3e;
+    --app-color-danger: #ff4a4a;
+    --app-color-danger-surface: #472326;
+    --app-color-progress-track: #424242;
+    --app-color-icon-contrast: transparent;
+    --app-color-focus: #61dbae;
+    --app-color-overlay: rgb(0 0 0 / 68%);
+    --app-color-tooltip: #303033;
+    --app-color-tooltip-text: #ffffff;
+    --app-color-dialog-overlay: rgb(0 0 0 / 50%);
+    --app-color-dialog-surface: #0e0e10;
+    --app-color-dialog-surface-accent: #111822;
+    --app-color-login-canvas: #000000;
+    --app-color-login-primary: #ffffff;
+    --app-color-login-secondary: rgb(255 255 255 / 50%);
+    --app-color-login-pill-border: #ffffff;
+    --app-color-login-pill-fill: rgb(255 255 255 / 16%);
+    --app-color-login-pill-text: rgb(255 255 255 / 80%);
+    --app-color-login-action: #ffffff;
+    --app-color-login-action-text: #000000;
+    --app-color-login-accent-purple: #8c52ff;
+    --app-color-login-accent-blue: #07a1ff;
+    --app-color-login-accent-green: #00bf63;
+    --app-color-home-rank-blue: #63aeff;
+    --app-color-home-rank-number: #ffffff;
+    --app-color-home-rank-number-text: #31343a;
+    --app-color-home-leaderboard-ray-purple: #986ff9;
+    --app-color-home-podium-purple: #894deb;
+    --app-color-home-podium-purple-soft: rgb(184 169 207 / 80%);
+    --app-color-home-podium-purple-text: #7735e4;
+    --app-color-home-podium-gold: #ffb044;
+    --app-color-home-podium-gold-soft: rgb(255 226 169 / 80%);
+    --app-color-home-podium-gold-text: #ef8801;
+    --app-color-home-podium-blue: #46a0ff;
+    --app-color-home-podium-blue-soft: rgb(184 228 255 / 80%);
+    --app-color-home-podium-blue-text: #1782eb;
+    --app-color-membership-gold-text: #e98900;
+    --app-color-membership-lifetime-text: #8f3ff2;
+    --app-color-membership-angel-text: #4174db;
+    --app-color-membership-gold-gradient-start: #fee096;
+    --app-color-membership-gold-gradient-end: #fef1d5;
+    --app-color-membership-lifetime-gradient-start: #e2cafd;
+    --app-color-membership-lifetime-gradient-end: #d0a7fe;
+    --app-color-membership-angel-gradient-start: #fcc1ba;
+    --app-color-membership-angel-gradient-warm: #fce7bb;
+    --app-color-membership-angel-gradient-cool: #c0edf8;
+    --app-color-membership-angel-gradient-end: #e0b9fa;
+    --app-background-membership-gold: linear-gradient(
+        90deg,
+        var(--app-color-membership-gold-gradient-start) 0%,
+        var(--app-color-membership-gold-gradient-end) 100%
+    );
+    --app-background-membership-lifetime: linear-gradient(
+        90deg,
+        var(--app-color-membership-lifetime-gradient-start) 0%,
+        var(--app-color-membership-lifetime-gradient-end) 100%
+    );
+    --app-background-membership-angel: linear-gradient(
+        90deg,
+        var(--app-color-membership-angel-gradient-start) 0%,
+        var(--app-color-membership-angel-gradient-warm) 34%,
+        var(--app-color-membership-angel-gradient-cool) 68%,
+        var(--app-color-membership-angel-gradient-end) 100%
+    );
+    --app-color-login-aurora-purple: #8c52ff;
+    --app-color-login-aurora-blue: #029dff;
+    --app-color-login-aurora-green: #00bf63;
+    --app-filter-login-action-icon: none;
+    --app-filter-dialog-icon: none;
+    --app-filter-shell-icon: none;
+    --app-shadow-panel: 0 18px 50px rgb(0 0 0 / 24%);
+    --app-shadow-drawer: 18px 0 48px rgb(0 0 0 / 34%);
 }
 
 :root[data-theme="light"] {
-  color-scheme: light;
-  --app-color-canvas: #f3f5f4;
-  --app-color-sidebar: #ffffff;
-  --app-color-surface: #ffffff;
-  --app-color-surface-raised: #f6f8f7;
-  --app-color-surface-hover: #edf2f0;
-  --app-color-text-primary: #17201d;
-  --app-color-text-secondary: #46534f;
-  --app-color-text-muted: #74807c;
-  --app-color-text-inverse: #ffffff;
-  --app-color-border-subtle: #dde4e1;
-  --app-color-border-strong: #bdc9c4;
-  --app-color-brand: #078f64;
-  --app-color-brand-start: #6e4de6;
-  --app-color-brand-end: #009d6c;
-  --app-color-success: #078f64;
-  --app-color-warning: #ad7100;
-  --app-color-danger: #d83d49;
-  --app-color-focus: #087e5c;
-  --app-color-overlay: rgb(17 24 21 / 48%);
-  --app-shadow-panel: 0 18px 50px rgb(38 55 48 / 10%);
-  --app-shadow-drawer: 18px 0 48px rgb(38 55 48 / 16%);
+    color-scheme: light;
+    --app-color-canvas: #f3f5f4;
+    --app-color-sidebar: #ffffff;
+    --app-color-surface: #ffffff;
+    --app-color-surface-raised: #f6f8f7;
+    --app-color-surface-hover: #edf2f0;
+    --app-color-text-primary: #17201d;
+    --app-color-text-secondary: #46534f;
+    --app-color-text-muted: #74807c;
+    --app-color-text-inverse: #ffffff;
+    --app-color-border-subtle: #dde4e1;
+    --app-color-border-strong: #bdc9c4;
+    --app-color-brand: #078f64;
+    --app-color-brand-start: #6e4de6;
+    --app-color-brand-end: #009d6c;
+    --app-color-accent-green: #007a50;
+    --app-color-accent-cyan: #007d7a;
+    --app-color-accent-blue: #246aa8;
+    --app-color-accent-orange: #9a5b18;
+    --app-color-accent-magenta: #9827b6;
+    --app-color-success: #078f64;
+    --app-color-warning: #ad7100;
+    --app-color-danger: #d83d49;
+    --app-color-danger-surface: #f8e1e3;
+    --app-color-progress-track: #d5dcda;
+    --app-color-icon-contrast: #17201d;
+    --app-color-focus: #087e5c;
+    --app-color-overlay: rgb(17 24 21 / 48%);
+    --app-color-tooltip: #303033;
+    --app-color-tooltip-text: #ffffff;
+    --app-color-dialog-overlay: rgb(17 24 21 / 38%);
+    --app-color-dialog-surface: #ffffff;
+    --app-color-dialog-surface-accent: #f2f7f5;
+    --app-color-login-canvas: #ffffff;
+    --app-color-login-primary: #111513;
+    --app-color-login-secondary: rgb(17 21 19 / 56%);
+    --app-color-login-pill-border: #111513;
+    --app-color-login-pill-fill: rgb(17 21 19 / 8%);
+    --app-color-login-pill-text: rgb(17 21 19 / 80%);
+    --app-color-login-action: #111513;
+    --app-color-login-action-text: #ffffff;
+    --app-color-login-accent-purple: #6e4de6;
+    --app-color-login-accent-blue: #087dc2;
+    --app-color-login-accent-green: #008c5e;
+    --app-color-home-rank-blue: #2369a6;
+    --app-color-home-rank-number: #26302c;
+    --app-color-home-rank-number-text: #ffffff;
+    --app-color-home-leaderboard-ray-purple: #986ff9;
+    --app-color-home-podium-purple: #7541c8;
+    --app-color-home-podium-purple-soft: #b9a9d0;
+    --app-color-home-podium-purple-text: #6123bc;
+    --app-color-home-podium-gold: #e79a30;
+    --app-color-home-podium-gold-soft: #ead09e;
+    --app-color-home-podium-gold-text: #9a5c00;
+    --app-color-home-podium-blue: #3b8bdc;
+    --app-color-home-podium-blue-soft: #acd5ec;
+    --app-color-home-podium-blue-text: #1765aa;
+    --app-color-membership-gold-text: #9a5c00;
+    --app-color-membership-lifetime-text: #7530bb;
+    --app-color-membership-angel-text: #285cac;
+    --app-color-membership-gold-gradient-start: #fee096;
+    --app-color-membership-gold-gradient-end: #fef1d5;
+    --app-color-membership-lifetime-gradient-start: #e2cafd;
+    --app-color-membership-lifetime-gradient-end: #d0a7fe;
+    --app-color-membership-angel-gradient-start: #fcc1ba;
+    --app-color-membership-angel-gradient-warm: #fce7bb;
+    --app-color-membership-angel-gradient-cool: #c0edf8;
+    --app-color-membership-angel-gradient-end: #e0b9fa;
+    --app-background-membership-gold: linear-gradient(
+        90deg,
+        var(--app-color-membership-gold-gradient-start) 0%,
+        var(--app-color-membership-gold-gradient-end) 100%
+    );
+    --app-background-membership-lifetime: linear-gradient(
+        90deg,
+        var(--app-color-membership-lifetime-gradient-start) 0%,
+        var(--app-color-membership-lifetime-gradient-end) 100%
+    );
+    --app-background-membership-angel: linear-gradient(
+        90deg,
+        var(--app-color-membership-angel-gradient-start) 0%,
+        var(--app-color-membership-angel-gradient-warm) 34%,
+        var(--app-color-membership-angel-gradient-cool) 68%,
+        var(--app-color-membership-angel-gradient-end) 100%
+    );
+    --app-color-login-aurora-purple: #6e4de6;
+    --app-color-login-aurora-blue: #087dc2;
+    --app-color-login-aurora-green: #008c5e;
+    --app-filter-login-action-icon: invert(1);
+    --app-filter-dialog-icon: invert(1);
+    --app-filter-shell-icon: invert(1);
+    --app-shadow-panel: 0 18px 50px rgb(38 55 48 / 10%);
+    --app-shadow-drawer: 18px 0 48px rgb(38 55 48 / 16%);
 }
 
 @layer base {
-  html {
-    min-width: 20rem;
-    min-height: 100%;
-    background: var(--app-color-canvas);
-    font-family: var(--font-sans);
-    text-rendering: optimizeLegibility;
-  }
+    html {
+        min-width: 20rem;
+        min-height: 100%;
+        background: var(--app-color-canvas);
+        font-family: var(--font-sans);
+        text-rendering: optimizeLegibility;
+    }
 
-  body,
-  #root {
-    min-height: 100dvh;
-  }
+    body,
+    #root {
+        min-height: 100dvh;
+    }
 
-  body {
-    margin: 0;
-    background: var(--app-color-canvas);
-    color: var(--app-color-text-primary);
-  }
+    body {
+        margin: 0;
+        background: var(--app-color-canvas);
+        color: var(--app-color-text-primary);
+    }
 
-  button,
-  input,
-  select,
-  textarea {
-    font: inherit;
-  }
+    button,
+    input,
+    select,
+    textarea {
+        font: inherit;
+    }
 
-  :focus-visible {
-    outline: 2px solid var(--app-color-focus);
-    outline-offset: 2px;
-  }
+    :focus-visible {
+        outline: 2px solid var(--app-color-focus);
+        outline-offset: 2px;
+    }
 }
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation: none;
+    animation: none;
+}
+
+@keyframes tld-gradient-text-shift {
+    from {
+        background-position: var(--tld-gradient-text-start);
+    }
+
+    to {
+        background-position: var(--tld-gradient-text-end);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }

@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame">
+<path id="Vector" d="M4 20C4 18 4 5 4 5C4 3.34315 5.4327 2 7.2 2H20V18C20 18 9.99075 18 7.2 18C4.68112 18 4 18.3421 4 20Z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+<path id="Vector_2" fill-rule="evenodd" clip-rule="evenodd" d="M6 22H20V18H6C4.89543 18 4 18.8954 4 20C4 21.1046 4.89543 22 6 22Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="A" d="M10.6752 10.5949H13.2605L12.8875 9.32154C12.5659 8.2926 12.283 7.23794 11.9871 6.17042H11.9357C11.6656 7.2508 11.3698 8.2926 11.0611 9.32154L10.6752 10.5949ZM14.418 14.4662L13.6206 11.7653H10.328L9.51768 14.4662H8L11.1383 5H12.8617L16 14.4662H14.418Z" fill="white"/>
+</g>
+</svg>

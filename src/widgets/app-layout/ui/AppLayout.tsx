@@ -1,162 +1,721 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
-import type { ReactElement } from 'react'
+import type { FormEvent, ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, Outlet } from 'react-router-dom'
-import { sharedConfig } from '../../../shared/config'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { projectConstants } from '../../../shared/constants'
 import { LanguageSwitcher } from '../../../shared/ui/language-switcher'
+import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
 import { ThemeSwitcher } from '../../../shared/ui/theme-switcher'
+import { Tooltip } from '../../../shared/ui/tooltip'
+import {
+    getNavigationStateForViewport,
+    hasCollapsedNavigationRail,
+    toggleNavigationState,
+} from '../model/navigation-state'
+import type { NavigationViewport } from '../model/navigation-state'
+import avatarSource from '../assets/avatar.png'
+import clubIconSource from '../assets/header/club.svg'
+import desktopIconSource from '../assets/header/desktop.svg'
+import feedbackIconSource from '../assets/header/feedback.svg'
+import notificationIconSource from '../assets/header/notification.svg'
+import playIconSource from '../assets/header/play.svg'
+import searchIconSource from '../assets/header/search.svg'
+import serviceIconSource from '../assets/header/service.svg'
+import sidebarToggleIconSource from '../assets/header/sidebar-toggle.svg'
+import aiCreateIconSource from '../assets/navigation/ai-create.svg'
+import aiTutorIconSource from '../assets/navigation/ai-tutor.svg'
+import awakeningIconSource from '../assets/navigation/awakening.svg'
+import bootcampIconSource from '../assets/navigation/bootcamp.svg'
+import caretIconSource from '../assets/navigation/caret.svg'
+import coCreateIconSource from '../assets/navigation/co-create.svg'
+import settingsIconSource from '../assets/navigation/diamond.svg'
+import guideIconSource from '../assets/navigation/guide.svg'
+import homeIconSource from '../assets/navigation/home.svg'
+import leaderboardIconSource from '../assets/navigation/leaderboard.svg'
+import pkIconSource from '../assets/navigation/pk.svg'
+import profileIconSource from '../assets/navigation/profile.svg'
+import revenueIconSource from '../assets/navigation/revenue.svg'
+import diamondIconSource from '../assets/navigation/settings.svg'
+import storiesIconSource from '../assets/navigation/stories.svg'
+import timerIconSource from '../assets/navigation/timer.svg'
+import vipIconSource from '../assets/navigation/vip.svg'
+import vocabularyIconSource from '../assets/navigation/vocabulary.svg'
+import wisdomIconSource from '../assets/navigation/wisdom.svg'
+
+export type AppNavigationIcon =
+    | 'ai-create'
+    | 'ai-tutor'
+    | 'awakening'
+    | 'bootcamp'
+    | 'co-create'
+    | 'guide'
+    | 'home'
+    | 'leaderboard'
+    | 'pk'
+    | 'profile'
+    | 'revenue'
+    | 'stories'
+    | 'vip'
+    | 'vocabulary'
+    | 'wisdom'
+
+export type AppNavigationAccent = 'default' | 'collaboration' | 'vip'
+
+export interface AppNavigationChildItem {
+    readonly label?: string
+    readonly labelKey: string
+    readonly pageLabel?: string
+    readonly pageLabelKey?: string
+    readonly to?: string
+    readonly end?: boolean
+}
 
 export interface AppNavigationItem {
-  readonly labelKey: string
-  readonly to: string
-  readonly end?: boolean
+    readonly label?: string
+    readonly labelKey: string
+    readonly pageLabel?: string
+    readonly pageLabelKey?: string
+    readonly icon: AppNavigationIcon
+    readonly to?: string
+    readonly end?: boolean
+    readonly accent?: AppNavigationAccent
+    readonly children?: readonly AppNavigationChildItem[]
+}
+
+export type AppUtilityIcon = 'club' | 'desktop' | 'feedback' | 'notification' | 'play' | 'service'
+
+export interface AppUtilityItem {
+    readonly labelKey: string
+    readonly icon: AppUtilityIcon
 }
 
 export interface AppLayoutProps {
-  readonly navigationItems: readonly AppNavigationItem[]
+    readonly navigationItems: readonly AppNavigationItem[]
+    readonly utilityItems: readonly AppUtilityItem[]
+    readonly searchPath: string
 }
 
-export function AppLayout({ navigationItems }: AppLayoutProps): ReactElement {
-  const { t } = useTranslation()
-  const navigationId = useId()
-  const [isNavigationOpen, setIsNavigationOpen] = useState(false)
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const triggerButtonRef = useRef<HTMLButtonElement>(null)
-  const closeNavigation = useCallback((): void => {
-    triggerButtonRef.current?.focus()
-    setIsNavigationOpen(false)
-  }, [])
-  const openNavigation = useCallback((): void => {
-    setIsNavigationOpen(true)
-  }, [])
-  const navigationClassName = isNavigationOpen
-    ? 'fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(20rem,86vw)] translate-x-0 visible flex-col border-r border-subtle bg-sidebar shadow-drawer transition-transform duration-200 xl:sticky xl:top-0 xl:z-20 xl:w-64 xl:translate-x-0 xl:visible xl:shadow-none'
-    : 'fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(20rem,86vw)] -translate-x-full invisible flex-col border-r border-subtle bg-sidebar shadow-drawer transition-transform duration-200 xl:sticky xl:top-0 xl:z-20 xl:w-64 xl:translate-x-0 xl:visible xl:shadow-none'
+interface NavigationEntryProps {
+    readonly isCompact: boolean
+    readonly item: AppNavigationItem
+    readonly onExpandNavigation: () => void
+    readonly pathname: string
+    readonly onNavigate: () => void
+}
 
-  useEffect(() => {
-    if (!isNavigationOpen) return undefined
+const navigationIconSources: Record<AppNavigationIcon, string> = {
+    'ai-create': aiCreateIconSource,
+    'ai-tutor': aiTutorIconSource,
+    awakening: awakeningIconSource,
+    bootcamp: bootcampIconSource,
+    'co-create': coCreateIconSource,
+    guide: guideIconSource,
+    home: homeIconSource,
+    leaderboard: leaderboardIconSource,
+    pk: pkIconSource,
+    profile: profileIconSource,
+    revenue: revenueIconSource,
+    stories: storiesIconSource,
+    vip: vipIconSource,
+    vocabulary: vocabularyIconSource,
+    wisdom: wisdomIconSource,
+}
 
-    const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') closeNavigation()
+const utilityIconSources: Record<AppUtilityIcon, string> = {
+    club: clubIconSource,
+    desktop: desktopIconSource,
+    feedback: feedbackIconSource,
+    notification: notificationIconSource,
+    play: playIconSource,
+    service: serviceIconSource,
+}
+
+const tabletNavigationMediaQuery = '(min-width: 48rem)'
+const desktopNavigationMediaQuery = '(min-width: 80rem)'
+
+function getCurrentNavigationViewport(): NavigationViewport {
+    if (typeof window === 'undefined') return 'mobile'
+    if (window.matchMedia(desktopNavigationMediaQuery).matches) return 'desktop'
+    if (window.matchMedia(tabletNavigationMediaQuery).matches) return 'tablet'
+    return 'mobile'
+}
+
+function isPathActive(pathname: string, to: string | undefined, end = false): boolean {
+    if (to === undefined) return false
+    if (end) return pathname === to
+    return pathname === to || pathname.startsWith(`${to}/`)
+}
+
+function getActivePageLabelSource(
+    items: readonly AppNavigationItem[],
+    pathname: string,
+): AppNavigationChildItem | AppNavigationItem | undefined {
+    for (const item of items) {
+        if (isPathActive(pathname, item.to, item.end)) return item
+
+        const activeChild = item.children?.find((child) =>
+            isPathActive(pathname, child.to, child.end),
+        )
+        if (activeChild !== undefined) return activeChild
     }
 
-    const focusFrame = window.requestAnimationFrame((): void => closeButtonRef.current?.focus())
-    window.addEventListener('keydown', closeOnEscape)
-    return (): void => {
-      window.cancelAnimationFrame(focusFrame)
-      window.removeEventListener('keydown', closeOnEscape)
-    }
-  }, [closeNavigation, isNavigationOpen])
+    return undefined
+}
 
-  return (
-    <div className="min-h-dvh bg-canvas text-primary xl:grid xl:grid-cols-[16rem_minmax(0,1fr)]">
-      {isNavigationOpen ? (
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label={t('layout.closeNavigation')}
-          className="fixed inset-0 z-40 bg-overlay xl:hidden"
-          onClick={closeNavigation}
+function NavigationEntry({
+    isCompact,
+    item,
+    onExpandNavigation,
+    pathname,
+    onNavigate,
+}: NavigationEntryProps): ReactElement {
+    const { t } = useTranslation()
+    const childNavigationId = useId()
+    const childItems = item.children ?? []
+    const itemLabel = item.label ?? t(item.labelKey)
+    const hasChildren = childItems.length > 0
+    const hasActiveChild = childItems.some((child) => isPathActive(pathname, child.to, child.end))
+    const isActive = isPathActive(pathname, item.to, item.end) || hasActiveChild
+    const [isExpanded, setIsExpanded] = useState(hasChildren)
+
+    const icon = (
+        <img
+            alt=""
+            aria-hidden="true"
+            className={
+                isActive || item.accent !== undefined
+                    ? 'size-6 shrink-0'
+                    : 'size-6 shrink-0 [filter:var(--app-filter-shell-icon)]'
+            }
+            src={navigationIconSources[item.icon]}
         />
-      ) : null}
+    )
 
-      <aside
-        id={navigationId}
-        className={navigationClassName}
-      >
-        <div className="flex h-20 shrink-0 items-center gap-3 border-b border-subtle px-4">
-          <Link
-            aria-label={t('layout.homeLabel', { appName: sharedConfig.application.name })}
-            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl"
-            to="/"
-            onClick={(): void => setIsNavigationOpen(false)}
-          >
-            <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-linear-to-br from-brand-start to-brand-end text-lg font-black text-inverse">
-              E
-            </span>
-            <span className="min-w-0">
-              <span className="block truncate text-sm font-semibold text-primary">{sharedConfig.application.name}</span>
-              <span className="block truncate text-xs text-muted">{t('layout.productType')}</span>
-            </span>
-          </Link>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            aria-label={t('layout.closeNavigation')}
-            className="grid size-10 shrink-0 place-items-center rounded-lg border border-subtle text-secondary transition-colors hover:bg-surface-hover hover:text-primary xl:hidden"
-            onClick={closeNavigation}
-          >
-            <span aria-hidden="true" className="text-xl leading-none">×</span>
-          </button>
-        </div>
+    const withCompactTooltip = (element: ReactElement): ReactElement => {
+        if (!isCompact) return element
+        return (
+            <Tooltip content={itemLabel} fullWidth placement="right">
+                {element}
+            </Tooltip>
+        )
+    }
 
-        <nav aria-label={t('layout.mainNavigation')} className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-5">
-          {navigationItems.map((item) => (
-            <NavLink
-              key={item.to}
-              className={({ isActive }): string => (
-                isActive
-                  ? 'flex min-h-12 items-center gap-3 rounded-xl bg-linear-to-r from-brand-start to-brand-end px-4 text-sm font-semibold text-inverse shadow-panel'
-                  : 'flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-medium text-secondary transition-colors hover:bg-surface-hover hover:text-primary'
-              )}
-              end={item.end ?? false}
-              to={item.to}
-              onClick={(): void => setIsNavigationOpen(false)}
-            >
-              <span aria-hidden="true" className="size-2 rounded-full bg-current opacity-75" />
-              {t(item.labelKey)}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="shrink-0 border-t border-subtle p-4 [padding-bottom:max(1rem,env(safe-area-inset-bottom))] xl:hidden">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted">{t('layout.interfaceSettings')}</p>
-          <div className="flex flex-wrap gap-2">
-            <ThemeSwitcher />
-            <LanguageSwitcher />
-          </div>
-        </div>
-      </aside>
-
-      <div className="min-w-0 xl:col-start-2">
-        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-4 border-b border-subtle bg-canvas/90 px-4 backdrop-blur-md md:px-6 xl:min-h-20 xl:px-8">
-          <div className="flex min-w-0 items-center gap-3">
+    if (hasChildren) {
+        const navigationButton = (
             <button
-              ref={triggerButtonRef}
-              type="button"
-              aria-controls={navigationId}
-              aria-expanded={isNavigationOpen}
-              aria-label={t('layout.openNavigation')}
-              className="grid size-11 shrink-0 place-items-center rounded-xl border border-subtle bg-surface text-secondary transition-colors hover:bg-surface-hover hover:text-primary xl:hidden"
-              onClick={openNavigation}
+                type="button"
+                aria-label={itemLabel}
+                aria-controls={childNavigationId}
+                aria-expanded={isCompact ? false : isExpanded}
+                className={
+                    isCompact
+                        ? isActive
+                            ? 'flex h-10 w-full cursor-pointer items-center justify-start rounded-lg bg-linear-to-r from-brand-start to-brand-end px-2 text-inverse'
+                            : 'flex h-10 w-full cursor-pointer items-center justify-start rounded-lg px-2 text-primary transition-colors hover:bg-surface-hover hover:text-primary'
+                        : isActive
+                          ? 'flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg bg-linear-to-r from-brand-start to-brand-end px-2.5 text-left text-body font-semibold text-inverse'
+                          : 'flex h-10 w-full cursor-pointer items-center gap-3 rounded-lg px-2.5 text-left text-body font-medium text-primary transition-colors hover:bg-surface-hover hover:text-primary'
+                }
+                onClick={(): void => {
+                    if (isCompact) {
+                        onExpandNavigation()
+                        return
+                    }
+                    setIsExpanded((currentValue) => !currentValue)
+                }}
             >
-              <span aria-hidden="true" className="grid gap-1">
-                <span className="block h-0.5 w-5 rounded-full bg-current" />
-                <span className="block h-0.5 w-5 rounded-full bg-current" />
-                <span className="block h-0.5 w-5 rounded-full bg-current" />
-              </span>
+                {icon}
+                <span
+                    className={
+                        isCompact
+                            ? 'invisible max-w-0 overflow-hidden opacity-0 transition-none'
+                            : 'visible min-w-0 max-w-[9rem] flex-1 truncate opacity-100 transition-[max-width,opacity] duration-100 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                    }
+                >
+                    {itemLabel}
+                </span>
+                <img
+                    alt=""
+                    aria-hidden="true"
+                    className={
+                        isCompact
+                            ? 'hidden'
+                            : isActive
+                              ? isExpanded
+                                  ? 'size-[18px] shrink-0 rotate-0 transition-transform duration-200 motion-reduce:transition-none'
+                                  : 'size-[18px] shrink-0 rotate-180 transition-transform duration-200 motion-reduce:transition-none'
+                              : isExpanded
+                                ? 'size-[18px] shrink-0 rotate-0 transition-transform duration-200 motion-reduce:transition-none [filter:var(--app-filter-shell-icon)]'
+                                : 'size-[18px] shrink-0 rotate-180 transition-transform duration-200 motion-reduce:transition-none [filter:var(--app-filter-shell-icon)]'
+                    }
+                    src={caretIconSource}
+                />
             </button>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-primary md:text-base">{t('layout.framework')}</p>
-              <p className="hidden truncate text-xs text-muted sm:block">{t('layout.rendererScope')}</p>
-            </div>
-          </div>
+        )
 
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="hidden rounded-full border border-subtle bg-surface px-3 py-1.5 text-xs font-medium text-secondary md:inline-flex">
-              {t('layout.p0Status')}
+        return (
+            <div>
+                {withCompactTooltip(navigationButton)}
+
+                <div
+                    id={childNavigationId}
+                    aria-hidden={isCompact || !isExpanded}
+                    className={
+                        isCompact || !isExpanded
+                            ? 'invisible grid grid-rows-[0fr] opacity-0 transition-none'
+                            : 'visible grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity] duration-200 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                    }
+                >
+                    <div className="overflow-hidden">
+                        <div className="relative ml-[22px] border-l border-subtle py-1 pl-[23px]">
+                            {childItems.map((child) => {
+                                const isChildActive = isPathActive(pathname, child.to, child.end)
+                                const childLabel = child.label ?? t(child.labelKey)
+                                if (child.to === undefined) {
+                                    return (
+                                        <span
+                                            key={child.labelKey}
+                                            aria-disabled="true"
+                                            className="flex h-8 items-center text-label text-muted"
+                                        >
+                                            {childLabel}
+                                        </span>
+                                    )
+                                }
+
+                                return (
+                                    <NavLink
+                                        key={child.to}
+                                        tabIndex={isExpanded && !isCompact ? undefined : -1}
+                                        className={
+                                            isChildActive
+                                                ? 'relative flex h-8 cursor-pointer items-center text-label font-medium text-brand before:absolute before:-left-6 before:h-4 before:w-px before:bg-brand'
+                                                : 'flex h-8 cursor-pointer items-center text-label text-secondary transition-colors hover:text-primary'
+                                        }
+                                        end={child.end ?? false}
+                                        to={child.to}
+                                        onClick={onNavigate}
+                                    >
+                                        {childLabel}
+                                    </NavLink>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (item.to === undefined) {
+        return withCompactTooltip(
+            <span
+                aria-disabled="true"
+                className={
+                    isCompact
+                        ? item.accent === 'collaboration'
+                            ? 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-brand'
+                            : item.accent === 'vip'
+                              ? 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-warning'
+                              : 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-primary'
+                        : item.accent === 'collaboration'
+                          ? 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-brand'
+                          : item.accent === 'vip'
+                            ? 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-warning'
+                            : 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-primary'
+                }
+            >
+                {icon}
+                <span
+                    className={
+                        isCompact
+                            ? 'invisible max-w-0 overflow-hidden opacity-0 transition-none'
+                            : 'visible min-w-0 max-w-[9rem] flex-1 truncate opacity-100 transition-[max-width,opacity] duration-100 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                    }
+                >
+                    {itemLabel}
+                </span>
+            </span>,
+        )
+    }
+
+    return withCompactTooltip(
+        <NavLink
+            aria-label={itemLabel}
+            className={
+                isCompact
+                    ? isActive
+                        ? 'flex h-10 w-full cursor-pointer items-center justify-start rounded-lg bg-linear-to-r from-brand-start to-brand-end px-2 text-inverse'
+                        : 'flex h-10 w-full cursor-pointer items-center justify-start rounded-lg px-2 text-primary transition-colors hover:bg-surface-hover hover:text-primary'
+                    : isActive
+                      ? 'flex h-10 cursor-pointer items-center gap-3 rounded-lg bg-linear-to-r from-brand-start to-brand-end px-2.5 text-body font-semibold text-inverse'
+                      : 'flex h-10 cursor-pointer items-center gap-3 rounded-lg px-2.5 text-body font-medium text-primary transition-colors hover:bg-surface-hover hover:text-primary'
+            }
+            end={item.end ?? false}
+            to={item.to}
+            onClick={onNavigate}
+        >
+            {icon}
+            <span
+                className={
+                    isCompact
+                        ? 'invisible max-w-0 overflow-hidden opacity-0 transition-none'
+                        : 'visible min-w-0 max-w-[9rem] flex-1 truncate opacity-100 transition-[max-width,opacity] duration-100 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                }
+            >
+                {itemLabel}
             </span>
-            <div className="hidden items-center gap-2 xl:flex">
-              <ThemeSwitcher />
-              <LanguageSwitcher />
-            </div>
-          </div>
-        </header>
+        </NavLink>,
+    )
+}
 
-        <main className="min-w-0">
-          <Outlet />
-        </main>
-      </div>
-    </div>
-  )
+export function AppLayout({
+    navigationItems,
+    utilityItems,
+    searchPath,
+}: AppLayoutProps): ReactElement {
+    const { t } = useTranslation()
+    const navigate = useNavigate()
+    const { pathname } = useLocation()
+    const navigationId = useId()
+    const [searchQuery, setSearchQuery] = useState('')
+    const activePageLabelSource = getActivePageLabelSource(navigationItems, pathname)
+    const activePageLabel =
+        activePageLabelSource === undefined
+            ? undefined
+            : (activePageLabelSource.pageLabel ??
+              activePageLabelSource.label ??
+              t(activePageLabelSource.pageLabelKey ?? activePageLabelSource.labelKey))
+    const [navigationState, setNavigationState] = useState(() =>
+        getNavigationStateForViewport(getCurrentNavigationViewport()),
+    )
+    const { isNavigationOpen, viewport } = navigationState
+    const isMobileViewport = viewport === 'mobile'
+    const isCompactNavigation = hasCollapsedNavigationRail(navigationState)
+    const isNavigationFullyHidden = !isNavigationOpen && !isCompactNavigation
+    const closeButtonRef = useRef<HTMLButtonElement>(null)
+    const triggerButtonRef = useRef<HTMLButtonElement>(null)
+    const closeNavigation = useCallback((): void => {
+        triggerButtonRef.current?.focus()
+        setNavigationState((currentState) => ({ ...currentState, isNavigationOpen: false }))
+    }, [])
+    const closeOverlayNavigation = useCallback((): void => {
+        if (isMobileViewport) closeNavigation()
+    }, [closeNavigation, isMobileViewport])
+    const openNavigation = useCallback((): void => {
+        setNavigationState((currentState) => ({ ...currentState, isNavigationOpen: true }))
+    }, [])
+    const isOverlayNavigationOpen = isNavigationOpen && isMobileViewport
+
+    useEffect(() => {
+        const tabletMediaQuery = window.matchMedia(tabletNavigationMediaQuery)
+        const desktopMediaQuery = window.matchMedia(desktopNavigationMediaQuery)
+
+        const synchronizeNavigation = (): void => {
+            const nextViewport: NavigationViewport = desktopMediaQuery.matches
+                ? 'desktop'
+                : tabletMediaQuery.matches
+                  ? 'tablet'
+                  : 'mobile'
+            setNavigationState(getNavigationStateForViewport(nextViewport))
+        }
+
+        synchronizeNavigation()
+        tabletMediaQuery.addEventListener('change', synchronizeNavigation)
+        desktopMediaQuery.addEventListener('change', synchronizeNavigation)
+        return (): void => {
+            tabletMediaQuery.removeEventListener('change', synchronizeNavigation)
+            desktopMediaQuery.removeEventListener('change', synchronizeNavigation)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!isOverlayNavigationOpen) return undefined
+
+        const closeOnEscape = (event: KeyboardEvent): void => {
+            if (event.key === 'Escape') closeNavigation()
+        }
+
+        const focusFrame = window.requestAnimationFrame((): void => closeButtonRef.current?.focus())
+        window.addEventListener('keydown', closeOnEscape)
+        return (): void => {
+            window.cancelAnimationFrame(focusFrame)
+            window.removeEventListener('keydown', closeOnEscape)
+        }
+    }, [closeNavigation, isOverlayNavigationOpen])
+
+    function submitCourseSearch(event: FormEvent<HTMLFormElement>): void {
+        event.preventDefault()
+        const query = searchQuery.trim()
+        navigate({
+            pathname: searchPath,
+            search: query.length > 0 ? `?q=${encodeURIComponent(query)}` : '',
+        })
+        closeOverlayNavigation()
+    }
+
+    const shellClassName = isNavigationOpen
+        ? 'min-h-dvh overflow-x-clip bg-canvas text-primary md:grid md:grid-cols-[200px_minmax(0,1fr)] md:transition-[grid-template-columns] md:duration-300 md:ease-out md:motion-reduce:transition-none'
+        : 'min-h-dvh overflow-x-clip bg-canvas text-primary md:grid md:grid-cols-[64px_minmax(0,1fr)] md:transition-[grid-template-columns] md:delay-100 md:duration-300 md:ease-out md:motion-reduce:delay-0 md:motion-reduce:transition-none'
+    const navigationClassName = isNavigationOpen
+        ? 'pointer-events-auto fixed inset-y-0 left-0 z-50 flex h-dvh w-[50vw] translate-x-0 flex-col overflow-hidden border-r border-subtle bg-canvas shadow-drawer transition-[translate,width] duration-300 ease-out motion-reduce:transition-none md:sticky md:top-0 md:z-20 md:w-[200px] md:shadow-none'
+        : 'pointer-events-none fixed inset-y-0 left-0 z-50 flex h-dvh w-[50vw] -translate-x-full flex-col overflow-hidden border-r border-subtle bg-canvas shadow-drawer transition-[translate,width] duration-300 ease-out motion-reduce:transition-none md:pointer-events-auto md:sticky md:top-0 md:z-20 md:w-16 md:translate-x-0 md:delay-100 md:shadow-none md:motion-reduce:delay-0'
+    const membershipControl = (
+        <button
+            type="button"
+            aria-label={t('layout.membershipCenter')}
+            className="grid h-10 w-full cursor-pointer place-items-center rounded-lg border border-subtle transition-colors hover:bg-surface-hover"
+        >
+            <img alt="" aria-hidden="true" className="size-5" src={diamondIconSource} />
+        </button>
+    )
+    const settingsControl = (
+        <details className="group relative">
+            <summary
+                aria-label={t('layout.interfaceSettings')}
+                className="grid h-10 cursor-pointer list-none place-items-center rounded-lg border border-subtle transition-colors hover:bg-surface-hover"
+            >
+                <img
+                    alt=""
+                    aria-hidden="true"
+                    className="size-5 [filter:var(--app-filter-shell-icon)]"
+                    src={settingsIconSource}
+                />
+            </summary>
+            <div className="absolute bottom-12 left-0 z-10 flex w-44 flex-col gap-2 rounded-lg border border-subtle bg-surface p-2 shadow-panel">
+                <ThemeSwitcher />
+                <LanguageSwitcher />
+            </div>
+        </details>
+    )
+
+    return (
+        <div className={shellClassName}>
+            <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden={!isOverlayNavigationOpen}
+                aria-label={t('layout.closeNavigation')}
+                className={
+                    isOverlayNavigationOpen
+                        ? 'fixed inset-0 z-40 cursor-pointer bg-overlay opacity-100 transition-opacity duration-300 ease-out motion-reduce:transition-none md:hidden'
+                        : 'pointer-events-none fixed inset-0 z-40 cursor-pointer bg-overlay opacity-0 transition-opacity duration-300 ease-out motion-reduce:transition-none md:hidden'
+                }
+                onClick={closeNavigation}
+            />
+
+            <aside
+                id={navigationId}
+                aria-hidden={isNavigationFullyHidden}
+                aria-label={t('layout.mainNavigation')}
+                className={navigationClassName}
+                inert={isNavigationFullyHidden ? true : undefined}
+            >
+                <div className="relative h-[98px] shrink-0 px-[11px] pt-[22px]">
+                    <div className="flex min-w-0 items-start">
+                        <img
+                            alt=""
+                            aria-hidden="true"
+                            className="size-[42px] max-w-none shrink-0 rounded-full object-cover"
+                            src={avatarSource}
+                        />
+                        <div
+                            className={
+                                isCompactNavigation
+                                    ? 'invisible absolute left-[63px] right-4 top-[23px] min-w-0 overflow-hidden opacity-0 transition-none'
+                                    : 'visible absolute left-[63px] right-4 top-[23px] min-w-0 overflow-hidden opacity-100 transition-opacity duration-100 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                            }
+                        >
+                            <p
+                                title={t('layout.userName')}
+                                className="truncate text-label font-normal text-primary"
+                            >
+                                {t('layout.userName')}
+                            </p>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5">
+                                <span className="shrink-0 whitespace-nowrap text-caption font-semibold text-danger">
+                                    {t('layout.userLevel')}
+                                </span>
+                                <span className="shrink-0">
+                                    <TldMembershipBadge
+                                        label={t('layout.vipStatus')}
+                                        size="compact"
+                                        tone="gold"
+                                    />
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        aria-hidden={isCompactNavigation}
+                        className="pointer-events-none absolute bottom-[9px] left-2.5 h-5"
+                    >
+                        <span
+                            className={
+                                isCompactNavigation
+                                    ? 'invisible inline-flex h-5 items-center gap-1 rounded-full border border-strong px-1.5 text-[10px] text-primary opacity-0 transition-none'
+                                    : 'visible inline-flex h-5 items-center gap-1 rounded-full border border-strong px-1.5 text-[10px] text-primary opacity-100 transition-opacity duration-100 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                            }
+                        >
+                            <img
+                                alt=""
+                                aria-hidden="true"
+                                className="size-3.5 [filter:var(--app-filter-shell-icon)]"
+                                src={timerIconSource}
+                            />
+                            {t('layout.studyTime')}
+                        </span>
+                    </div>
+
+                    <button
+                        ref={closeButtonRef}
+                        type="button"
+                        aria-label={t('layout.closeNavigation')}
+                        className="absolute right-3 top-4 grid size-9 cursor-pointer place-items-center rounded-lg border border-subtle text-xl text-secondary transition-colors hover:bg-surface-hover hover:text-primary md:hidden"
+                        onClick={closeNavigation}
+                    >
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+
+                <nav className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {navigationItems.map((item) => (
+                        <NavigationEntry
+                            key={item.labelKey}
+                            isCompact={isCompactNavigation}
+                            item={item}
+                            pathname={pathname}
+                            onExpandNavigation={openNavigation}
+                            onNavigate={closeOverlayNavigation}
+                        />
+                    ))}
+                </nav>
+
+                <div className="shrink-0 space-y-2.5 border-t border-subtle bg-canvas px-3 py-2.5 [padding-bottom:max(0.625rem,env(safe-area-inset-bottom))]">
+                    {isCompactNavigation ? (
+                        <Tooltip content={t('layout.membershipCenter')} fullWidth placement="right">
+                            {membershipControl}
+                        </Tooltip>
+                    ) : (
+                        membershipControl
+                    )}
+                    {isCompactNavigation ? (
+                        <Tooltip
+                            content={t('layout.interfaceSettings')}
+                            fullWidth
+                            placement="right"
+                        >
+                            {settingsControl}
+                        </Tooltip>
+                    ) : (
+                        settingsControl
+                    )}
+                </div>
+            </aside>
+
+            <div className="h-dvh min-w-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:col-start-2">
+                <header className="sticky top-0 z-30 flex h-16 items-center gap-2 bg-canvas px-3 md:gap-3 md:px-4 xl:h-20">
+                    <div className="flex shrink-0 items-center gap-1">
+                        <button
+                            ref={triggerButtonRef}
+                            type="button"
+                            aria-controls={navigationId}
+                            aria-expanded={isNavigationOpen}
+                            aria-label={
+                                isNavigationOpen
+                                    ? t('layout.closeNavigation')
+                                    : t('layout.openNavigation')
+                            }
+                            className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md transition-colors hover:bg-surface-hover"
+                            onClick={(): void => setNavigationState(toggleNavigationState)}
+                        >
+                            <img
+                                alt=""
+                                aria-hidden="true"
+                                className={
+                                    isNavigationOpen
+                                        ? 'size-5 rotate-0 transition-transform duration-300 ease-out motion-reduce:transition-none [filter:var(--app-filter-shell-icon)]'
+                                        : 'size-5 rotate-180 transition-transform duration-300 ease-out motion-reduce:transition-none [filter:var(--app-filter-shell-icon)]'
+                                }
+                                src={sidebarToggleIconSource}
+                            />
+                        </button>
+                        {activePageLabel === undefined ? null : (
+                            <span className="hidden whitespace-nowrap text-body font-medium text-primary xl:block">
+                                {activePageLabel}
+                            </span>
+                        )}
+                    </div>
+
+                    <form
+                        className={
+                            activePageLabel === undefined
+                                ? 'w-7 shrink-0 md:w-1/2 md:min-w-20 md:max-w-[468px] xl:w-auto xl:flex-1'
+                                : 'w-7 shrink-0 md:w-1/2 md:min-w-20 md:max-w-[468px] xl:ml-2 xl:w-auto xl:flex-1'
+                        }
+                        role="search"
+                        onSubmit={submitCourseSearch}
+                    >
+                        <label className="sr-only" htmlFor="global-course-search">
+                            {t('layout.searchLabel')}
+                        </label>
+                        <div className="flex size-7 items-center md:h-[46px] md:w-full md:rounded-lg md:border md:border-subtle md:bg-surface md:pl-[15px]">
+                            <input
+                                id="global-course-search"
+                                className="hidden min-w-0 flex-1 bg-transparent text-body tracking-[0.01em] text-primary outline-none placeholder:text-muted md:block"
+                                placeholder={t('layout.searchPlaceholder')}
+                                type="search"
+                                value={searchQuery}
+                                onChange={(event): void => setSearchQuery(event.target.value)}
+                            />
+                            <button
+                                type="submit"
+                                aria-label={t('layout.searchAction')}
+                                className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-strong text-primary transition-colors hover:bg-surface-hover md:size-[46px] md:border-0"
+                            >
+                                <img
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="size-[18px] md:size-[22px]"
+                                    src={searchIconSource}
+                                />
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-2">
+                        {utilityItems.map((item) => (
+                            <button
+                                key={item.labelKey}
+                                type="button"
+                                aria-label={t(item.labelKey)}
+                                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-strong text-primary transition-colors hover:bg-surface-hover md:h-8 md:w-8 min-[1800px]:min-w-max min-[1800px]:px-[11px]"
+                            >
+                                <img
+                                    alt=""
+                                    aria-hidden="true"
+                                    className="size-[18px] [filter:var(--app-filter-shell-icon)] min-[1800px]:size-6"
+                                    src={utilityIconSources[item.icon]}
+                                />
+                                <span className="hidden whitespace-nowrap text-body font-medium min-[1800px]:inline">
+                                    {t(item.labelKey)}
+                                </span>
+                            </button>
+                        ))}
+                        <img
+                            alt=""
+                            aria-hidden="true"
+                            className="hidden size-[52px] shrink-0 object-cover min-[1800px]:block"
+                            src={projectConstants.assets.mascotSource}
+                        />
+                    </div>
+                </header>
+
+                <main className="min-h-[calc(100dvh-4rem)] min-w-0 xl:min-h-[calc(100dvh-5rem)]">
+                    <Outlet />
+                </main>
+            </div>
+        </div>
+    )
 }

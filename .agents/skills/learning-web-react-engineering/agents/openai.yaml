@@ -1,6 +1,6 @@
 interface:
-  display_name: "Learning Web React Engineering"
-  short_description: "Engineer React rendering, state and responsive behavior deliberately"
-  default_prompt: "Use $learning-web-react-engineering to assess and improve this React rendering change."
+    display_name: "Learning Web React Engineering"
+    short_description: "Engineer React rendering, state and responsive behavior deliberately"
+    default_prompt: "Use $learning-web-react-engineering to assess and improve this React rendering change."
 policy:
-  allow_implicit_invocation: true
+    allow_implicit_invocation: true

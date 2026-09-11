@@ -44,9 +44,10 @@ entities/course/
 ## 5. 提交前
 
 ```bash
+pnpm run format:check
 pnpm run test
 pnpm run lint
 pnpm run build
 ```
 
-涉及 Electron 时再执行 `pnpm run desktop:build`。浏览器与设备体验无法由当前测试覆盖时，在交接中列出实际复测视口与未复测项。
+`pnpm run lint` 会再执行 `format:check`，单独列出是为了让格式偏差在完整 lint 前快速失败。涉及 Electron 时再执行 `pnpm run desktop:build`。浏览器与设备体验无法由当前测试覆盖时，在交接中列出实际复测视口与未复测项。Codex 的人工视觉验收只覆盖 PC（优先任务指定的桌面尺寸，未指定时为 1440×900）；平板与 H5 的视觉、横竖屏和真机兼容统一列为待用户验收，不得记为已通过。

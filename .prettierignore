@@ -1,0 +1,17 @@
+node_modules/
+dist/
+release/
+coverage/
+.pnpm-store/
+pnpm-lock.yaml
+**/*.md
+public/
+**/*.svg
+**/*.png
+**/*.jpg
+**/*.jpeg
+**/*.webp
+**/*.gif
+**/*.ico
+**/*.mp3
+**/*.mp4

@@ -1,6 +1,6 @@
 interface:
-  display_name: "Learning Web Change Review"
-  short_description: "Read-only review for architecture, responsive and shared-contract regressions"
-  default_prompt: "Use $learning-web-change-review to review the existing changes without editing files."
+    display_name: "Learning Web Change Review"
+    short_description: "Read-only review for architecture, responsive and shared-contract regressions"
+    default_prompt: "Use $learning-web-change-review to review the existing changes without editing files."
 policy:
-  allow_implicit_invocation: true
+    allow_implicit_invocation: true

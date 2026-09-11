@@ -1,6 +1,6 @@
 interface:
-  display_name: "Learning Web Feature Delivery"
-  short_description: "Deliver a scoped learning web feature with FSD and responsive safeguards"
-  default_prompt: "Use $learning-web-feature-delivery to implement this scoped frontend feature and verify it."
+    display_name: "Learning Web Feature Delivery"
+    short_description: "Deliver a scoped learning web feature with FSD and responsive safeguards"
+    default_prompt: "Use $learning-web-feature-delivery to implement this scoped frontend feature and verify it."
 policy:
-  allow_implicit_invocation: true
+    allow_implicit_invocation: true

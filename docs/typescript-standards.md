@@ -10,6 +10,7 @@
 - 导入纯类型时使用 `import type`。
 - 索引访问按 `noUncheckedIndexedAccess` 处理，不假设元素存在。
 - 不用 `eslint-disable`、`oxlint-disable` 或 `@ts-ignore` 绕过规则。
+- TypeScript 与 TSX 统一使用 4 个空格缩进，禁止 Tab；以根目录 `.editorconfig` 和 Prettier 结果为准，不手工维护与格式化器冲突的换行。
 
 ## 2. 类型归属
 
@@ -35,14 +36,14 @@ shared/api/
 
 ```ts
 export interface CourseDto {
-  id: string
-  title: string
+    id: string
+    title: string
 }
 
 export function isCourseDto(value: unknown): value is CourseDto {
-  if (typeof value !== 'object' || value === null) return false
-  const candidate = value as Record<string, unknown>
-  return typeof candidate.id === 'string' && typeof candidate.title === 'string'
+    if (typeof value !== 'object' || value === null) return false
+    const candidate = value as Record<string, unknown>
+    return typeof candidate.id === 'string' && typeof candidate.title === 'string'
 }
 ```
 
@@ -88,3 +89,4 @@ export function isCourseDto(value: unknown): value is CourseDto {
 5. 是否新增 `any`、非空断言或宽泛断言？
 6. 领域数值和时间语义是否明确？
 7. 是否补充了必要测试并运行 test/lint/build？
+8. 是否已运行 Prettier，且没有 Tab 或非 4 空格缩进？
