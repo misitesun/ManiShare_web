@@ -41,7 +41,8 @@ Read the owning public entry, nearby components, Hooks, tests and README. Move s
 
 ## Async and loading
 
-- Start independent async work together and await near consumption.
+- For API/loading changes and request-bearing component reuse, read `docs/api-capability-boundaries.md` and trace implicit requests, preloads and state writes. Do not fill missing response fields with extra requests without explicit requirements and authorization.
+- Start independent, in-scope async work together and await near consumption; concurrency or preloading optimizations do not authorize new data-completion requests. Verify request sources/counts as well as rendered output.
 - Route-level code splitting is the default useful boundary; justify smaller lazy chunks with bundle evidence.
 - Model idle/loading/success/empty/error states explicitly when a real request exists.
 - Do not add global state or caching libraries before a measured need.

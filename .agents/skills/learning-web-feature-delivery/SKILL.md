@@ -18,6 +18,8 @@ description: Implement or modify an English Learning frontend business capabilit
 
 ## Delivery
 
+For API integration, data-loading changes or reuse of request-bearing components/Hooks, read `docs/api-capability-boundaries.md`. Check returned fields and implicit requests/preloads/state writes before implementation. Use the documented fallback and feedback path for missing data; add compensating requests only when explicitly required and already authorized. Handoff must include request-source/count evidence and any unverified integration steps.
+
 - Format source, scripts and configuration with four spaces and no tabs. Run `pnpm run format` after edits and treat the root EditorConfig and Prettier configuration as the executable source of truth.
 - Default light, single-purpose routes to page colocation: UI, Hooks, state, animation and assets that disappear with the page stay inside `pages/<page>`. Splitting an internal file does not justify a new public slice.
 - Extract an independently describable user action or business flow to `features` even with one consumer. Use `widgets` only for a complete large block reused across pages; route small domain-neutral UI to `shared/ui` and stable domain concepts to `entities`.

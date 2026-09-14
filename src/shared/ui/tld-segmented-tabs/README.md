@@ -4,4 +4,6 @@
 - 入口：从 `src/shared/ui/tld-segmented-tabs` 导入 `TldSegmentedTabs`、Props、展示变体与页签项类型；`variant` 默认为 `segmented`，明细导航使用 `underline`。
 - 约束：组件只管理展示与点击回调，不持有业务筛选状态，不解释页签值，也不包含业务文案；调用方为每项提供稳定 ID 和对应面板 ID；页签文案统一使用全局 tab-label 响应式语义字号，窄屏溢出由调用方提供局部滚动容器。
 - 扩展：出现真实的禁用项或方向键 roving focus 需求时，在本组件统一扩展并补行为测试，不在业务页面复制样式。
+- 分段背景使用单个非交互渐变层，按页签数量等比分配宽度，以选中索引驱动百分比 translateX，300ms ease-out 滑动。按钮等宽且保留原有布局，渐变与按钮共用定位容器，随父级宽度和局部滚动同步，不依赖窗口尺寸、定时器或 DOM 测量。初次渲染直接对齐当前值，空列表/无匹配值不显示背景；快速切换从当前过渡位置继续。`prefers-reduced-motion` 下立即到位。underline 变体不变。
 - 验证：运行 `pnpm run test && pnpm run lint && pnpm run build`；PC 检查活动态、悬停态和可见焦点，平板/H5 视觉与真机兼容由用户验收。
+- 分段页签只对渐变背景的位置做动画；文字颜色和 hover 底色直接切换，不使用颜色/透明度过渡，保留原有 hover 样式。

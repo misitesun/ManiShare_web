@@ -66,6 +66,10 @@ app → pages → widgets → features → entities → shared
 - 普通 TypeScript 运算符可正常使用；涉及积分、计费或统计口径时，由所属领域模块明确单位、精度、舍入和测试，不预建金融十进制规则。
 - 日期时间原生 API 只允许在 `shared/lib/time` 实现；业务模块通过公共入口使用。
 
+### 4.1 接口能力边界与缺失数据处理
+
+接口接入、数据加载和组件复用必须遵守[接口能力边界与缺失数据处理](./api-capability-boundaries.md)。以当前业务接口返回值实现功能，不得擅自增加详情查询、逐条请求、跨接口拼接或预加载来补字段；先检查复用组件的请求和状态写入副作用。缺项使用已有默认图、空态或契约错误处理并记录后端反馈，保留必要布局，不伪造数据。额外补齐请求必须有明确需求及授权，验证需包含请求次数与来源。
+
 ## 5. Tailwind CSS 与响应式
 
 Tailwind CSS v4 是默认样式层。Vite 通过 `@tailwindcss/vite` 接入，唯一全局入口为 `src/app/styles/index.css`。入口使用 `source("../..")` 将候选 class 扫描范围固定为 `src`，docs、scripts 和测试 fixture 不得进入 production CSS。
@@ -111,6 +115,8 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 - 图标按钮提供可访问名称；抽屉/菜单暴露展开状态和控制关系。
 - 所有交互可用键盘操作，并保留清晰的 `:focus-visible`。
 - 所有可操作元素必须显式使用 `cursor-pointer`，不能只依赖浏览器默认光标；原生 `disabled`、`aria-disabled="true"` 或纯展示内容不使用 pointer，必要时使用 `disabled:cursor-not-allowed` 表达禁用态。
+- 检查范围必须覆盖控件内部与条件出现的操作：输入框清空按钮、弹窗关闭、密码显隐、下拉箭头、折叠入口、图标按钮、分页、可点击卡片及选择控件。不得只检查外层按钮；浏览器原生子控件也要单独检查，例如搜索框使用 `[&::-webkit-search-cancel-button]:cursor-pointer`，并覆盖禁用/只读状态。输入文字区域保持 `cursor-text`，不要为了清空按钮把整个输入框改为 pointer。
+- PC 验收逐项悬停真实点击目标，覆盖默认、输入非空、展开、选中、禁用与只读状态；共享组件统一修复内部光标，页面不得复制补丁。光标不能代替原生语义、键盘操作或焦点反馈。
 - 动画遵循 `prefers-reduced-motion`。
 - 表单未来出现时必须有可关联标签和明确错误信息。
 

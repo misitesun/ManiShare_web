@@ -34,6 +34,8 @@ Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI�
 
 ## 工具链与类型
 
+- 接口接入、数据加载或带请求的组件复用必须遵守[接口能力边界与缺失数据处理](./docs/api-capability-boundaries.md)：不得擅自增加请求补字段；缺项使用默认图/空态并记录反馈，验收检查请求次数与来源。
+
 - 包管理器唯一使用 pnpm `10.28.2`。所有项目命令必须使用 `pnpm` 或 `pnpm run`；禁止 npm、yarn、npx、bun。
 - 源代码、脚本和配置文件统一使用 4 个空格缩进，禁止 Tab；根目录 `.editorconfig` 和 Prettier 配置是可执行契约。修改后使用 `pnpm run format`，`pnpm run lint` 会通过 `format:check` 阻断格式偏差。
 - 新增运行时依赖使用 `pnpm add`，开发依赖使用 `pnpm add -D`；同一任务同步更新 `package.json`、`pnpm-lock.yaml`、文档与 CI。

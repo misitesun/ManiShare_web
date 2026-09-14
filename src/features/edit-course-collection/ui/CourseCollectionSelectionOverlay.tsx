@@ -1,6 +1,5 @@
 import type { ReactElement } from 'react'
-import selectedIconSource from '../assets/selected.svg'
-import unselectedIconSource from '../assets/unselected.svg'
+import { TldSelection } from '../../../shared/ui/tld-selection'
 
 export interface CourseCollectionSelectionOverlayProps {
     readonly label: string
@@ -14,19 +13,14 @@ export function CourseCollectionSelectionOverlay({
     selected,
 }: CourseCollectionSelectionOverlayProps): ReactElement {
     return (
-        <button
-            type="button"
-            aria-label={label}
-            aria-pressed={selected}
-            className="absolute inset-0 z-10 cursor-pointer rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
-            onClick={onToggle}
-        >
-            <img
-                alt=""
-                aria-hidden="true"
-                className="absolute right-2.5 top-2.5 size-6"
-                src={selected ? selectedIconSource : unselectedIconSource}
+        <div className="absolute inset-0 z-10 rounded-xl">
+            <TldSelection
+                label={label}
+                checked={selected}
+                onCheckedChange={onToggle}
+                layout="card"
+                tone="danger"
             />
-        </button>
+        </div>
     )
 }

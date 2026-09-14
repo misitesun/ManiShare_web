@@ -70,10 +70,10 @@ export function TldDialog({
     const showActions = showCancelButton || showConfirmButton
     const dialogFrameClassName =
         size === 'small'
-            ? 'max-h-[calc(100dvh-24px)] min-h-[220px] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+            ? 'max-h-[calc(100dvh-24px)] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[220px] md:max-h-[calc(100dvh-48px)]'
             : size === 'medium'
-              ? 'max-h-[calc(100dvh-24px)] min-h-[280px] w-full max-w-[560px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
-              : 'max-h-[calc(100dvh-24px)] min-h-[320px] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+              ? 'max-h-[calc(100dvh-24px)] w-full max-w-[560px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
+              : 'max-h-[calc(100dvh-24px)] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
 
     useEffect(() => {
         onOpenChangeRef.current = onOpenChange
@@ -191,7 +191,7 @@ export function TldDialog({
                         />
                     </button>
 
-                    <header className="shrink-0 px-4 pb-4 pr-16 pt-5 md:px-6 md:pb-5 md:pr-20 md:pt-6">
+                    <header className="shrink-0 px-4 pb-3 pr-16 pt-4 md:px-6 md:pb-5 md:pr-20 md:pt-6">
                         <h2 id={titleId} className="text-xl font-medium leading-7 md:text-[22px]">
                             {title}
                         </h2>
@@ -205,9 +205,9 @@ export function TldDialog({
                     </div>
 
                     {showActions ? (
-                        <footer className="flex shrink-0 flex-col items-center justify-center gap-3 px-4 pb-5 md:flex-row md:gap-6 md:px-6 md:pb-6">
+                        <footer className="flex shrink-0 items-center justify-center gap-3 px-4 pb-4 md:gap-6 md:px-6 md:pb-6">
                             {showCancelButton ? (
-                                <div className="w-full md:w-[180px]">
+                                <div className="min-w-0 flex-1 md:w-[180px] md:flex-none">
                                     <TldButton
                                         fullWidth
                                         size="large"
@@ -219,7 +219,7 @@ export function TldDialog({
                                 </div>
                             ) : null}
                             {showConfirmButton ? (
-                                <div className="w-full md:w-[180px]">
+                                <div className="min-w-0 flex-1 md:w-[180px] md:flex-none">
                                     <TldButton
                                         fullWidth
                                         size="large"

@@ -101,7 +101,7 @@ export function FavoritesPage(): ReactElement {
                 {filteredFavoriteItems.length === 0 ? (
                     <p className="py-20 text-center text-body text-muted">暂无收藏</p>
                 ) : (
-                    <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 xl:min-h-[584px] xl:grid-cols-4 xl:min-[1920px]:content-start xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(290px,1fr))]">
+                    <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 xl:min-h-[584px] xl:content-start xl:grid-cols-4 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(290px,1fr))]">
                         {filteredFavoriteItems.map((favoriteItem) => (
                             <FavoriteCard
                                 key={favoriteItem.id}

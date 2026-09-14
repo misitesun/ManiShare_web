@@ -1,6 +1,3 @@
-import { coursePackages } from '../../../entities/course-package'
-import type { CoursePackageSummary } from '../../../entities/course-package'
-
 export interface NotebookRecordLine {
     readonly id: string
     readonly text: string
@@ -19,7 +16,9 @@ export interface NotebookGroup {
     readonly isMuted?: boolean
 }
 
-export interface NotebookCoursePackage extends CoursePackageSummary {
+export interface NotebookCoursePackage {
+    readonly id: string
+    readonly coursePackageId: string
     readonly noteCount: number
 }
 
@@ -81,51 +80,63 @@ export const notebookGroupPages: readonly (readonly NotebookGroup[])[] = [
 
 const designCoursePackages: readonly NotebookCoursePackage[] = [
     {
-        ...coursePackages['english-learning-map'],
+        id: 'english-learning-map',
+        coursePackageId: 'english-learning-map',
         noteCount: 4,
     },
     {
-        ...coursePackages['ocean-vocabulary'],
+        id: 'ocean-vocabulary',
+        coursePackageId: 'ocean-vocabulary',
         noteCount: 2,
     },
     {
-        ...coursePackages['writing-practice'],
+        id: 'writing-practice',
+        coursePackageId: 'writing-practice',
         noteCount: 6,
     },
     {
-        ...coursePackages['listening-practice'],
+        id: 'listening-practice',
+        coursePackageId: 'listening-practice',
         noteCount: 4,
     },
     {
-        ...coursePackages['daily-english'],
+        id: 'daily-english',
+        coursePackageId: 'daily-english',
         noteCount: 9,
     },
     {
-        ...coursePackages['time-expression'],
+        id: 'time-expression',
+        coursePackageId: 'time-expression',
         noteCount: 6,
     },
     {
-        ...coursePackages['vocabulary-association'],
+        id: 'vocabulary-association',
+        coursePackageId: 'vocabulary-association',
         noteCount: 2,
     },
     {
-        ...coursePackages['speaking-practice'],
+        id: 'speaking-practice',
+        coursePackageId: 'speaking-practice',
         noteCount: 5,
     },
     {
-        ...coursePackages['alphabet-review'],
+        id: 'alphabet-review',
+        coursePackageId: 'alphabet-review',
         noteCount: 4,
     },
     {
-        ...coursePackages['sports-english'],
+        id: 'sports-english',
+        coursePackageId: 'sports-english',
         noteCount: 1,
     },
     {
-        ...coursePackages['travel-english'],
+        id: 'travel-english',
+        coursePackageId: 'travel-english',
         noteCount: 2,
     },
     {
-        ...coursePackages['food-english'],
+        id: 'food-english',
+        coursePackageId: 'food-english',
         noteCount: 3,
     },
 ]
@@ -141,3 +152,25 @@ export const notebookCoursePackagePages: readonly (readonly NotebookCoursePackag
     designCoursePackages,
     designCoursePackages.map(createContinuationPackage),
 ]
+
+export function findNotebookCourse(
+    coursePackageId: string | undefined,
+): NotebookCoursePackage | undefined {
+    return notebookCoursePackagePages.flat().find((course) => course.id === coursePackageId)
+}
+
+export function createCourseNoteGroups(course: NotebookCoursePackage): readonly NotebookGroup[] {
+    return Array.from({ length: course.noteCount }, (_, index) => {
+        const id = `${course.id}-group-${index + 1}`
+        return {
+            id,
+            sentence: 'Journey to the West Chapter 1: The Monkey',
+            translation: '西游记第一章：猴子',
+            isMuted: index === 0,
+            records:
+                index === 0
+                    ? [createRecord(`${id}-record-1`), createRecord(`${id}-record-2`)]
+                    : [createRecord(`${id}-record-1`)],
+        }
+    })
+}

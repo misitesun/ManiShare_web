@@ -50,16 +50,25 @@ app → pages → widgets → features → entities → shared
 /
 /profile/learning-progress
 /profile/notes
+/profile/notes/courses/:coursePackageId
+/profile/notes/courses/:coursePackageId/chapters/:chapterId
 /profile/notes/:noteId
 /profile/favorites
 /profile/works
 /foreign-language-guide
+/foreign-language-guide/courses/:courseId
 /leaderboard
 /profile
 /login
 ```
 
 查询参数仅用于筛选、排序、分页和 Tab 等可恢复视图状态。路由表由 `src/app/config/routes.ts` 维护，路由装配在 `src/app/router/router.tsx`。
+
+`/profile/notes/courses/:coursePackageId` 已实现课程包笔记二级静态页，归属 `pages/notebook-course`；参数是课程包笔记索引，不是单条笔记 ID。`/profile/notes/:noteId` 仅为未来单条笔记资源的路径示例，当前未注册。一级 `?view=course-packages` 表达按课程包视图，返回入口显式保留该参数。笔记本导航前缀匹配覆盖二级页面。
+
+两级笔记页共同依赖 `widgets/notebook-notes`（笔记组/记录 UI 与本地删除确认）和 `entities/notebook`（记录模型及演示数据），页面仍拥有分页、路由和页签。课程标题/封面由页面组合 `entities/course-package`，实体之间不建立同层依赖。通用返回入口使用 `shared/ui/tld-back-button`，目标由调用方提供，避免直达二级页时依赖未知浏览历史。
+
+课程包的课程列表由八个静态章节卡片组成，整卡 Link 进入 `/profile/notes/courses/:coursePackageId/chapters/:chapterId`（`pages/notebook-chapter`）。章节页同样复用 `NotebookNotes`，显示截图对应笔记组；通过明确课程包父路径加 `?view=courses` 返回列表，直达、刷新也保持该行为。章节模型及示例数据属于 entities/notebook，页面之间不互相导入。课程包和章节的 URL 参数分别查询校验，不能将未知章节默认为第一章。
 
 `/login` 是不套用 App Shell 的独立品牌首屏。`/` 套用 App Shell 并提供学习首页静态编排；`/profile` 提供玩家资料静态页面，`/profile/notes` 提供笔记本双视图静态分页列表，`/profile/learning-progress` 提供学习进度静态分页列表，`/profile/favorites` 提供我的收藏分类、分页、整卡多选与本地删除，`/profile/works` 提供我的作品分页、整卡多选与本地删除确认，`/foreign-language-guide` 提供外语逆袭秘籍静态课程分页列表，`/leaderboard` 提供固定头尾与内部滚动分页的学习排行榜，`/courses/search` 保留后续业务使用的空白功能区域；课程搜索词使用 `q` 查询参数。真实公告、学习统计、排行榜数据请求、资料请求、搜索、课程开通和认证动作确认后再建立对应 feature。
 

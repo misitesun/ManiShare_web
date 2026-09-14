@@ -1,5 +1,8 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- 下拉单选：`shared/ui/tld-select` 提供受控 `TldSelect`，支持深浅主题、已选项反馈、键盘选择和外部关闭；业务排序由所属页面实现。菜单显隐支持过渡，关闭时 inert 隔离焦点。
+- 表单控件：`shared/ui/tld-input` 提供 `TldInput`（焦点边框与淡阴影）；`shared/ui/tld-switch` 提供 `TldSwitch`（受控开关）；`shared/ui/tld-selection` 提供 `TldSelection`（圆形逐项 checkbox）。均支持可访问名称、禁用和主题色；选择和显隐动画遵循 reduced-motion，业务状态留在页面。
+
 本文回答三个问题：框架已经提供什么、后续业务应该从哪里接入、哪些能力当前明确不做。详细约束仍以 `AGENTS.md`、专题文档和各模块 README 为准；本文件是导航和边界地图，不替代它们。
 
 ## 1. 项目目录
@@ -61,6 +64,7 @@
 | 动画 | `src/shared/lib/animation` | GSAP 注册、`gsap` 与 `useGSAP` 稳定入口 | 跨页面全局时间线或具体业务动画编排 |
 | 通知 | `src/shared/notification` | success/info/warning/error/confirm 统一入口 | 业务文案和权限判断 |
 | 通用按钮 | `src/shared/ui/tld-button` | 主/次文字按钮、统一尺寸、整行宽度、交互光标和禁用态 | 业务点击状态、图标按钮、导航页签或链接语义 |
+| 返回入口 | `src/shared/ui/tld-back-button` | Figma 箭头、统一外观、显式目标的 Link 导航和自定义文案 | 猜测历史栈、业务取消确认和路径拼装 |
 | 渐变文字 | `src/shared/ui/tld-gradient-text` | 可传颜色、速度、方向、往返、hover 暂停和可选边框的动态渐变文字 | 业务文案、点击行为、筛选状态或页面级动画 |
 | 会员标签 | `src/shared/ui/tld-membership-badge` | 黄金 VIP、终身 VIP、漫奇天使和免费体验的图标、渐变底托与三档尺寸 | 用户权益、会员状态判断和业务文案 |
 | 进度展示 | `src/shared/ui/tld-progress-bar` | 数值归一化、可选数值文案、两档比例轨道和无障碍进度语义 | 业务进度计算、请求或状态所有权 |
@@ -78,6 +82,9 @@
 | --- | --- | --- |
 | 路由 | `src/app/config/routes.ts`、`src/app/router/router.tsx` | `/` 是学习首页静态编排，`/courses/search` 使用空白功能区域，`/profile` 是玩家资料页，`/profile/knowledge-gaps` 是查漏补缺静态分页列表，`/profile/notes` 是笔记本双视图静态分页列表，`/profile/learning-progress` 是学习进度静态分页列表，`/profile/favorites` 是我的收藏分类、整卡多选与本地删除静态列表，`/profile/works` 是我的作品整卡多选与本地删除静态列表，`/foreign-language-guide` 是外语逆袭秘籍静态课程分页列表，`/leaderboard` 是固定头尾与内部滚动分页的学习排行榜，`/promotion/revenue` 是推广收益概览与佣金静态分页列表，`/login` 为独立品牌首屏 |
 | 课程集合编辑 | `src/features/edit-course-collection` | 我的收藏与我的作品共用浏览/编辑、整卡多选、取消和本地删除状态；页面仍分别拥有数据、筛选、分页和提示文案 |
+| 笔记本二级页 | `src/pages/notebook-course` | `/profile/notes/courses/:coursePackageId` 课程包概要、全部笔记和八个章节卡片；`view=courses` 恢复课程列表 |
+| 章节笔记页 | `src/pages/notebook-chapter` | `/profile/notes/courses/:coursePackageId/chapters/:chapterId` 展示对应章节笔记，返回恢复课程列表，未知参数显示空态 |
+| 共享笔记区 | `src/widgets/notebook-notes`、`src/entities/notebook` | 两级页面统一记录展示、删除确认和演示数据；分页由一级页拥有，新增/编辑仍为静态入口 |
 | 响应式壳层 | `src/widgets/app-layout` | 同一开关状态驱动跨端侧栏动画；H5 使用不推动主内容且可完全离场的覆盖式抽屉，`md` 平板与 `xl` PC/Electron 在 200px 侧栏和保留头像/导航图标的 64px 轨道间切换，1920px 宽屏展示完整标签文案 |
 | 学习首页 | `src/pages/home` | 1920px 三栏基准布局、超宽屏 1720px 居中容器、固定前三名舞台和包含 50 条静态数据的内部滚动榜单；平板/H5 使用同一语义 DOM 重排 |
 | 登录落地页 | `src/pages/login` | Figma 静态布局、黑白主题、三端响应式与从底部向上展开的 React Bits Aurora 流动光带；表单、认证和跳转待独立需求 |
@@ -123,3 +130,9 @@ pnpm run build
 只有 Electron 边界或桌面构建受影响时再运行 `pnpm run desktop:build`。视觉或响应式任务仍需面向 390×844、768×1024、1440×900 实现，但 Codex 只人工验收 PC（优先任务指定的桌面尺寸，未指定时为 1440×900）；平板/H5 的视觉与真机兼容由用户验收，并在交接中标为待用户验收。相关主题、reduced-motion 和运行时降级按实际受影响范围复测。
 
 当前明确不预建课程、练习、笔记、用户档案、音频、录音、语音识别、AI 教学、全局状态、请求缓存或完整 PWA 能力。它们必须在真实需求、数据契约和多端行为确认后，按 FSD 建立对应模块。
+- `TldInput` 同时服务查漏补缺和 AppLayout 顶部搜索，统一 hover/focus 绿色边框，提供 medium/large 尺寸与 trailingAction 尾部操作槽；不负责业务搜索或路由。
+- 收藏与作品编辑的选择覆盖层统一消费 `TldSelection layout="card"`：整卡原生 checkbox 点击区、右上角圆形指示器、主题底色与选中动画；不再维护独立选中/未选中图片。
+- `TldSelection` 使用白色对号标记选中，`tone="selection"`（默认）为绿色普通选择，`tone="danger"` 为红色删除选择；作品/收藏编辑覆盖层使用 danger，查漏补缺保持默认。
+- `TldSegmentedTabs` 分段变体复用单个滑动渐变背景（300ms），百分比几何自动适配父容器尺寸和横向滚动，reduced-motion 下立即切换；不新增浏览器监听或依赖，underline 保持原样。
+- `TldDialog` H5 高度随内容自适应，操作按钮同排等宽，单按钮占满操作区；md 及以上保留原有尺寸与最小高度，正文仍可内部滚动。
+- 言灵觉醒：`pages/awakening`，路由 `/awakening`，三排静态选项、原稿课程封面与分页演示；`/awakening/courses/:courseId` 提供音标课程详情静态预览，固定面包屑、简介与章节共同内部滚动，复用进度条和开关。收藏/助手仅本地展示状态，学习、重置、筛选业务待接口确认。

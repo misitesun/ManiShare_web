@@ -32,6 +32,7 @@ Apply only the rows relevant to the requested change:
 | --- | --- |
 | Route | route constants, router, page slice, navigation and locale copy when applicable, and route documentation |
 | Shared capability | named capability directory, public `index.ts`, focused tests, module README and `docs/module-capabilities.md` |
+| API/loading or request-bearing shared component | `docs/api-capability-boundaries.md`, consumer request triggers/counts, implicit preloads/state writes, missing-field feedback and explicit requirements/authorization for compensating requests |
 | Language key | During the current Chinese-first phase, do not create a key for ordinary new page copy. When multilingual delivery is explicitly reopened, update the requested locale resources, locale-key verification and owning module copy together. |
 | Storage key | `sharedConfig.storageKeys`, `StorageSchema`, storage behavior, tests and documentation |
 | Theme/token | theme registration, complete semantic tokens, current Chinese label, PC visual acceptance and tablet/H5 user-acceptance handoff; add other locale labels only when multilingual delivery is explicitly in scope |

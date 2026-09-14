@@ -9,6 +9,30 @@ const items = [
     { id: 'second', label: '第二项', panelId: 'second-panel' },
 ]
 
+test('segmented indicator aligns with the controlled selection and handles missing values', (): void => {
+    const render = (value: string): string =>
+        renderToStaticMarkup(
+            createElement(TldSegmentedTabs, {
+                ariaLabel: '筛选',
+                items,
+                value,
+                onValueChange: (): void => undefined,
+            }),
+        )
+    assert.match(render('first'), /width:50%;transform:translateX\(0%\)/)
+    assert.match(render('second'), /width:50%;transform:translateX\(100%\)/)
+    assert.doesNotMatch(render('missing'), /translateX/)
+    const empty = renderToStaticMarkup(
+        createElement(TldSegmentedTabs, {
+            ariaLabel: '筛选',
+            items: [],
+            value: '',
+            onValueChange: (): void => undefined,
+        }),
+    )
+    assert.doesNotMatch(empty, /NaN|Infinity|translateX/)
+})
+
 test('TldSegmentedTabs keeps the segmented presentation by default', (): void => {
     const markup = renderToStaticMarkup(
         createElement(TldSegmentedTabs, {

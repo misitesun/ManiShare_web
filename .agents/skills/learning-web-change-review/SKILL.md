@@ -25,4 +25,6 @@ For changed App Shell list/management layouts, check `docs/architecture.md#mainp
 
 ## Output
 
+For API/loading changes or request-bearing component reuse, read `docs/api-capability-boundaries.md`. Check extra detail/per-item/cross-endpoint/preload requests against the task and existing authorization, including implicit state writes. Verify missing-field fallback, backend feedback and request-source/count evidence; do not accept visual success alone as integration evidence. Do not flag explicitly authorized pagination or detail flows merely for using multiple requests.
+
 Report only evidence-backed findings caused by the diff, ordered by severity, with path/line evidence, trigger, impact and smallest valid correction. Separate confirmed issues from questions or follow-up suggestions. Review responsive code for H5/tablet/PC, but perform and claim visual acceptance only for the PC viewport; list tablet/H5 visual and real-device compatibility as awaiting user acceptance. If no findings exist, state that and list residual risks or unperformed viewport/runtime checks. Do not claim a command passed unless its output was provided or you ran it. Do not edit files, stage, commit, push or perform external actions in review mode.

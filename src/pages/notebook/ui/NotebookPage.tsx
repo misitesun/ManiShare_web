@@ -1,11 +1,13 @@
-import { useState } from 'react'
 import type { ReactElement } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { TldSegmentedTabs } from '../../../shared/ui/tld-segmented-tabs'
 import type { TldSegmentedTabItem } from '../../../shared/ui/tld-segmented-tabs'
 import { AllNotesList } from './AllNotesList'
 import { CoursePackageList } from './CoursePackageList'
 
-type NotebookView = 'all-notes' | 'course-packages'
+interface NotebookPageProps {
+    readonly coursePath: string
+}
 
 const allNotesPanelId = 'notebook-all-notes-panel'
 const coursePackagesPanelId = 'notebook-course-packages-panel'
@@ -15,11 +17,22 @@ const notebookTabs = [
     { id: 'course-packages', label: '按课程包', panelId: coursePackagesPanelId },
 ] satisfies readonly TldSegmentedTabItem[]
 
-export function NotebookPage(): ReactElement {
-    const [activeView, setActiveView] = useState<NotebookView>('all-notes')
+export function NotebookPage({ coursePath }: NotebookPageProps): ReactElement {
+    const [searchParams, setSearchParams] = useSearchParams()
+    const activeView =
+        searchParams.get('view') === 'course-packages' ? 'course-packages' : 'all-notes'
 
     function selectView(value: string): void {
-        if (value === 'all-notes' || value === 'course-packages') setActiveView(value)
+        if (value !== 'all-notes' && value !== 'course-packages') return
+        setSearchParams(
+            (current) => {
+                const next = new URLSearchParams(current)
+                if (value === 'course-packages') next.set('view', value)
+                else next.delete('view')
+                return next
+            },
+            { replace: true },
+        )
     }
 
     return (
@@ -52,7 +65,7 @@ export function NotebookPage(): ReactElement {
                     className="mt-3"
                     role="tabpanel"
                 >
-                    <CoursePackageList />
+                    <CoursePackageList coursePath={coursePath} />
                 </div>
             )}
         </section>

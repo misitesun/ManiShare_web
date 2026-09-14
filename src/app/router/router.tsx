@@ -21,6 +21,15 @@ const profilePage = lazy(async () => {
     return { default: module.ProfilePage }
 })
 
+const awakeningPage = lazy(async () => {
+    const module = await import('../../pages/awakening')
+    return { default: module.AwakeningPage }
+})
+const awakeningCoursePage = lazy(async () => {
+    const module = await import('../../pages/awakening')
+    return { default: module.AwakeningCoursePage }
+})
+
 const knowledgeGapsPage = lazy(async () => {
     const module = await import('../../pages/knowledge-gaps')
     return { default: module.KnowledgeGapsPage }
@@ -29,6 +38,16 @@ const knowledgeGapsPage = lazy(async () => {
 const notebookPage = lazy(async () => {
     const module = await import('../../pages/notebook')
     return { default: module.NotebookPage }
+})
+
+const notebookCoursePage = lazy(async () => {
+    const module = await import('../../pages/notebook-course')
+    return { default: module.NotebookCoursePage }
+})
+
+const notebookChapterPage = lazy(async () => {
+    const module = await import('../../pages/notebook-chapter')
+    return { default: module.NotebookChapterPage }
 })
 
 const learningProgressPage = lazy(async () => {
@@ -54,6 +73,11 @@ const foreignLanguageGuidePage = lazy(async () => {
 const courseSearchPage = lazy(async () => {
     const module = await import('../../pages/course-search')
     return { default: module.CourseSearchPage }
+})
+
+const foreignLanguageCoursePage = lazy(async () => {
+    const module = await import('../../pages/foreign-language-course')
+    return { default: module.ForeignLanguageCoursePage }
 })
 
 const promotionRevenuePage = lazy(async () => {
@@ -84,6 +108,22 @@ export const router = createBrowserRouter([
         errorElement: <RouteErrorPage />,
         children: [
             {
+                path: routePaths.awakening,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(awakeningPage, { coursePath: routePaths.awakeningCourse })}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.awakeningCourse,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(awakeningCoursePage, { backPath: routePaths.awakening })}
+                    </Suspense>
+                ),
+            },
+            {
                 index: true,
                 element: <Suspense fallback={<RouteLoading />}>{createElement(homePage)}</Suspense>,
             },
@@ -104,7 +144,31 @@ export const router = createBrowserRouter([
             {
                 path: routePaths.notebook,
                 element: (
-                    <Suspense fallback={<RouteLoading />}>{createElement(notebookPage)}</Suspense>
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(notebookPage, { coursePath: routePaths.notebookCourse })}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.notebookCourse,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(notebookCoursePage, {
+                            backPath: `${routePaths.notebook}?view=course-packages`,
+                            chapterPath: routePaths.notebookChapter,
+                        })}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.notebookChapter,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(notebookChapterPage, {
+                            coursePath: routePaths.notebookCourse,
+                            notebookPath: `${routePaths.notebook}?view=course-packages`,
+                        })}
+                    </Suspense>
                 ),
             },
             {
@@ -131,7 +195,19 @@ export const router = createBrowserRouter([
                 path: routePaths.foreignLanguageGuide,
                 element: (
                     <Suspense fallback={<RouteLoading />}>
-                        {createElement(foreignLanguageGuidePage)}
+                        {createElement(foreignLanguageGuidePage, {
+                            courseDetailPath: routePaths.foreignLanguageCourse,
+                        })}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.foreignLanguageCourse,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(foreignLanguageCoursePage, {
+                            backPath: routePaths.foreignLanguageGuide,
+                        })}
                     </Suspense>
                 ),
             },

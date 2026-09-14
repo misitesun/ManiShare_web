@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { generatePath, Link } from 'react-router-dom'
 import { TldButton } from '../../../shared/ui/tld-button'
 import { TldGradientText } from '../../../shared/ui/tld-gradient-text'
 import { TldPaginationStatus } from '../../../shared/ui/tld-pagination-status'
@@ -9,7 +10,13 @@ import { ForeignLanguageCourseCard } from './ForeignLanguageCourseCard'
 
 const categoryLabels = ['全部', '分类1', '分类2', '分类3'] as const
 
-export function ForeignLanguageGuidePage(): ReactElement {
+interface ForeignLanguageGuidePageProps {
+    readonly courseDetailPath: string
+}
+
+export function ForeignLanguageGuidePage({
+    courseDetailPath,
+}: ForeignLanguageGuidePageProps): ReactElement {
     const { loadNextPage, status, visibleItems } = useForeignLanguageCoursePagination(
         foreignLanguageCoursePages,
     )
@@ -59,9 +66,21 @@ export function ForeignLanguageGuidePage(): ReactElement {
             </nav>
 
             <div className="mt-[30px] grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 md:gap-y-5 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(562px,1fr))]">
-                {visibleItems.map((courseItem) => (
-                    <ForeignLanguageCourseCard key={courseItem.id} courseItem={courseItem} />
-                ))}
+                {visibleItems.map((courseItem) =>
+                    courseItem.id === 'winter-speaking' ||
+                    courseItem.id === 'winter-speaking-continuation' ? (
+                        <Link
+                            key={courseItem.id}
+                            to={generatePath(courseDetailPath, { courseId: 'winter-speaking' })}
+                            aria-label={`查看${courseItem.title}课程详情`}
+                            className="block min-w-0 cursor-pointer rounded-xl outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus"
+                        >
+                            <ForeignLanguageCourseCard courseItem={courseItem} />
+                        </Link>
+                    ) : (
+                        <ForeignLanguageCourseCard key={courseItem.id} courseItem={courseItem} />
+                    ),
+                )}
             </div>
 
             <TldPaginationStatus status={status} onLoadNextPage={loadNextPage} />

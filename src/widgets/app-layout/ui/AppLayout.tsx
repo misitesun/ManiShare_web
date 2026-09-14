@@ -5,6 +5,7 @@ import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { projectConstants } from '../../../shared/constants'
 import { LanguageSwitcher } from '../../../shared/ui/language-switcher'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
+import { TldInput } from '../../../shared/ui/tld-input'
 import { ThemeSwitcher } from '../../../shared/ui/theme-switcher'
 import { Tooltip } from '../../../shared/ui/tooltip'
 import {
@@ -176,7 +177,7 @@ function NavigationEntry({
     const hasChildren = childItems.length > 0
     const hasActiveChild = childItems.some((child) => isPathActive(pathname, child.to, child.end))
     const isActive = isPathActive(pathname, item.to, item.end) || hasActiveChild
-    const [isExpanded, setIsExpanded] = useState(hasChildren)
+    const [isExpanded, setIsExpanded] = useState(false)
 
     const icon = (
         <img
@@ -657,31 +658,43 @@ export function AppLayout({
                         role="search"
                         onSubmit={submitCourseSearch}
                     >
-                        <label className="sr-only" htmlFor="global-course-search">
-                            {t('layout.searchLabel')}
-                        </label>
-                        <div className="flex size-7 items-center md:h-[46px] md:w-full md:rounded-lg md:border md:border-subtle md:bg-surface md:pl-[15px]">
-                            <input
+                        <div className="hidden min-w-0 md:block">
+                            <TldInput
+                                label={t('layout.searchLabel')}
+                                size="large"
                                 id="global-course-search"
-                                className="hidden min-w-0 flex-1 bg-transparent text-body tracking-[0.01em] text-primary outline-none placeholder:text-muted md:block"
                                 placeholder={t('layout.searchPlaceholder')}
                                 type="search"
                                 value={searchQuery}
                                 onChange={(event): void => setSearchQuery(event.target.value)}
+                                trailingAction={
+                                    <button
+                                        type="submit"
+                                        aria-label={t('layout.searchAction')}
+                                        className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-lg text-primary outline-offset-2 transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none"
+                                    >
+                                        <img
+                                            alt=""
+                                            aria-hidden="true"
+                                            className="size-[18px] md:size-[22px]"
+                                            src={searchIconSource}
+                                        />
+                                    </button>
+                                }
                             />
-                            <button
-                                type="submit"
-                                aria-label={t('layout.searchAction')}
-                                className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-strong text-primary transition-colors hover:bg-surface-hover md:size-[46px] md:border-0"
-                            >
-                                <img
-                                    alt=""
-                                    aria-hidden="true"
-                                    className="size-[18px] md:size-[22px]"
-                                    src={searchIconSource}
-                                />
-                            </button>
                         </div>
+                        <button
+                            type="submit"
+                            aria-label={t('layout.searchAction')}
+                            className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-lg border border-strong text-primary outline-offset-2 transition-colors hover:border-brand hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none md:hidden"
+                        >
+                            <img
+                                alt=""
+                                aria-hidden="true"
+                                className="size-[18px]"
+                                src={searchIconSource}
+                            />
+                        </button>
                     </form>
 
                     <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-2">
