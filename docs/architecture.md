@@ -1,5 +1,7 @@
 # 架构约定
 
+- AI 助教静态页归属 `pages/ai-tutor`，由 app 在 `/ai-tutor` 懒加载并复用壳层。导师、场景、资源和选择状态均为页面私有；只复用 shared 的 TldSelection 与 TldButton，不新增 features/widgets 或接口。布局沿用常规版心，手机一列、平板两列、PC 四列，最终多端视觉由用户验收。
+
 ## 总体分层
 
 项目采用 Feature-Sliced Design：

@@ -1,5 +1,6 @@
 export const routePaths = {
     home: '/',
+    aiTutor: '/ai-tutor',
     awakening: '/awakening',
     awakeningCourse: '/awakening/courses/:courseId',
     login: '/login',

@@ -41,7 +41,7 @@ export const navigationItems = [
         end: true,
     },
     { labelKey: 'navigation.pk', icon: 'pk' },
-    { labelKey: 'navigation.aiTutor', icon: 'ai-tutor' },
+    { labelKey: 'navigation.aiTutor', icon: 'ai-tutor', to: routePaths.aiTutor },
     { labelKey: 'navigation.aiCreate', icon: 'ai-create' },
     {
         label: '排行榜',

@@ -1,5 +1,7 @@
 # 应用配置
 
+- AI 助教：`routePaths.aiTutor` 为 `/ai-tutor`，侧栏使用现有 `navigation.aiTutor` 与图标；只提供导师/场景静态选择入口。
+
 - 外语课程详情：`foreignLanguageCourse` 为 `/foreign-language-guide/courses/:courseId`，当前静态示例 ID 为 `winter-speaking`；详情与目录路径分别注入两级 page，导航通过目录前缀匹配。
 
 - 职责：维护应用内导航项与语义化路由路径。

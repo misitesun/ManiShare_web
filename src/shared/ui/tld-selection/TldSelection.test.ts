@@ -4,6 +4,26 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { TldSelection } from './TldSelection'
 
+test('radio selection exposes native grouping and bottom card indicator', () => {
+    const html = renderToStaticMarkup(
+        createElement(TldSelection, {
+            label: 'Sarah',
+            type: 'radio',
+            name: 'mentor',
+            value: 'sarah',
+            checked: true,
+            layout: 'card',
+            indicatorPlacement: 'bottom',
+            onCheckedChange: (): void => undefined,
+        }),
+    )
+    assert.match(html, /type="radio"/)
+    assert.match(html, /name="mentor"/)
+    assert.match(html, /value="sarah"/)
+    assert.match(html, /data-placement="bottom"/)
+    assert.match(html, /checked=""/)
+})
+
 test('card selection preserves a single native checked checkbox and accessible name', () => {
     const html = renderToStaticMarkup(
         createElement(TldSelection, {

@@ -1,5 +1,7 @@
 # TldSelection
 
+- 单选：传 `type="radio"`，同组使用相同 `name`、不同 `value`；消费者维护唯一选中值。默认仍为 checkbox，不影响既有批量选择。`indicatorPlacement="bottom"` 将 card 指示器放在右下角，默认 top 保持原布局。AI 助教页复用此模式，无请求或存储副作用。
+
 - 职责：受控圆形逐项选择按钮；label、checked、onCheckedChange，支持 disabled。批量勾选使用原生 checkbox 语义而非互斥 radio；业务维护选中ID。支持键盘、焦点和 reduced-motion。
 - 入口：`index.ts` 导出组件和 Props。
 - 约束：无业务状态、不访问接口或存储，使用语义主题色，兼容 dark/light；尺寸由父级布局控制。

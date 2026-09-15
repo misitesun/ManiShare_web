@@ -11,6 +11,11 @@ const loginPage = lazy(async () => {
     return { default: module.LoginPage }
 })
 
+const aiTutorPage = lazy(async () => {
+    const module = await import('../../pages/ai-tutor')
+    return { default: module.AiTutorPage }
+})
+
 const homePage = lazy(async () => {
     const module = await import('../../pages/home')
     return { default: module.HomePage }
@@ -107,6 +112,12 @@ export const router = createBrowserRouter([
         ),
         errorElement: <RouteErrorPage />,
         children: [
+            {
+                path: routePaths.aiTutor,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>{createElement(aiTutorPage)}</Suspense>
+                ),
+            },
             {
                 path: routePaths.awakening,
                 element: (

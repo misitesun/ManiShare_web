@@ -1,5 +1,7 @@
 # 路由
 
+- `/ai-tutor` 懒加载 `pages/ai-tutor` 公共入口，沿用 AppLayout，支持直接访问。页面只做本地选择展示，不创建 AI 会话。
+
 - 外语课程详情：`/foreign-language-guide/courses/:courseId` 懒加载 `pages/foreign-language-course`；目录注入详情路径模板，详情注入目录返回路径。只为已有冰雪课程设计提供入口，未知 ID 明确展示暂未提供详情。
 
 - 职责：使用 React Router 装配页面、懒加载、错误页和未知路径回退。

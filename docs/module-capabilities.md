@@ -1,5 +1,7 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- AI 助教：`pages/ai-tutor` 提供 `/ai-tutor` 静态导师/场景选择；页面私有资源、两组本地单选，不接入对话接口。`TldSelection` 新增可选 radio/name/value 和卡片指示器位置，默认 checkbox 保持兼容。
+
 - 下拉单选：`shared/ui/tld-select` 提供受控 `TldSelect`，支持深浅主题、已选项反馈、键盘选择和外部关闭；业务排序由所属页面实现。菜单显隐支持过渡，关闭时 inert 隔离焦点。
 - 表单控件：`shared/ui/tld-input` 提供 `TldInput`（焦点边框与淡阴影）；`shared/ui/tld-switch` 提供 `TldSwitch`（受控开关）；`shared/ui/tld-selection` 提供 `TldSelection`（圆形逐项 checkbox）。均支持可访问名称、禁用和主题色；选择和显隐动画遵循 reduced-motion，业务状态留在页面。
 
