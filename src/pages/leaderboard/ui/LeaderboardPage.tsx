@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import type { ReactElement } from 'react'
+import { TldMovingHighlight } from '../../../shared/ui/tld-moving-highlight'
 import { TldPaginationStatus } from '../../../shared/ui/tld-pagination-status'
 import {
     currentLeaderboardUser,
@@ -37,6 +38,8 @@ const leaderboardPages = getLeaderboardPages()
 export function LeaderboardPage(): ReactElement {
     const [activePeriod, setActivePeriod] = useState<LeaderboardPeriod>('week')
     const [activeMetric, setActiveMetric] = useState<LeaderboardMetric>('duration')
+    const periodRef = useRef<HTMLElement>(null)
+    const metricRef = useRef<HTMLDivElement>(null)
     const listRef = useRef<HTMLDivElement>(null)
     const { loadNextPage, resetPagination, status, visibleItems } =
         useLeaderboardPagination(leaderboardPages)
@@ -60,23 +63,11 @@ export function LeaderboardPage(): ReactElement {
         >
             <div className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 md:grid-cols-[180px_minmax(0,1fr)] md:grid-rows-1 md:gap-4">
                 <nav
+                    ref={periodRef}
                     aria-label="排行榜周期"
-                    className="relative grid grid-cols-4 gap-1 rounded-xl border border-primary/30 p-2 md:flex md:h-full md:flex-col md:items-center md:gap-8 md:px-5 md:py-5"
+                    className="relative isolate grid grid-cols-4 gap-1 rounded-xl border border-primary/30 p-2 md:flex md:h-full md:flex-col md:items-center md:gap-8 md:px-5 md:py-5"
                 >
-                    <span
-                        aria-hidden="true"
-                        className={
-                            activePeriod === 'week'
-                                ? 'pointer-events-none absolute left-2 top-2 z-10 h-10 w-[calc((100%-28px)/4)] translate-x-0 rounded-lg bg-linear-to-r from-brand-start to-brand-end p-px transition-all duration-200 ease-out motion-reduce:transition-none md:left-5 md:top-5 md:h-[46px] md:w-[140px] md:translate-x-0 md:translate-y-0'
-                                : activePeriod === 'month'
-                                  ? 'pointer-events-none absolute left-2 top-2 z-10 h-10 w-[calc((100%-28px)/4)] translate-x-[calc(100%+4px)] rounded-lg bg-linear-to-r from-brand-start to-brand-end p-px transition-all duration-200 ease-out motion-reduce:transition-none md:left-5 md:top-5 md:h-[46px] md:w-[140px] md:translate-x-0 md:translate-y-[78px]'
-                                  : activePeriod === 'year'
-                                    ? 'pointer-events-none absolute left-2 top-2 z-10 h-10 w-[calc((100%-28px)/4)] translate-x-[calc(200%+8px)] rounded-lg bg-linear-to-r from-brand-start to-brand-end p-px transition-all duration-200 ease-out motion-reduce:transition-none md:left-5 md:top-5 md:h-[46px] md:w-[140px] md:translate-x-0 md:translate-y-[156px]'
-                                    : 'pointer-events-none absolute left-2 top-2 z-10 h-10 w-[calc((100%-28px)/4)] translate-x-[calc(300%+12px)] rounded-lg bg-linear-to-r from-brand-start to-brand-end p-px transition-all duration-200 ease-out motion-reduce:transition-none md:left-5 md:top-5 md:h-[46px] md:w-[140px] md:translate-x-0 md:translate-y-[234px]'
-                        }
-                    >
-                        <span className="block h-full w-full rounded-[7px] bg-canvas" />
-                    </span>
+                    <TldMovingHighlight containerRef={periodRef} activeKey={activePeriod} />
 
                     {periodOptions.map((option) => {
                         const isActive = option.value === activePeriod
@@ -84,17 +75,26 @@ export function LeaderboardPage(): ReactElement {
                         return (
                             <button
                                 key={option.value}
+                                data-highlight-key={option.value}
                                 type="button"
                                 aria-controls="leaderboard-panel"
                                 aria-pressed={isActive}
                                 className={
                                     isActive
-                                        ? 'relative z-20 grid h-10 cursor-pointer place-items-center rounded-lg text-tab-label text-brand outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none md:h-[46px] md:w-[140px]'
-                                        : 'relative z-20 grid h-10 cursor-pointer place-items-center rounded-lg text-tab-label text-muted outline-none transition-colors duration-200 hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none md:h-[46px] md:w-[140px]'
+                                        ? 'group relative grid h-10 cursor-pointer place-items-center rounded-lg text-tab-label text-brand outline-none transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none md:h-[46px] md:w-[140px]'
+                                        : 'group relative grid h-10 cursor-pointer place-items-center rounded-lg text-tab-label text-muted outline-none transition-colors duration-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-focus motion-reduce:transition-none md:h-[46px] md:w-[140px]'
                                 }
                                 onClick={(): void => selectPeriod(option.value)}
                             >
-                                {option.label}
+                                <span
+                                    aria-hidden="true"
+                                    className={
+                                        isActive
+                                            ? 'pointer-events-none absolute inset-0 z-0 rounded-[inherit]'
+                                            : 'pointer-events-none absolute inset-0 z-0 rounded-[inherit] group-hover:bg-surface-hover'
+                                    }
+                                />
+                                <span className="relative z-20">{option.label}</span>
                             </button>
                         )
                     })}
@@ -111,26 +111,16 @@ export function LeaderboardPage(): ReactElement {
                         </h1>
 
                         <div
+                            ref={metricRef}
                             aria-label="排行指标"
-                            className="relative inline-flex h-8 shrink-0 overflow-hidden rounded-full border border-strong bg-canvas"
+                            className="relative isolate inline-flex h-8 shrink-0 overflow-hidden rounded-full border border-strong bg-canvas"
                             role="group"
                         >
-                            <span
-                                aria-hidden="true"
-                                className={
-                                    activeMetric === 'duration'
-                                        ? 'pointer-events-none absolute -inset-y-px -left-px z-10 w-[calc(50%+1px)] translate-x-0 rounded-l-full rounded-r-none bg-linear-to-b from-brand-start via-accent-blue to-brand-end p-px transition-all duration-200 ease-out motion-reduce:transition-none'
-                                        : 'pointer-events-none absolute -inset-y-px -left-px z-10 w-[calc(50%+1px)] translate-x-full rounded-l-none rounded-r-full bg-linear-to-b from-brand-start via-accent-blue to-brand-end p-px transition-all duration-200 ease-out motion-reduce:transition-none'
-                                }
-                            >
-                                <span
-                                    className={
-                                        activeMetric === 'duration'
-                                            ? 'block h-full w-full rounded-l-[999px] rounded-r-none bg-canvas transition-all duration-200 ease-out motion-reduce:transition-none'
-                                            : 'block h-full w-full rounded-l-none rounded-r-[999px] bg-canvas transition-all duration-200 ease-out motion-reduce:transition-none'
-                                    }
-                                />
-                            </span>
+                            <TldMovingHighlight
+                                containerRef={metricRef}
+                                activeKey={activeMetric}
+                                shape={activeMetric === 'duration' ? 'pill-start' : 'pill-end'}
+                            />
 
                             {metricOptions.map((option) => {
                                 const isActive = option.value === activeMetric
@@ -138,16 +128,25 @@ export function LeaderboardPage(): ReactElement {
                                 return (
                                     <button
                                         key={option.value}
+                                        data-highlight-key={option.value}
                                         type="button"
                                         aria-pressed={isActive}
                                         className={
                                             isActive
-                                                ? 'relative z-20 h-full w-20 cursor-pointer text-label text-brand outline-none focus-visible:outline-2 focus-visible:outline-focus'
-                                                : 'relative z-20 h-full w-20 cursor-pointer text-label text-muted outline-none transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-focus'
+                                                ? 'group relative h-full w-20 cursor-pointer text-label text-brand outline-none focus-visible:outline-2 focus-visible:outline-focus'
+                                                : 'group relative h-full w-20 cursor-pointer text-label text-muted outline-none transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-focus'
                                         }
                                         onClick={(): void => selectMetric(option.value)}
                                     >
-                                        {option.label}
+                                        <span
+                                            aria-hidden="true"
+                                            className={
+                                                isActive
+                                                    ? 'pointer-events-none absolute inset-0 z-0 rounded-[inherit]'
+                                                    : 'pointer-events-none absolute inset-0 z-0 rounded-[inherit] group-hover:bg-surface-hover'
+                                            }
+                                        />
+                                        <span className="relative z-20">{option.label}</span>
                                     </button>
                                 )
                             })}

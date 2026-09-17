@@ -1,6 +1,6 @@
 # 架构约定
 
-- AI 助教静态页归属 `pages/ai-tutor`，由 app 在 `/ai-tutor` 懒加载并复用壳层。导师、场景、资源和选择状态均为页面私有；只复用 shared 的 TldSelection 与 TldButton，不新增 features/widgets 或接口。布局沿用常规版心，手机一列、平板两列、PC 四列，最终多端视觉由用户验收。
+- AI 助教归属 `pages/ai-tutor`，由 app 在 `/ai-tutor` 及 `/ai-tutor/mentors/:mentorId/scenes/:sceneId` 懒加载并复用壳层。导师、场景、聊天静态示例、输入状态与资源为页面私有，不新增 features/widgets 或接口。选择页保持响应式网格；聊天页按用户要求一屏展示，导师栏和输入区固定，场景与消息内部滚动；切换导师显式返回父页并恢复选择。
 
 ## 总体分层
 
@@ -60,6 +60,7 @@ app → pages → widgets → features → entities → shared
 /foreign-language-guide
 /foreign-language-guide/courses/:courseId
 /leaderboard
+/branch-company
 /profile
 /login
 ```

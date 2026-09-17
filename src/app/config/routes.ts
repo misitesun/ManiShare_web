@@ -1,6 +1,7 @@
 export const routePaths = {
     home: '/',
     aiTutor: '/ai-tutor',
+    aiTutorChat: '/ai-tutor/mentors/:mentorId/scenes/:sceneId',
     awakening: '/awakening',
     awakeningCourse: '/awakening/courses/:courseId',
     login: '/login',
@@ -14,7 +15,10 @@ export const routePaths = {
     works: '/profile/works',
     foreignLanguageGuide: '/foreign-language-guide',
     foreignLanguageCourse: '/foreign-language-guide/courses/:courseId',
+    collaboration: '/collaboration',
+    vipMembership: '/vip',
     leaderboard: '/leaderboard',
     promotionRevenue: '/promotion/revenue',
+    branchCompany: '/branch-company',
     courseSearch: '/courses/search',
 } as const

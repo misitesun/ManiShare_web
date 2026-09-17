@@ -9,6 +9,8 @@ Use this Skill when a change affects more than its immediate implementation modu
 
 ## Impact map
 
+For every design-driven implementation, apply [编码前方案](../../../docs/ai-collaboration.md#设计稿驱动任务的编码前方案) before editing code. Merge this impact map into the user-visible five-part plan rather than replacing or duplicating it. Base the plan on verified repository owners and public contracts, cover layout, interactions/state, reused/new components with reasons, PC/tablet/H5 adaptation, and ordered implementation/verification. Explicitly request confirmation and stop implementation changes until the user confirms. A confirmed plan remains valid only for its stated scope; a new design node or material scope/contract change requires an updated plan and renewed confirmation.
+
 Before editing, read `AGENTS.md`, every core document it requires, `docs/ai-collaboration.md` and the affected public entries, then list:
 
 - current owner and public entry;

@@ -51,3 +51,24 @@ test('TldSelection exposes label and disabled controlled state', () => {
     assert.match(html, /disabled=""/)
     assert.match(html, /type="checkbox"/)
 })
+
+test('inline radio renders visible option copy without changing its accessible name', () => {
+    const html = renderToStaticMarkup(
+        createElement(
+            TldSelection,
+            {
+                label: '增加功能',
+                type: 'radio',
+                name: 'feedback-category',
+                value: 'feature',
+                checked: false,
+                layout: 'inline',
+                onCheckedChange: (): void => undefined,
+            },
+            '增加功能',
+        ),
+    )
+    assert.match(html, /data-layout="inline"/)
+    assert.match(html, /aria-label="增加功能"/)
+    assert.match(html, />增加功能</)
+})

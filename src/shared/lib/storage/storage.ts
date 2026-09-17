@@ -6,6 +6,7 @@ type StorageSchema = {
     [sharedConfig.storageKeys.theme]: AppTheme
     [sharedConfig.storageKeys.pwaInstalled]: boolean
     [sharedConfig.storageKeys.accessToken]: string
+    [sharedConfig.storageKeys.locationPromptConfirmed]: boolean
 }
 
 export type AppStorageKey = keyof StorageSchema

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent, ReactElement } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { SubmitFeedbackDialog } from '../../../features/submit-feedback'
 import { projectConstants } from '../../../shared/constants'
 import { LanguageSwitcher } from '../../../shared/ui/language-switcher'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
@@ -29,11 +30,13 @@ import awakeningIconSource from '../assets/navigation/awakening.svg'
 import bootcampIconSource from '../assets/navigation/bootcamp.svg'
 import caretIconSource from '../assets/navigation/caret.svg'
 import coCreateIconSource from '../assets/navigation/co-create.svg'
+import competitionIconSource from '../assets/navigation/competition.svg'
 import settingsIconSource from '../assets/navigation/diamond.svg'
 import guideIconSource from '../assets/navigation/guide.svg'
 import homeIconSource from '../assets/navigation/home.svg'
 import leaderboardIconSource from '../assets/navigation/leaderboard.svg'
 import pkIconSource from '../assets/navigation/pk.svg'
+import prizeCenterIconSource from '../assets/navigation/prize-center.svg'
 import profileIconSource from '../assets/navigation/profile.svg'
 import revenueIconSource from '../assets/navigation/revenue.svg'
 import diamondIconSource from '../assets/navigation/settings.svg'
@@ -49,18 +52,20 @@ export type AppNavigationIcon =
     | 'awakening'
     | 'bootcamp'
     | 'co-create'
+    | 'competition'
     | 'guide'
     | 'home'
     | 'leaderboard'
     | 'pk'
     | 'profile'
+    | 'prize-center'
     | 'revenue'
     | 'stories'
     | 'vip'
     | 'vocabulary'
     | 'wisdom'
 
-export type AppNavigationAccent = 'default' | 'collaboration' | 'vip'
+export type AppNavigationAccent = 'default' | 'vip'
 
 export interface AppNavigationChildItem {
     readonly label?: string
@@ -84,13 +89,22 @@ export interface AppNavigationItem {
 }
 
 export type AppUtilityIcon = 'club' | 'desktop' | 'feedback' | 'notification' | 'play' | 'service'
+export type AppUtilityAction = 'feedback'
 
 export interface AppUtilityItem {
     readonly labelKey: string
     readonly icon: AppUtilityIcon
+    readonly action?: AppUtilityAction
+}
+
+export interface AppFooterNavigationItem {
+    readonly label: string
+    readonly pageLabel?: string
+    readonly to: string
 }
 
 export interface AppLayoutProps {
+    readonly footerNavigationItem: AppFooterNavigationItem
     readonly navigationItems: readonly AppNavigationItem[]
     readonly utilityItems: readonly AppUtilityItem[]
     readonly searchPath: string
@@ -110,11 +124,13 @@ const navigationIconSources: Record<AppNavigationIcon, string> = {
     awakening: awakeningIconSource,
     bootcamp: bootcampIconSource,
     'co-create': coCreateIconSource,
+    competition: competitionIconSource,
     guide: guideIconSource,
     home: homeIconSource,
     leaderboard: leaderboardIconSource,
     pk: pkIconSource,
     profile: profileIconSource,
+    'prize-center': prizeCenterIconSource,
     revenue: revenueIconSource,
     stories: storiesIconSource,
     vip: vipIconSource,
@@ -314,16 +330,12 @@ function NavigationEntry({
                 aria-disabled="true"
                 className={
                     isCompact
-                        ? item.accent === 'collaboration'
-                            ? 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-brand'
-                            : item.accent === 'vip'
-                              ? 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-warning'
-                              : 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-primary'
-                        : item.accent === 'collaboration'
-                          ? 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-brand'
-                          : item.accent === 'vip'
-                            ? 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-warning'
-                            : 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-primary'
+                        ? item.accent === 'vip'
+                            ? 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-warning'
+                            : 'flex h-10 w-full items-center justify-start rounded-lg px-2 text-primary'
+                        : item.accent === 'vip'
+                          ? 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-warning'
+                          : 'flex h-10 items-center gap-3 rounded-lg px-2.5 text-body font-medium text-primary'
                 }
             >
                 {icon}
@@ -371,6 +383,7 @@ function NavigationEntry({
 }
 
 export function AppLayout({
+    footerNavigationItem,
     navigationItems,
     utilityItems,
     searchPath,
@@ -380,13 +393,16 @@ export function AppLayout({
     const { pathname } = useLocation()
     const navigationId = useId()
     const [searchQuery, setSearchQuery] = useState('')
+    const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false)
     const activePageLabelSource = getActivePageLabelSource(navigationItems, pathname)
-    const activePageLabel =
-        activePageLabelSource === undefined
-            ? undefined
-            : (activePageLabelSource.pageLabel ??
-              activePageLabelSource.label ??
-              t(activePageLabelSource.pageLabelKey ?? activePageLabelSource.labelKey))
+    const isFooterNavigationActive = isPathActive(pathname, footerNavigationItem.to, true)
+    const activePageLabel = isFooterNavigationActive
+        ? (footerNavigationItem.pageLabel ?? footerNavigationItem.label)
+        : activePageLabelSource === undefined
+          ? undefined
+          : (activePageLabelSource.pageLabel ??
+            activePageLabelSource.label ??
+            t(activePageLabelSource.pageLabelKey ?? activePageLabelSource.labelKey))
     const [navigationState, setNavigationState] = useState(() =>
         getNavigationStateForViewport(getCurrentNavigationViewport()),
     )
@@ -461,14 +477,20 @@ export function AppLayout({
     const navigationClassName = isNavigationOpen
         ? 'pointer-events-auto fixed inset-y-0 left-0 z-50 flex h-dvh w-[50vw] translate-x-0 flex-col overflow-hidden border-r border-subtle bg-canvas shadow-drawer transition-[translate,width] duration-300 ease-out motion-reduce:transition-none md:sticky md:top-0 md:z-20 md:w-[200px] md:shadow-none'
         : 'pointer-events-none fixed inset-y-0 left-0 z-50 flex h-dvh w-[50vw] -translate-x-full flex-col overflow-hidden border-r border-subtle bg-canvas shadow-drawer transition-[translate,width] duration-300 ease-out motion-reduce:transition-none md:pointer-events-auto md:sticky md:top-0 md:z-20 md:w-16 md:translate-x-0 md:delay-100 md:shadow-none md:motion-reduce:delay-0'
-    const membershipControl = (
-        <button
-            type="button"
-            aria-label={t('layout.membershipCenter')}
-            className="grid h-10 w-full cursor-pointer place-items-center rounded-lg border border-subtle transition-colors hover:bg-surface-hover"
+    const branchCompanyControl = (
+        <NavLink
+            aria-label={footerNavigationItem.label}
+            className={
+                isFooterNavigationActive
+                    ? 'grid h-10 w-full cursor-pointer place-items-center rounded-lg border border-brand bg-surface-hover transition-colors'
+                    : 'grid h-10 w-full cursor-pointer place-items-center rounded-lg border border-subtle transition-colors hover:bg-surface-hover'
+            }
+            end
+            to={footerNavigationItem.to}
+            onClick={closeOverlayNavigation}
         >
             <img alt="" aria-hidden="true" className="size-5" src={diamondIconSource} />
-        </button>
+        </NavLink>
     )
     const settingsControl = (
         <details className="group relative">
@@ -595,11 +617,11 @@ export function AppLayout({
 
                 <div className="shrink-0 space-y-2.5 border-t border-subtle bg-canvas px-3 py-2.5 [padding-bottom:max(0.625rem,env(safe-area-inset-bottom))]">
                     {isCompactNavigation ? (
-                        <Tooltip content={t('layout.membershipCenter')} fullWidth placement="right">
-                            {membershipControl}
+                        <Tooltip content={footerNavigationItem.label} fullWidth placement="right">
+                            {branchCompanyControl}
                         </Tooltip>
                     ) : (
-                        membershipControl
+                        branchCompanyControl
                     )}
                     {isCompactNavigation ? (
                         <Tooltip
@@ -704,6 +726,11 @@ export function AppLayout({
                                 type="button"
                                 aria-label={t(item.labelKey)}
                                 className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-strong text-primary transition-colors hover:bg-surface-hover md:h-8 md:w-8 min-[1800px]:min-w-max min-[1800px]:px-[11px]"
+                                onClick={
+                                    item.action === 'feedback'
+                                        ? (): void => setIsFeedbackDialogOpen(true)
+                                        : undefined
+                                }
                             >
                                 <img
                                     alt=""
@@ -728,6 +755,11 @@ export function AppLayout({
                 <main className="min-h-[calc(100dvh-4rem)] min-w-0 xl:min-h-[calc(100dvh-5rem)]">
                     <Outlet />
                 </main>
+
+                <SubmitFeedbackDialog
+                    open={isFeedbackDialogOpen}
+                    onOpenChange={setIsFeedbackDialogOpen}
+                />
             </div>
         </div>
     )

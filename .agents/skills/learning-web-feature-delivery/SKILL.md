@@ -7,9 +7,11 @@ description: Implement or modify an English Learning frontend business capabilit
 
 ## Before implementation
 
+For every design-driven implementation request, follow [编码前方案](../../../docs/ai-collaboration.md#设计稿驱动任务的编码前方案): inspect the design and the repository's actual route, owner, public entries, components, state and tests, then publish the five-part plan in commentary (layout, interactions/state, verified reused/new components with reasons, PC/tablet/H5 adaptation, ordered implementation and verification steps). Explicitly ask the user to confirm and stop before implementation changes, business-asset downloads or dependency installation until that confirmation arrives, even when the request appears complete or already includes proposed steps. Read-only investigation and plan refinement may continue. Reuse an already confirmed plan within the same scope; if a later design node or request materially expands the page, interaction, public contract, API or acceptance scope, update the plan and wait for confirmation again. Do not impose this workflow on questions or small fixes that are not driven by a newly supplied design.
+
 1. Read `AGENTS.md`, development, TypeScript, testing, architecture and AI collaboration docs.
 2. Inspect the worktree, preserve unrelated changes and state the smallest expected file or module boundary before editing.
-3. For a new page or capability, complete `docs/feature-delivery-checklist.md` and stop only on unresolved decisions that materially change scope or architecture.
+3. For a new page or capability, complete `docs/feature-delivery-checklist.md`. Outside the design-confirmation gate above, stop only on unresolved decisions that materially change scope or architecture.
 4. Read the target slice README, public entry, types and tests, then search for an existing public capability before creating another one.
 5. Classify compatibility impact. If browser, device, media or Electron behavior is involved, read `docs/compatibility.md` and matching registered contracts before choosing an API or changing fallbacks.
 6. If TSX runtime logic, Hooks, state, Effects, lists, client loading or component refactors change, also read `learning-web-react-engineering`.

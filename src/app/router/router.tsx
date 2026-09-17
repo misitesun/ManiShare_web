@@ -1,7 +1,7 @@
 import { createElement, lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { AppLayout } from '../../widgets/app-layout'
-import { navigationItems, utilityItems } from '../config/navigation'
+import { footerNavigationItem, navigationItems, utilityItems } from '../config/navigation'
 import { routePaths } from '../config/routes'
 import { RouteErrorPage } from './ui/RouteErrorPage'
 import { RouteLoading } from './ui/RouteLoading'
@@ -14,6 +14,10 @@ const loginPage = lazy(async () => {
 const aiTutorPage = lazy(async () => {
     const module = await import('../../pages/ai-tutor')
     return { default: module.AiTutorPage }
+})
+const aiTutorChatPage = lazy(async () => {
+    const module = await import('../../pages/ai-tutor')
+    return { default: module.AiTutorChatPage }
 })
 
 const homePage = lazy(async () => {
@@ -85,9 +89,24 @@ const foreignLanguageCoursePage = lazy(async () => {
     return { default: module.ForeignLanguageCoursePage }
 })
 
+const collaborationPage = lazy(async () => {
+    const module = await import('../../pages/collaboration')
+    return { default: module.CollaborationPage }
+})
+
+const vipMembershipPage = lazy(async () => {
+    const module = await import('../../pages/vip-membership')
+    return { default: module.VipMembershipPage }
+})
+
 const promotionRevenuePage = lazy(async () => {
     const module = await import('../../pages/promotion-revenue')
     return { default: module.PromotionRevenuePage }
+})
+
+const branchCompanyPage = lazy(async () => {
+    const module = await import('../../pages/branch-company')
+    return { default: module.BranchCompanyPage }
 })
 
 const leaderboardPage = lazy(async () => {
@@ -105,6 +124,7 @@ export const router = createBrowserRouter([
         path: routePaths.home,
         element: (
             <AppLayout
+                footerNavigationItem={footerNavigationItem}
                 navigationItems={navigationItems}
                 utilityItems={utilityItems}
                 searchPath={routePaths.courseSearch}
@@ -115,7 +135,20 @@ export const router = createBrowserRouter([
             {
                 path: routePaths.aiTutor,
                 element: (
-                    <Suspense fallback={<RouteLoading />}>{createElement(aiTutorPage)}</Suspense>
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(aiTutorPage, { chatPath: routePaths.aiTutorChat })}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.aiTutorChat,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(aiTutorChatPage, {
+                            backPath: routePaths.aiTutor,
+                            chatPath: routePaths.aiTutorChat,
+                        })}
+                    </Suspense>
                 ),
             },
             {
@@ -223,6 +256,24 @@ export const router = createBrowserRouter([
                 ),
             },
             {
+                path: routePaths.collaboration,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(collaborationPage)}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.vipMembership,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(vipMembershipPage, {
+                            collaborationPath: routePaths.collaboration,
+                        })}
+                    </Suspense>
+                ),
+            },
+            {
                 path: routePaths.courseSearch,
                 element: (
                     <Suspense fallback={<RouteLoading />}>
@@ -235,6 +286,14 @@ export const router = createBrowserRouter([
                 element: (
                     <Suspense fallback={<RouteLoading />}>
                         {createElement(promotionRevenuePage)}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.branchCompany,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(branchCompanyPage)}
                     </Suspense>
                 ),
             },

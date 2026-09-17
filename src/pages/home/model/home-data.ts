@@ -21,23 +21,6 @@ import messageAvatar01Source from '../assets/leaderboard/message-avatar-01.png'
 import messageAvatar02Source from '../assets/leaderboard/message-avatar-02.png'
 import messageAvatar03Source from '../assets/leaderboard/message-avatar-03.png'
 import messageAvatar04Source from '../assets/leaderboard/message-avatar-04.png'
-import showcase01Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase02Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase03Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase04Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase05Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase06Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase07Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase08Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase09Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase10Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase11Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase12Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase13Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase14Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase15Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase16Source from '../assets/leaderboard/message-avatar-01.png'
-import showcase17Source from '../assets/leaderboard/message-avatar-01.png'
 import { createLeaderboardRows } from './leaderboard-data'
 import type { HomeLeaderboardLevelTone } from './leaderboard-data'
 
@@ -174,23 +157,3 @@ export const leaderboardEntries: readonly HomeLeaderboardEntry[] = createLeaderb
         time: entry.time,
     }),
 )
-
-export const showcaseSources: readonly string[] = [
-    showcase01Source,
-    showcase02Source,
-    showcase03Source,
-    showcase04Source,
-    showcase05Source,
-    showcase06Source,
-    showcase07Source,
-    showcase08Source,
-    showcase09Source,
-    showcase10Source,
-    showcase11Source,
-    showcase12Source,
-    showcase13Source,
-    showcase14Source,
-    showcase15Source,
-    showcase16Source,
-    showcase17Source,
-]

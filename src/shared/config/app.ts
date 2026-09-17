@@ -44,5 +44,6 @@ export const sharedConfig = {
         theme: 'english-learning-theme',
         pwaInstalled: 'english-learning-pwa-installed',
         accessToken: 'english-learning-access-token',
+        locationPromptConfirmed: 'english-learning-location-prompt-confirmed',
     },
 } as const

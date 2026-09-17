@@ -1,9 +1,12 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
-- AI 助教：`pages/ai-tutor` 提供 `/ai-tutor` 静态导师/场景选择；页面私有资源、两组本地单选，不接入对话接口。`TldSelection` 新增可选 radio/name/value 和卡片指示器位置，默认 checkbox 保持兼容。
+- `shared/ui/tld-moving-highlight`：无业务移动高亮层，按选项 DOM 几何适配横排、竖排、多行网格与内部滚动。AI 导师选择、聊天场景、排行榜周期与指标统一复用；保留各页面原生选择语义。
+
+- AI 助教：`pages/ai-tutor` 提供 `/ai-tutor` 静态导师/场景选择和 `/ai-tutor/mentors/:mentorId/scenes/:sceneId` 一屏聊天 UI；包含场景滑动选中、内部滚动、返回恢复选择和文字/语音输入模式切换，不接入对话或录音接口。`TldSelection` 支持 radio/name/value 和卡片指示器位置，默认 checkbox 保持兼容。
 
 - 下拉单选：`shared/ui/tld-select` 提供受控 `TldSelect`，支持深浅主题、已选项反馈、键盘选择和外部关闭；业务排序由所属页面实现。菜单显隐支持过渡，关闭时 inert 隔离焦点。
 - 表单控件：`shared/ui/tld-input` 提供 `TldInput`（焦点边框与淡阴影）；`shared/ui/tld-switch` 提供 `TldSwitch`（受控开关）；`shared/ui/tld-selection` 提供 `TldSelection`（圆形逐项 checkbox）。均支持可访问名称、禁用和主题色；选择和显隐动画遵循 reduced-motion，业务状态留在页面。
+- 图片选择：`shared/ui/tld-image-upload` 提供受控的单张/多张本地图片选择、预览和移除，负责 Object URL 回收；不上传、不压缩、不请求接口。顶栏反馈由 `features/submit-feedback` 组合单选、描述与截图，当前提交只关闭并重置静态表单。
 
 本文回答三个问题：框架已经提供什么、后续业务应该从哪里接入、哪些能力当前明确不做。详细约束仍以 `AGENTS.md`、专题文档和各模块 README 为准；本文件是导航和边界地图，不替代它们。
 
@@ -71,9 +74,10 @@
 | 会员标签 | `src/shared/ui/tld-membership-badge` | 黄金 VIP、终身 VIP、漫奇天使和免费体验的图标、渐变底托与三档尺寸 | 用户权益、会员状态判断和业务文案 |
 | 进度展示 | `src/shared/ui/tld-progress-bar` | 数值归一化、可选数值文案、两档比例轨道和无障碍进度语义 | 业务进度计算、请求或状态所有权 |
 | 列表分页状态 | `src/shared/ui/tld-pagination-status` | 触底自动加载哨兵、加载中、无更多和失败重试反馈 | 页码、接口、列表数据和领域错误规则 |
+| 提现明细区块 | `src/widgets/withdrawal-records` | 推广收益与分公司的提现表格、静态分页、状态徽标、收款码弹窗和审核说明提示 | 真实提现请求、审核规则、结算状态或用户通知 |
 | 通用页签 | `src/shared/ui/tld-segmented-tabs` | 受控单选页签、分段渐变/下划线展示与基础无障碍语义 | 业务筛选状态、路由和页签文案 |
 | Tooltip 文字提示 | `src/shared/ui/tooltip` | Portal 定位、四方向、自定义高度与 hover/focus 交互 | 业务文案、触发条件或导航状态 |
-| Dialog 对话框 | `src/shared/ui/tld-dialog` | 受控 Portal、渐变边框、响应式尺寸、内容插槽、统一操作按钮、焦点与关闭策略 | 业务表单、提交状态、接口错误或全局弹窗队列 |
+| Dialog 对话框 | `src/shared/ui/tld-dialog` | 受控 Portal、渐变边框、2px 背景模糊遮罩、响应式尺寸、内容插槽、统一操作按钮、焦点与关闭策略 | 业务表单、提交状态、接口错误或全局弹窗队列 |
 | PWA 预留 | `src/shared/lib/pwa` | 安装生命周期监听与状态 Hook | manifest、Service Worker、离线缓存和发布 |
 
 新增公共能力前先搜索现有入口。页面私有 UI、Hook、状态和资源默认留在 `pages/<page>`；只有独立用户业务进入 `features`，跨页面大型组合进入 `widgets`。第二个真实消费者只触发重新判断；确认能力没有业务语义后，才下沉到双方共同允许依赖的最低层。不能先建 `shared/utils`、`hooks` 或 `services` 等万能目录。
@@ -82,13 +86,14 @@
 
 | 能力 | 所有者 | 当前契约 |
 | --- | --- | --- |
-| 路由 | `src/app/config/routes.ts`、`src/app/router/router.tsx` | `/` 是学习首页静态编排，`/courses/search` 使用空白功能区域，`/profile` 是玩家资料页，`/profile/knowledge-gaps` 是查漏补缺静态分页列表，`/profile/notes` 是笔记本双视图静态分页列表，`/profile/learning-progress` 是学习进度静态分页列表，`/profile/favorites` 是我的收藏分类、整卡多选与本地删除静态列表，`/profile/works` 是我的作品整卡多选与本地删除静态列表，`/foreign-language-guide` 是外语逆袭秘籍静态课程分页列表，`/leaderboard` 是固定头尾与内部滚动分页的学习排行榜，`/promotion/revenue` 是推广收益概览与佣金静态分页列表，`/login` 为独立品牌首屏 |
+| 路由 | `src/app/config/routes.ts`、`src/app/router/router.tsx` | `/` 是学习首页静态编排，`/courses/search` 使用空白功能区域，`/profile` 是玩家资料页，`/profile/knowledge-gaps` 是查漏补缺静态分页列表，`/profile/notes` 是笔记本双视图静态分页列表，`/profile/learning-progress` 是学习进度静态分页列表，`/profile/favorites` 是我的收藏分类、整卡多选与本地删除静态列表，`/profile/works` 是我的作品整卡多选与本地删除静态列表，`/foreign-language-guide` 是外语逆袭秘籍静态课程分页列表，`/collaboration` 是联创天使静态权益和支付页，`/vip` 是畅学 VIP 静态方案页，`/leaderboard` 是固定头尾与内部滚动分页的学习排行榜，`/promotion/revenue` 是推广收益概览与佣金静态分页列表，`/branch-company` 是分公司结算概览与奖励静态分页列表，`/login` 为独立品牌首屏 |
 | 课程集合编辑 | `src/features/edit-course-collection` | 我的收藏与我的作品共用浏览/编辑、整卡多选、取消和本地删除状态；页面仍分别拥有数据、筛选、分页和提示文案 |
 | 笔记本二级页 | `src/pages/notebook-course` | `/profile/notes/courses/:coursePackageId` 课程包概要、全部笔记和八个章节卡片；`view=courses` 恢复课程列表 |
 | 章节笔记页 | `src/pages/notebook-chapter` | `/profile/notes/courses/:coursePackageId/chapters/:chapterId` 展示对应章节笔记，返回恢复课程列表，未知参数显示空态 |
 | 共享笔记区 | `src/widgets/notebook-notes`、`src/entities/notebook` | 两级页面统一记录展示、删除确认和演示数据；分页由一级页拥有，新增/编辑仍为静态入口 |
-| 响应式壳层 | `src/widgets/app-layout` | 同一开关状态驱动跨端侧栏动画；H5 使用不推动主内容且可完全离场的覆盖式抽屉，`md` 平板与 `xl` PC/Electron 在 200px 侧栏和保留头像/导航图标的 64px 轨道间切换，1920px 宽屏展示完整标签文案 |
-| 学习首页 | `src/pages/home` | 1920px 三栏基准布局、超宽屏 1720px 居中容器、固定前三名舞台和包含 50 条静态数据的内部滚动榜单；平板/H5 使用同一语义 DOM 重排 |
+| 响应式壳层 | `src/widgets/app-layout` | 同一开关状态驱动跨端侧栏动画；H5 使用不推动主内容且可完全离场的覆盖式抽屉，`md` 平板与 `xl` PC/Electron 在 200px 侧栏和保留头像/导航图标的 64px 轨道间切换，1920px 宽屏展示完整标签文案；联创天使使用整行品牌渐变，排行榜后预留风采大赛与奖品兑换中心静态入口 |
+| 分公司 | `src/pages/branch-company` | 侧栏底部钻石入口、结算概览、奖励明细静态分页，并复用跨页面提现明细区块；不发起接口请求或推导提现规则 |
+| 学习首页 | `src/pages/home` | 1920px 三栏基准布局、超宽屏 1720px 居中容器、固定前三名舞台和包含 50 条静态数据的内部滚动榜单；首次进入时通过 TldDialog 展示定位说明并持久化确认标记，不请求定位权限；平板/H5 使用同一语义 DOM 重排 |
 | 登录落地页 | `src/pages/login` | Figma 静态布局、黑白主题、三端响应式与从底部向上展开的 React Bits Aurora 流动光带；表单、认证和跳转待独立需求 |
 | Electron | `electron/`、`electron-builder.yml` | Web/H5/Electron 共用 renderer；桌面能力只通过具名 preload API 与校验 sender 的 IPC |
 | 兼容性知识 | `docs/compatibility.md` | 运行时差异必须进入登记契约，明确 fallback、cleanup、自动验证和人工复测 |

@@ -32,6 +32,7 @@ export interface TldDialogProps {
     readonly open: boolean
     readonly showCancelButton?: boolean
     readonly showConfirmButton?: boolean
+    readonly showHeader?: boolean
     readonly size?: TldDialogSize
     readonly title: ReactNode
 }
@@ -58,6 +59,7 @@ export function TldDialog({
     open,
     showCancelButton = true,
     showConfirmButton = true,
+    showHeader = true,
     size = 'large',
     title,
 }: TldDialogProps): ReactElement | null {
@@ -72,7 +74,7 @@ export function TldDialog({
         size === 'small'
             ? 'max-h-[calc(100dvh-24px)] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[220px] md:max-h-[calc(100dvh-48px)]'
             : size === 'medium'
-              ? 'max-h-[calc(100dvh-24px)] w-full max-w-[560px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
+              ? 'max-h-[calc(100dvh-24px)] w-full max-w-[576px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
               : 'max-h-[calc(100dvh-24px)] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
 
     useEffect(() => {
@@ -164,7 +166,7 @@ export function TldDialog({
 
     return createPortal(
         <div
-            className="fixed inset-0 z-60 grid place-items-center overflow-y-auto bg-dialog-overlay p-3 backdrop-blur-[12.5px] md:p-6"
+            className="fixed inset-0 z-60 grid place-items-center overflow-y-auto bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6"
             onPointerDown={handleBackdropPointerDown}
         >
             <div className={dialogFrameClassName}>
@@ -186,16 +188,29 @@ export function TldDialog({
                         <img
                             alt=""
                             aria-hidden="true"
-                            className="size-7 [filter:var(--app-filter-dialog-icon)]"
+                            className={
+                                showHeader
+                                    ? 'size-7 [filter:var(--app-filter-dialog-icon)]'
+                                    : 'size-6 [filter:var(--app-filter-dialog-icon)]'
+                            }
                             src={closeIconSource}
                         />
                     </button>
 
-                    <header className="shrink-0 px-4 pb-3 pr-16 pt-4 md:px-6 md:pb-5 md:pr-20 md:pt-6">
-                        <h2 id={titleId} className="text-xl font-medium leading-7 md:text-[22px]">
+                    {showHeader ? (
+                        <header className="shrink-0 px-4 pb-3 pr-16 pt-4 md:px-6 md:pb-5 md:pr-20 md:pt-6">
+                            <h2
+                                id={titleId}
+                                className="text-xl font-medium leading-7 md:text-[22px]"
+                            >
+                                {title}
+                            </h2>
+                        </header>
+                    ) : (
+                        <h2 id={titleId} className="sr-only">
                             {title}
                         </h2>
-                    </header>
+                    )}
 
                     <div
                         id={hasBodyContent ? contentId : undefined}

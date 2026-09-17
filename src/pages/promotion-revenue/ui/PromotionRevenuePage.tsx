@@ -2,14 +2,17 @@ import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { TldSegmentedTabs } from '../../../shared/ui/tld-segmented-tabs'
 import type { TldSegmentedTabItem } from '../../../shared/ui/tld-segmented-tabs'
+import {
+    WithdrawalRecordTable,
+    useWithdrawalRecordPagination,
+    withdrawalRecordPages,
+} from '../../../widgets/withdrawal-records'
 import { commissionRecordPages } from '../model/promotion-revenue-records'
 import { registrationRecordPages } from '../model/registration-records'
 import { usePromotionRevenuePagination } from '../model/usePromotionRevenuePagination'
-import { withdrawalRecordPages } from '../model/withdrawal-records'
 import { CommissionRecordTable } from './CommissionRecordTable'
 import { PromotionOverview } from './PromotionOverview'
 import { RegistrationRecordTable } from './RegistrationRecordTable'
-import { WithdrawalRecordTable } from './WithdrawalRecordTable'
 
 type PromotionRevenueView = 'commission' | 'withdrawal' | 'registration'
 
@@ -27,7 +30,7 @@ export function PromotionRevenuePage(): ReactElement {
     const [activeView, setActiveView] = useState<PromotionRevenueView>('commission')
     const commissionPagination = usePromotionRevenuePagination(commissionRecordPages)
     const registrationPagination = usePromotionRevenuePagination(registrationRecordPages)
-    const withdrawalPagination = usePromotionRevenuePagination(withdrawalRecordPages)
+    const withdrawalPagination = useWithdrawalRecordPagination(withdrawalRecordPages)
 
     function selectView(value: string): void {
         if (value === 'commission' || value === 'withdrawal' || value === 'registration') {

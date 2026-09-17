@@ -1,11 +1,20 @@
-import { useState, type ReactElement } from 'react'
+import { useState, useRef, type ReactElement } from 'react'
+import { generatePath, useNavigate, useSearchParams } from 'react-router-dom'
 import { TldButton } from '../../../shared/ui/tld-button'
 import { TldSelection } from '../../../shared/ui/tld-selection'
+import { TldMovingHighlight } from '../../../shared/ui/tld-moving-highlight'
 import { mentors, scenes } from '../model/catalog'
 
-export function AiTutorPage(): ReactElement {
-    const [mentorId, setMentorId] = useState<string>('sarah')
-    const [sceneId, setSceneId] = useState<string | null>(null)
+export function AiTutorPage({ chatPath }: { readonly chatPath: string }): ReactElement {
+    const mentorListRef = useRef<HTMLDivElement>(null)
+    const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
+    const [mentorId, setMentorId] = useState<string>(
+        () => mentors.find((item) => item.id === searchParams.get('mentor'))?.id ?? 'sarah',
+    )
+    const [sceneId, setSceneId] = useState<string | null>(
+        () => scenes.find((item) => item.id === searchParams.get('scene'))?.id ?? null,
+    )
 
     return (
         <div className="min-w-0 px-4 pb-16 pt-5 min-[1920px]:px-[250px]">
@@ -14,24 +23,28 @@ export function AiTutorPage(): ReactElement {
                 <p className="mt-2 text-body text-muted">
                     选择一位你喜欢的AI导师，开启地道英语学习之旅吧～
                 </p>
-                <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div
+                    ref={mentorListRef}
+                    className="relative isolate mt-5 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+                >
+                    <TldMovingHighlight
+                        containerRef={mentorListRef}
+                        activeKey={mentorId}
+                        tone="soft"
+                        shape="card"
+                    />
                     {mentors.map((mentor) => (
                         <div
                             key={mentor.id}
-                            className={
-                                mentorId === mentor.id
-                                    ? 'relative min-w-0 rounded-xl bg-linear-to-b from-brand-start to-brand-end p-px'
-                                    : 'relative min-w-0 rounded-xl bg-strong p-px'
-                            }
+                            data-highlight-key={mentor.id}
+                            className="relative min-w-0 rounded-xl p-px"
                         >
-                            <div className="rounded-[11px] bg-canvas">
-                                <div
-                                    className={
-                                        mentorId === mentor.id
-                                            ? 'flex min-h-[100px] items-center gap-4 rounded-[11px] bg-linear-to-b from-brand-start/10 to-brand-end/10 p-[15px] pr-9'
-                                            : 'flex min-h-[100px] items-center gap-4 rounded-[11px] p-[15px] pr-9'
-                                    }
-                                >
+                            <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-0 z-0 rounded-xl border border-strong bg-canvas"
+                            />
+                            <div className="relative z-20 rounded-[11px]">
+                                <div className="flex min-h-[100px] items-center gap-4 rounded-[11px] p-[15px] pr-9">
                                     <img
                                         src={mentor.image}
                                         alt=""
@@ -55,7 +68,7 @@ export function AiTutorPage(): ReactElement {
                                     </div>
                                 </div>
                             </div>
-                            <div className="absolute inset-0">
+                            <div className="absolute inset-0 z-20">
                                 <TldSelection
                                     type="radio"
                                     name="ai-mentor"
@@ -110,8 +123,15 @@ export function AiTutorPage(): ReactElement {
                 </div>
             </fieldset>
             <div className="mx-auto mt-12 w-full max-w-[515px] xl:mt-[100px]">
-                <TldButton size="large" fullWidth>
-                    开启对话
+                <TldButton
+                    size="large"
+                    fullWidth
+                    disabled={!sceneId}
+                    onClick={(): void => {
+                        if (sceneId) void navigate(generatePath(chatPath, { mentorId, sceneId }))
+                    }}
+                >
+                    开始对话
                     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6">
                         <path
                             d="M3 12h18m-6-6 6 6-6 6"

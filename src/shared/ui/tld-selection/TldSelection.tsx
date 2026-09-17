@@ -4,8 +4,9 @@ export interface TldSelectionProps {
     readonly label: string
     readonly checked: boolean
     readonly onCheckedChange: (checked: boolean) => void
+    readonly children?: React.ReactNode
     readonly disabled?: boolean
-    readonly layout?: 'control' | 'card'
+    readonly layout?: 'control' | 'card' | 'inline'
     readonly tone?: 'selection' | 'danger'
     readonly type?: 'checkbox' | 'radio'
     readonly name?: string
@@ -18,6 +19,7 @@ export function TldSelection({
     label,
     checked,
     onCheckedChange,
+    children,
     disabled = false,
     layout = 'control',
     tone = 'selection',
@@ -32,8 +34,8 @@ export function TldSelection({
             data-placement={indicatorPlacement}
             className={
                 disabled
-                    ? 'group relative flex size-9 shrink-0 cursor-not-allowed items-center justify-center opacity-50 data-[layout=card]:size-full'
-                    : 'group relative flex size-9 shrink-0 cursor-pointer items-center justify-center data-[layout=card]:size-full'
+                    ? 'group relative flex size-9 shrink-0 cursor-not-allowed items-center justify-center opacity-50 data-[layout=card]:size-full data-[layout=inline]:h-9 data-[layout=inline]:w-full data-[layout=inline]:justify-start data-[layout=inline]:gap-1.5'
+                    : 'group relative flex size-9 shrink-0 cursor-pointer items-center justify-center data-[layout=card]:size-full data-[layout=inline]:h-9 data-[layout=inline]:w-full data-[layout=inline]:justify-start data-[layout=inline]:gap-1.5'
             }
         >
             <input
@@ -72,6 +74,9 @@ export function TldSelection({
                     />
                 </svg>
             </span>
+            {children === undefined ? null : (
+                <span className="min-w-0 text-left text-body text-primary">{children}</span>
+            )}
         </label>
     )
 }

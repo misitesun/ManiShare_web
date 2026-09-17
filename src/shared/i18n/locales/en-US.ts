@@ -20,6 +20,8 @@ export const enUS = {
         pk: 'PK arena',
         aiTutor: 'AI tutor',
         aiCreate: 'AI creation',
+        competition: 'Showcase contest',
+        prizeCenter: 'Prize center',
     },
     layout: {
         productType: 'English learning platform',

@@ -1,4 +1,8 @@
-import type { AppNavigationItem, AppUtilityItem } from '../../widgets/app-layout'
+import type {
+    AppFooterNavigationItem,
+    AppNavigationItem,
+    AppUtilityItem,
+} from '../../widgets/app-layout'
 import { routePaths } from './routes'
 
 export const navigationItems = [
@@ -32,8 +36,19 @@ export const navigationItems = [
         to: routePaths.foreignLanguageGuide,
         end: true,
     },
-    { labelKey: 'navigation.collaboration', icon: 'co-create', accent: 'collaboration' },
-    { labelKey: 'navigation.vip', icon: 'vip', accent: 'vip' },
+    {
+        labelKey: 'navigation.collaboration',
+        icon: 'co-create',
+        to: routePaths.collaboration,
+        end: true,
+    },
+    {
+        labelKey: 'navigation.vip',
+        icon: 'vip',
+        accent: 'vip',
+        to: routePaths.vipMembership,
+        end: true,
+    },
     {
         labelKey: 'navigation.revenue',
         icon: 'revenue',
@@ -51,13 +66,21 @@ export const navigationItems = [
         to: routePaths.leaderboard,
         end: true,
     },
+    { labelKey: 'navigation.competition', icon: 'competition' },
+    { labelKey: 'navigation.prizeCenter', icon: 'prize-center' },
 ] satisfies readonly AppNavigationItem[]
 
 export const utilityItems = [
     { labelKey: 'layout.playerClub', icon: 'club' },
     { labelKey: 'layout.customerService', icon: 'service' },
     { labelKey: 'layout.gameGuide', icon: 'play' },
-    { labelKey: 'layout.feedback', icon: 'feedback' },
+    { labelKey: 'layout.feedback', icon: 'feedback', action: 'feedback' },
     { labelKey: 'layout.systemMessages', icon: 'notification' },
     { labelKey: 'layout.addDesktop', icon: 'desktop' },
 ] satisfies readonly AppUtilityItem[]
+
+export const footerNavigationItem = {
+    label: '分公司',
+    pageLabel: '分公司',
+    to: routePaths.branchCompany,
+} satisfies AppFooterNavigationItem

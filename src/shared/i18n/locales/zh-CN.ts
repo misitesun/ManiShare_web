@@ -20,6 +20,8 @@ export const zhCN = {
         pk: 'PK争霸',
         aiTutor: 'AI助教',
         aiCreate: 'AI智创',
+        competition: '风采大赛',
+        prizeCenter: '奖品兑换中心',
     },
     layout: {
         productType: '英语学习平台',

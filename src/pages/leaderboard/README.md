@@ -1,5 +1,9 @@
 # 排行榜页
 
+- 周期与指标均复用 `shared/ui/tld-moving-highlight` 的 TldMovingHighlight；页面只提供容器 ref、activeKey 与选项标记，删除原先按周期枚举的固定 transform class。周期支持横/竖排重排，指标保留胶囊左右端造型。
+
+- 周期和指标滑块层级：导航建立 isolate 层叠上下文；hover 背景单独放在 z-0，高亮为 z-10，文字为 z-20。按钮自身不设置 z-index，不把悬停背景和文字一起提升到高亮上方。
+
 - 职责：提供学习排行榜静态页面，包含周榜/月榜/年榜/总榜周期切换、时长/积分指标切换、分页加载榜单和固定当前用户排名栏。
 - 入口：`index.ts` 只导出 `LeaderboardPage`，由 `app/router` 懒加载装配到 `/leaderboard`。
 - 约束：页面私有静态数据、分页状态、榜单行和 Figma 资源保留在本 slice；用户会员身份复用 `shared/ui/tld-membership-badge`，分页反馈复用 `shared/ui/tld-pagination-status`。当前不定义排行接口、统计口径或真实筛选规则。
