@@ -47,8 +47,14 @@ export function PromotionRevenuePage(): ReactElement {
 
             <div className="mt-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <TldSegmentedTabs
+                    activeTextTone="brand"
                     ariaLabel="推广收益明细类型"
+                    baselineTone="strong"
+                    indicatorTone="brand"
+                    indicatorWidth="segment"
                     items={promotionRevenueTabs}
+                    layout="equal"
+                    showBaseline
                     value={activeView}
                     variant="underline"
                     onValueChange={selectView}

@@ -114,6 +114,11 @@ const leaderboardPage = lazy(async () => {
     return { default: module.LeaderboardPage }
 })
 
+const prizeCenterPage = lazy(async () => {
+    const module = await import('../../pages/prize-center')
+    return { default: module.PrizeCenterPage }
+})
+
 export const router = createBrowserRouter([
     {
         path: routePaths.login,
@@ -302,6 +307,14 @@ export const router = createBrowserRouter([
                 element: (
                     <Suspense fallback={<RouteLoading />}>
                         {createElement(leaderboardPage)}
+                    </Suspense>
+                ),
+            },
+            {
+                path: routePaths.prizeCenter,
+                element: (
+                    <Suspense fallback={<RouteLoading />}>
+                        {createElement(prizeCenterPage)}
                     </Suspense>
                 ),
             },

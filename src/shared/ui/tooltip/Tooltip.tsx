@@ -2,6 +2,7 @@ import {
     cloneElement,
     isValidElement,
     useCallback,
+    useContext,
     useEffect,
     useId,
     useRef,
@@ -9,6 +10,7 @@ import {
 } from 'react'
 import type { CSSProperties, FocusEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { TooltipGroupContext, type TooltipGroupContextValue } from './context'
 import { getTooltipCoordinates } from './position'
 import type { TooltipCoordinates, TooltipPlacement } from './position'
 
@@ -26,6 +28,111 @@ export interface TooltipProps {
 }
 
 export function Tooltip({
+    children,
+    content,
+    fullWidth = false,
+    height = '2.25rem',
+    offset = 8,
+    placement = 'right',
+}: TooltipProps): ReactElement {
+    const group = useContext(TooltipGroupContext)
+    const props = { children, content, fullWidth, height, offset, placement }
+    return group === null ? (
+        <StandaloneTooltip {...props} />
+    ) : (
+        <GroupedTooltip {...props} group={group} />
+    )
+}
+
+interface GroupedTooltipProps extends TooltipProps {
+    readonly group: TooltipGroupContextValue
+}
+
+function GroupedTooltip({
+    children,
+    content,
+    fullWidth = false,
+    group,
+    height = '2.25rem',
+    offset = 8,
+    placement = 'right',
+}: GroupedTooltipProps): ReactElement {
+    const tooltipId = useId()
+    const triggerRef = useRef<HTMLElement | null>(null)
+    const groupHide = group.hide
+    const groupShow = group.show
+    const isActive = group.activeId === tooltipId
+
+    const setTriggerNode = useCallback((node: HTMLElement | null): void => {
+        triggerRef.current = node
+    }, [])
+
+    const showTooltip = useCallback((): void => {
+        const trigger = triggerRef.current
+        if (trigger === null) return
+        groupShow({ content, height, id: tooltipId, offset, placement, trigger })
+    }, [content, groupShow, height, offset, placement, tooltipId])
+
+    const hideTooltip = useCallback((): void => {
+        groupHide(tooltipId)
+    }, [groupHide, tooltipId])
+
+    const hideTooltipAfterFocusLeaves = useCallback(
+        (event: FocusEvent<HTMLElement>): void => {
+            if (
+                event.relatedTarget instanceof Node &&
+                event.currentTarget.contains(event.relatedTarget)
+            ) {
+                return
+            }
+            hideTooltip()
+        },
+        [hideTooltip],
+    )
+
+    useEffect(
+        () => (): void => {
+            groupHide(tooltipId, true)
+        },
+        [groupHide, tooltipId],
+    )
+
+    const describedChild =
+        isActive && isValidElement<TooltipChildProps>(children)
+            ? cloneElement(children, {
+                  'aria-describedby':
+                      children.props['aria-describedby'] === undefined
+                          ? group.tooltipId
+                          : `${children.props['aria-describedby']} ${group.tooltipId}`,
+              })
+            : children
+
+    return fullWidth ? (
+        <div
+            ref={setTriggerNode}
+            className="block w-full"
+            onBlurCapture={hideTooltipAfterFocusLeaves}
+            onFocusCapture={showTooltip}
+            onMouseEnter={showTooltip}
+            onMouseLeave={hideTooltip}
+        >
+            {describedChild}
+        </div>
+    ) : (
+        <span
+            ref={setTriggerNode}
+            className="inline-flex"
+            onBlurCapture={hideTooltipAfterFocusLeaves}
+            onFocusCapture={showTooltip}
+            onMouseEnter={showTooltip}
+            onMouseLeave={hideTooltip}
+        >
+            {describedChild}
+        </span>
+    )
+}
+
+function StandaloneTooltip({
     children,
     content,
     fullWidth = false,

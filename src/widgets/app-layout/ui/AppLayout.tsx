@@ -7,8 +7,9 @@ import { projectConstants } from '../../../shared/constants'
 import { LanguageSwitcher } from '../../../shared/ui/language-switcher'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
 import { TldInput } from '../../../shared/ui/tld-input'
+import { TldMovingHighlight } from '../../../shared/ui/tld-moving-highlight'
 import { ThemeSwitcher } from '../../../shared/ui/theme-switcher'
-import { Tooltip } from '../../../shared/ui/tooltip'
+import { Tooltip, TooltipGroup } from '../../../shared/ui/tooltip'
 import {
     getNavigationStateForViewport,
     hasCollapsedNavigationRail,
@@ -188,10 +189,12 @@ function NavigationEntry({
 }: NavigationEntryProps): ReactElement {
     const { t } = useTranslation()
     const childNavigationId = useId()
+    const childNavigationRef = useRef<HTMLDivElement>(null)
     const childItems = item.children ?? []
     const itemLabel = item.label ?? t(item.labelKey)
     const hasChildren = childItems.length > 0
-    const hasActiveChild = childItems.some((child) => isPathActive(pathname, child.to, child.end))
+    const activeChild = childItems.find((child) => isPathActive(pathname, child.to, child.end))
+    const hasActiveChild = activeChild !== undefined
     const isActive = isPathActive(pathname, item.to, item.end) || hasActiveChild
     const [isExpanded, setIsExpanded] = useState(false)
 
@@ -278,13 +281,25 @@ function NavigationEntry({
                     id={childNavigationId}
                     aria-hidden={isCompact || !isExpanded}
                     className={
-                        isCompact || !isExpanded
+                        isCompact
                             ? 'invisible grid grid-rows-[0fr] opacity-0 transition-none'
-                            : 'visible grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity] duration-200 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
+                            : isExpanded
+                              ? 'visible grid grid-rows-[1fr] opacity-100 transition-[grid-template-rows,opacity,visibility] duration-200 motion-reduce:transition-none'
+                              : 'invisible grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity,visibility] duration-200 motion-reduce:transition-none'
                     }
                 >
                     <div className="overflow-hidden">
-                        <div className="relative ml-[22px] border-l border-subtle py-1 pl-[23px]">
+                        <div
+                            ref={childNavigationRef}
+                            className="relative isolate ml-[22px] border-l border-subtle py-1 pl-[23px]"
+                        >
+                            <TldMovingHighlight
+                                activeKey={activeChild?.labelKey ?? null}
+                                axis="vertical"
+                                containerRef={childNavigationRef}
+                                motion="rubber"
+                                tone="brand"
+                            />
                             {childItems.map((child) => {
                                 const isChildActive = isPathActive(pathname, child.to, child.end)
                                 const childLabel = child.label ?? t(child.labelKey)
@@ -306,14 +321,19 @@ function NavigationEntry({
                                         tabIndex={isExpanded && !isCompact ? undefined : -1}
                                         className={
                                             isChildActive
-                                                ? 'relative flex h-8 cursor-pointer items-center text-label font-medium text-brand before:absolute before:-left-6 before:h-4 before:w-px before:bg-brand'
-                                                : 'flex h-8 cursor-pointer items-center text-label text-secondary transition-colors hover:text-primary'
+                                                ? 'relative flex h-8 cursor-pointer items-center text-label font-medium text-brand transition-colors duration-200 ease-out motion-reduce:transition-none'
+                                                : 'relative flex h-8 cursor-pointer items-center text-label text-secondary transition-colors duration-200 ease-out hover:text-primary motion-reduce:transition-none'
                                         }
                                         end={child.end ?? false}
                                         to={child.to}
                                         onClick={onNavigate}
                                     >
-                                        {childLabel}
+                                        <span
+                                            aria-hidden="true"
+                                            data-highlight-key={child.labelKey}
+                                            className="pointer-events-none absolute -left-6 top-2 h-4 w-px opacity-0"
+                                        />
+                                        <span className="relative z-20">{childLabel}</span>
                                     </NavLink>
                                 )
                             })}
@@ -602,39 +622,45 @@ export function AppLayout({
                     </button>
                 </div>
 
-                <nav className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {navigationItems.map((item) => (
-                        <NavigationEntry
-                            key={item.labelKey}
-                            isCompact={isCompactNavigation}
-                            item={item}
-                            pathname={pathname}
-                            onExpandNavigation={openNavigation}
-                            onNavigate={closeOverlayNavigation}
-                        />
-                    ))}
-                </nav>
+                <TooltipGroup>
+                    <nav className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {navigationItems.map((item) => (
+                            <NavigationEntry
+                                key={item.labelKey}
+                                isCompact={isCompactNavigation}
+                                item={item}
+                                pathname={pathname}
+                                onExpandNavigation={openNavigation}
+                                onNavigate={closeOverlayNavigation}
+                            />
+                        ))}
+                    </nav>
 
-                <div className="shrink-0 space-y-2.5 border-t border-subtle bg-canvas px-3 py-2.5 [padding-bottom:max(0.625rem,env(safe-area-inset-bottom))]">
-                    {isCompactNavigation ? (
-                        <Tooltip content={footerNavigationItem.label} fullWidth placement="right">
-                            {branchCompanyControl}
-                        </Tooltip>
-                    ) : (
-                        branchCompanyControl
-                    )}
-                    {isCompactNavigation ? (
-                        <Tooltip
-                            content={t('layout.interfaceSettings')}
-                            fullWidth
-                            placement="right"
-                        >
-                            {settingsControl}
-                        </Tooltip>
-                    ) : (
-                        settingsControl
-                    )}
-                </div>
+                    <div className="shrink-0 space-y-2.5 border-t border-subtle bg-canvas px-3 py-2.5 [padding-bottom:max(0.625rem,env(safe-area-inset-bottom))]">
+                        {isCompactNavigation ? (
+                            <Tooltip
+                                content={footerNavigationItem.label}
+                                fullWidth
+                                placement="right"
+                            >
+                                {branchCompanyControl}
+                            </Tooltip>
+                        ) : (
+                            branchCompanyControl
+                        )}
+                        {isCompactNavigation ? (
+                            <Tooltip
+                                content={t('layout.interfaceSettings')}
+                                fullWidth
+                                placement="right"
+                            >
+                                {settingsControl}
+                            </Tooltip>
+                        ) : (
+                            settingsControl
+                        )}
+                    </div>
+                </TooltipGroup>
             </aside>
 
             <div className="h-dvh min-w-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:col-start-2">
@@ -746,7 +772,7 @@ export function AppLayout({
                         <img
                             alt=""
                             aria-hidden="true"
-                            className="hidden size-[52px] shrink-0 object-cover min-[1800px]:block"
+                            className="size-7 shrink-0 object-cover md:size-8 xl:size-10 min-[1800px]:size-[52px]!"
                             src={projectConstants.assets.mascotSource}
                         />
                     </div>

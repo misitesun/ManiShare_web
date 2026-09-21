@@ -66,7 +66,6 @@
 - 如需继续精修动态质感，可只调整 React Bits 默认暴露的 `colorStops`、`blend`、`amplitude` 与 `speed`，不改动页面信息结构。
 
 final result: passed
-
 ---
 
 # 首页设计验收
@@ -117,3 +116,53 @@ final result: passed
 - 中间 `415 × 713` 区域按需求保持占位，后续业务确认后再建立对应模块。
 
 final result: passed for PC; tablet and H5 visual acceptance pending user review
+
+---
+
+# 奖品兑换中心：兑换记录 Design QA
+
+## Evidence
+
+- Source visual truth: https://www.figma.com/design/NLXdsc7dSeTlfPLpCc0l3n/漫奇说?node-id=1097-50030
+- Implementation: http://localhost:5173/prize-center（Codex in-app browser capture，兑换记录页签）
+- Viewport and state: 1920×1080 CSS px，device pixel ratio 2，dark theme，兑换记录页签选中。
+- Source dimensions: Figma frame 1920×1080 logical px。
+- Implementation dimensions: 1920×1080 CSS px；浏览器截图按 CSS 几何归一化后比较，未把 2× 屏幕密度当作布局差异。
+- Full-view evidence: 页面标题、328px 横幅、三项页签、记录表的整体层级与设计稿一致；文档宽度与视口均为 1920px，无页面级横向溢出。
+- Focused-region evidence: 单独检查记录表区域；表格位于 x=450、y=600，宽 1220px、高 262px，表头 54px、数据行 52px，状态标签均为 66×24px。
+- Interactions checked: 从默认积分兑换切换至兑换记录；选中态、tabpanel 关联和四条记录均正常展示。
+- Console: 未发现 error 日志。
+
+## Findings
+
+- 未发现需要阻断交付的 P0、P1 或 P2 差异。
+- PC 表格比设计稿标注的 1212px 宽 8px，这是既有 mainPage ≥1920px 两侧 250px 流式版心契约产生的预期差异；未设置设计稿固定最大宽度。
+- 状态色使用项目 `success` 主题 token，而不是页面硬编码色值，以保留 dark/light 主题契约。
+
+## Required Fidelity Surfaces
+
+- Fonts and typography: 复用项目语义字号；表头 16px、数据 14px、状态 12px，与设计层级一致，无换行或截断。
+- Spacing and layout rhythm: 表格顶部、表头、行高、列宽、圆角和交替行背景与设计稿对齐。
+- Colors and visual tokens: 使用 `canvas`、`surface-raised`、`primary`、`brand` 与 `success` 语义 token；dark theme 下层级和对比度正确。
+- Image quality and asset fidelity: 兑换记录区域没有新增图片或非标准图标；应用壳与横幅占位沿用现有页面实现。
+- Copy and content: 表头、四条记录、会员内容、成功状态和日期均与设计稿一致。
+
+## Comparison History
+
+- 预检查发现表格顶部为 y=592，比 Figma 的 y=600 上移 8px；将记录 panel 间距从 20px 调整为 28px后，复测为 y=600。
+- 调整后的完整页面和表格聚焦区域均重新检查，未发现新的 P0、P1 或 P2 问题。
+
+## Implementation Checklist
+
+- [x] 语义化表格与稳定记录 ID
+- [x] 交替行背景与成功状态标签
+- [x] PC 流式版心和窄屏局部横向滚动
+- [x] 页签选择与 panel 可访问关联
+- [x] 无接口请求或虚假兑换行为
+
+## Follow-up Polish
+
+- 平板和 H5 的视觉、横竖屏与真机滚动体验由用户验收。
+- 后续接入真实记录接口时补齐 loading、empty、error 与分页状态。
+
+final result: passed

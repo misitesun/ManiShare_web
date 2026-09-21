@@ -67,7 +67,12 @@ export const navigationItems = [
         end: true,
     },
     { labelKey: 'navigation.competition', icon: 'competition' },
-    { labelKey: 'navigation.prizeCenter', icon: 'prize-center' },
+    {
+        labelKey: 'navigation.prizeCenter',
+        icon: 'prize-center',
+        to: routePaths.prizeCenter,
+        end: true,
+    },
 ] satisfies readonly AppNavigationItem[]
 
 export const utilityItems = [

@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { Tooltip } from '../../../shared/ui/tooltip'
+import { Tooltip, TooltipGroup } from '../../../shared/ui/tooltip'
 import calendarIconSource from '../assets/icons/calendar.svg'
 import chevronLeftIconSource from '../assets/icons/chevron-left.svg'
 import { gardenDays, gardenStageSources } from '../model/home-data'
@@ -52,53 +52,55 @@ export function LearningGarden(): ReactElement {
             </div>
 
             <div className="mt-4 overflow-x-auto pb-2 [scrollbar-color:var(--app-color-border-strong)_transparent] [scrollbar-width:thin] xl:min-[1440px]:flex xl:min-[1440px]:min-h-0 xl:min-[1440px]:flex-1 xl:min-[1440px]:items-end">
-                <div className="flex min-w-[1138px] items-end gap-1">
-                    {gardenDays.map((entry) => {
-                        const source = gardenStageSources[entry.stage] ?? gardenStageSources[0]
-                        const tooltipText =
-                            entry.minutes === 0 ? '没有学习' : `学习时长：${entry.minutes}分钟`
+                <TooltipGroup>
+                    <div className="flex min-w-[1138px] items-end gap-1">
+                        {gardenDays.map((entry) => {
+                            const source = gardenStageSources[entry.stage] ?? gardenStageSources[0]
+                            const tooltipText =
+                                entry.minutes === 0 ? '没有学习' : `学习时长：${entry.minutes}分钟`
 
-                        return (
-                            <Tooltip key={entry.day} content={tooltipText} placement="top">
-                                <button
-                                    type="button"
-                                    aria-label={`8月${entry.day}日，${tooltipText}`}
-                                    className="flex h-[155px] w-8 shrink-0 cursor-default flex-col items-center justify-end"
-                                >
-                                    <span className="flex h-[126px] items-end justify-center">
-                                        <img
-                                            alt=""
-                                            aria-hidden="true"
-                                            className={
-                                                entry.stage === 0
-                                                    ? 'h-9 max-w-10 object-contain'
-                                                    : entry.stage === 1
-                                                      ? 'h-11 max-w-10 object-contain'
-                                                      : entry.stage === 2
-                                                        ? 'h-12 max-w-10 object-contain'
-                                                        : entry.stage === 3
-                                                          ? 'h-14 max-w-10 object-contain'
-                                                          : entry.stage === 4
-                                                            ? 'h-16 max-w-10 object-contain'
-                                                            : entry.stage === 5
-                                                              ? 'h-[68px] max-w-10 object-contain'
-                                                              : entry.stage === 6
-                                                                ? 'h-[72px] max-w-10 object-contain'
-                                                                : entry.stage === 7
-                                                                  ? 'h-[78px] max-w-11 object-contain'
-                                                                  : 'h-[84px] max-w-12 object-contain'
-                                            }
-                                            src={source}
-                                        />
-                                    </span>
-                                    <span className="mt-1 text-body text-primary tabular-nums">
-                                        {String(entry.day).padStart(2, '0')}
-                                    </span>
-                                </button>
-                            </Tooltip>
-                        )
-                    })}
-                </div>
+                            return (
+                                <Tooltip key={entry.day} content={tooltipText} placement="top">
+                                    <button
+                                        type="button"
+                                        aria-label={`8月${entry.day}日，${tooltipText}`}
+                                        className="flex h-[155px] w-8 shrink-0 cursor-default flex-col items-center justify-end"
+                                    >
+                                        <span className="flex h-[126px] items-end justify-center">
+                                            <img
+                                                alt=""
+                                                aria-hidden="true"
+                                                className={
+                                                    entry.stage === 0
+                                                        ? 'h-9 max-w-10 object-contain'
+                                                        : entry.stage === 1
+                                                          ? 'h-11 max-w-10 object-contain'
+                                                          : entry.stage === 2
+                                                            ? 'h-12 max-w-10 object-contain'
+                                                            : entry.stage === 3
+                                                              ? 'h-14 max-w-10 object-contain'
+                                                              : entry.stage === 4
+                                                                ? 'h-16 max-w-10 object-contain'
+                                                                : entry.stage === 5
+                                                                  ? 'h-[68px] max-w-10 object-contain'
+                                                                  : entry.stage === 6
+                                                                    ? 'h-[72px] max-w-10 object-contain'
+                                                                    : entry.stage === 7
+                                                                      ? 'h-[78px] max-w-11 object-contain'
+                                                                      : 'h-[84px] max-w-12 object-contain'
+                                                }
+                                                src={source}
+                                            />
+                                        </span>
+                                        <span className="mt-1 text-body text-primary tabular-nums">
+                                            {String(entry.day).padStart(2, '0')}
+                                        </span>
+                                    </button>
+                                </Tooltip>
+                            )
+                        })}
+                    </div>
+                </TooltipGroup>
             </div>
         </section>
     )

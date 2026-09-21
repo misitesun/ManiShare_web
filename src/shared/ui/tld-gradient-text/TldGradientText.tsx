@@ -1,3 +1,4 @@
+import * as React from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { getGradientTextStyle } from './gradient-text-style'
 import type { TldGradientTextDirection } from './gradient-text-style'
@@ -43,7 +44,7 @@ export function TldGradientText({
             <span className={containerClassName} style={showBorder ? gradientStyle : undefined}>
                 <span className={contentClassName}>
                     <span className={gradientTextClassName} style={gradientStyle}>
-                        {children}
+                        <React.Fragment>{children}</React.Fragment>
                     </span>
                 </span>
             </span>

@@ -1,3 +1,5 @@
 export { Tooltip } from './Tooltip'
 export type { TooltipProps } from './Tooltip'
+export { TooltipGroup } from './TooltipGroup'
+export type { TooltipGroupProps } from './TooltipGroup'
 export type { TooltipPlacement } from './position'

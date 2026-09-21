@@ -1,2 +1,2 @@
 export { TldMovingHighlight } from './TldMovingHighlight'
-export type { TldMovingHighlightProps } from './TldMovingHighlight'
+export type { TldMovingHighlightProps, TldMovingHighlightTone } from './TldMovingHighlight'

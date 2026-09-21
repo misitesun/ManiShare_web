@@ -1,14 +1,22 @@
+import { useState } from 'react'
 import type { ReactElement } from 'react'
 import { generatePath, Link } from 'react-router-dom'
 import { TldButton } from '../../../shared/ui/tld-button'
-import { TldGradientText } from '../../../shared/ui/tld-gradient-text'
 import { TldPaginationStatus } from '../../../shared/ui/tld-pagination-status'
+import { TldSegmentedTabs } from '../../../shared/ui/tld-segmented-tabs'
 import oceanEnglishBannerSource from '../assets/ocean-english-banner.webp'
 import { foreignLanguageCoursePages } from '../model/course-items'
 import { useForeignLanguageCoursePagination } from '../model/useForeignLanguageCoursePagination'
 import { ForeignLanguageCourseCard } from './ForeignLanguageCourseCard'
 
 const categoryLabels = ['全部', '分类1', '分类2', '分类3'] as const
+const categoryTabs = categoryLabels.map((label) => ({ id: label, label }))
+
+type CategoryLabel = (typeof categoryLabels)[number]
+
+function isCategoryLabel(value: string): value is CategoryLabel {
+    return categoryLabels.some((label) => label === value)
+}
 
 interface ForeignLanguageGuidePageProps {
     readonly courseDetailPath: string
@@ -17,9 +25,14 @@ interface ForeignLanguageGuidePageProps {
 export function ForeignLanguageGuidePage({
     courseDetailPath,
 }: ForeignLanguageGuidePageProps): ReactElement {
+    const [activeCategory, setActiveCategory] = useState<CategoryLabel>('全部')
     const { loadNextPage, status, visibleItems } = useForeignLanguageCoursePagination(
         foreignLanguageCoursePages,
     )
+
+    function selectCategory(value: string): void {
+        if (isCategoryLabel(value)) setActiveCategory(value)
+    }
 
     return (
         <section
@@ -40,30 +53,22 @@ export function ForeignLanguageGuidePage({
                 </div>
             </div>
 
-            <nav
-                aria-label="课程分类"
-                className="mt-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
-                <ul className="mx-auto flex w-max min-w-full items-start justify-center gap-8 md:gap-12 xl:gap-16">
-                    {categoryLabels.map((label, index) => (
-                        <li
-                            key={label}
-                            aria-current={index === 0 ? 'page' : undefined}
-                            className={
-                                index === 0
-                                    ? 'relative pb-3 text-tab-label font-medium text-brand after:absolute after:bottom-0 after:left-1/2 after:h-1 after:w-12 after:-translate-x-1/2 after:rounded-full after:bg-brand-start'
-                                    : 'pb-3 text-tab-label text-muted'
-                            }
-                        >
-                            {index === 0 ? (
-                                <TldGradientText animationSpeed={3}>{label}</TldGradientText>
-                            ) : (
-                                label
-                            )}
-                        </li>
-                    ))}
-                </ul>
-            </nav>
+            <div className="mt-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <TldSegmentedTabs
+                    activeTextTone="gradient"
+                    ariaLabel="课程分类"
+                    indicatorThickness="thick"
+                    indicatorTone="brand-start"
+                    indicatorWidth={48}
+                    items={categoryTabs}
+                    layout="equal"
+                    semantics="filter"
+                    showBaseline={false}
+                    value={activeCategory}
+                    variant="underline"
+                    onValueChange={selectCategory}
+                />
+            </div>
 
             <div className="mt-[30px] grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 md:gap-y-5 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(562px,1fr))]">
                 {visibleItems.map((courseItem) =>

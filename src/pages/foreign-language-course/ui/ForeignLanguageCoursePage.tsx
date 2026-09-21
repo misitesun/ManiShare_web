@@ -97,10 +97,15 @@ export function ForeignLanguageCoursePage({
                     </div>
                 </div>
 
-                <div className="[&_[role=tab]]:min-w-0 [&_[role=tab]]:flex-1">
+                <div>
                     <TldSegmentedTabs
+                        activeTextTone="brand"
                         ariaLabel="课程内容"
+                        indicatorTone="brand"
+                        indicatorWidth="segment"
                         items={detailTabs}
+                        layout="equal"
+                        showBaseline
                         value={activeTab}
                         onValueChange={setActiveTab}
                         variant="underline"

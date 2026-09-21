@@ -18,6 +18,7 @@ export const routePaths = {
     collaboration: '/collaboration',
     vipMembership: '/vip',
     leaderboard: '/leaderboard',
+    prizeCenter: '/prize-center',
     promotionRevenue: '/promotion/revenue',
     branchCompany: '/branch-company',
     courseSearch: '/courses/search',

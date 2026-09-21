@@ -21,6 +21,8 @@ test('select exposes its controlled selection and starts closed', () => {
     assert.match(html, /aria-haspopup="menu"/)
     assert.match(html, /inert=""/)
     assert.match(html, /aria-hidden="true"/)
+    assert.match(html, /data-highlight-key="date"/)
+    assert.match(html, /data-highlight-key="count"/)
 })
 
 test('select handles empty options without inventing a selected value', () => {
