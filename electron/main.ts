@@ -1,10 +1,25 @@
 import { app, BrowserWindow, ipcMain, net, protocol } from 'electron'
-import { existsSync } from 'node:fs'
-import { dirname, isAbsolute, join, relative, resolve } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+
+import {
+    contentSecurityPolicy,
+    digest,
+    isTrustedRenderer as trustedRenderer,
+    parseCspManifest,
+    resolveRendererFile,
+    verifyHtmlIntegrity,
+} from './renderer-contract.js'
+import type { CspManifest } from './renderer-contract.js'
 
 const appProtocol = 'englishlearning'
 const developmentRendererUrl = process.env.DESKTOP_RENDERER_URL
+if (
+    developmentRendererUrl !== undefined &&
+    !trustedRenderer(developmentRendererUrl, developmentRendererUrl)
+)
+    throw new Error('Development renderer must use the assigned loopback HTTP origin')
 const electronDirectory = dirname(fileURLToPath(import.meta.url))
 const preloadPath = join(electronDirectory, 'preload.cjs')
 let mainWindow: BrowserWindow | null = null
@@ -16,6 +31,7 @@ protocol.registerSchemesAsPrivileged([
             standard: true,
             secure: true,
             supportFetchAPI: true,
+            corsEnabled: true,
         },
     },
 ])
@@ -24,46 +40,43 @@ function rendererDirectory(): string {
     return join(app.getAppPath(), 'dist', 'production')
 }
 
-function resolveRendererFile(requestUrl: string): string {
-    const requestedPath = decodeURIComponent(new URL(requestUrl).pathname)
-    const requestedFile = requestedPath === '/' ? 'index.html' : requestedPath.slice(1)
-    const candidate = resolve(rendererDirectory(), requestedFile)
-    const relativePath = relative(rendererDirectory(), candidate)
-    const isInsideRendererDirectory =
-        relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath))
-
-    if (isInsideRendererDirectory && existsSync(candidate)) return candidate
-
-    return join(rendererDirectory(), 'index.html')
-}
-
+let cspManifest: CspManifest = {}
 async function registerRendererProtocol(): Promise<void> {
-    await protocol.handle(appProtocol, async (request): Promise<Response> => {
-        const response = await net.fetch(pathToFileURL(resolveRendererFile(request.url)).toString())
-        const headers = new Headers(response.headers)
-
-        headers.set(
-            'Content-Security-Policy',
-            "default-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https:",
+    if (developmentRendererUrl === undefined) {
+        cspManifest = parseCspManifest(
+            JSON.parse(
+                readFileSync(join(rendererDirectory(), '.csp-manifest.json'), 'utf8'),
+            ) as unknown,
         )
-
-        return new Response(response.body, {
-            headers,
-            status: response.status,
-            statusText: response.statusText,
+        verifyHtmlIntegrity(rendererDirectory(), cspManifest)
+    }
+    await protocol.handle(appProtocol, async (request): Promise<Response> => {
+        if (!trustedRenderer(request.url)) return new Response('Forbidden', { status: 403 })
+        const result = resolveRendererFile(rendererDirectory(), request.url)
+        if (result.file === null || result.key === null)
+            return new Response('Not found', { status: result.status })
+        const headers = new Headers({
+            'Content-Type': result.contentType,
+            'Cache-Control': result.cacheControl,
+            'X-Content-Type-Options': 'nosniff',
         })
+        const integrity = cspManifest[result.key]
+        if (result.contentType.startsWith('text/html')) {
+            if (integrity === undefined || digest(readFileSync(result.file)) !== integrity.digest)
+                return new Response('HTML integrity failure', { status: 500 })
+            headers.set('Content-Security-Policy', contentSecurityPolicy(integrity))
+        }
+        const response = await net.fetch(pathToFileURL(result.file).toString())
+        return new Response(response.body, { headers, status: result.status })
     })
 }
 
 function rendererUrl(): string {
-    return developmentRendererUrl ?? `${appProtocol}://app/index.html`
+    return developmentRendererUrl ?? `${appProtocol}://app/`
 }
 
 function isTrustedRenderer(url: string): boolean {
-    if (developmentRendererUrl !== undefined)
-        return new URL(url).origin === new URL(developmentRendererUrl).origin
-
-    return new URL(url).protocol === `${appProtocol}:`
+    return trustedRenderer(url, developmentRendererUrl)
 }
 
 async function createMainWindow(): Promise<BrowserWindow> {
@@ -81,8 +94,13 @@ async function createMainWindow(): Promise<BrowserWindow> {
         },
     })
 
-    window.once('ready-to-show', (): void => window.show())
+    window.once('ready-to-show', (): void => {
+        if (process.env.DESKTOP_SMOKE !== '1') window.show()
+    })
     window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+    window.webContents.on('will-redirect', (event, url): void => {
+        if (!isTrustedRenderer(url)) event.preventDefault()
+    })
     window.webContents.on('will-navigate', (event, url): void => {
         if (!isTrustedRenderer(url)) event.preventDefault()
     })

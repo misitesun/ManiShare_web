@@ -30,7 +30,7 @@
 
 每个 Skill 目录包含同名 `SKILL.md` 和 `agents/openai.yaml`，由 `pnpm run lint:ai-skills` 验证。校验同时保证四个核心 Skill 完整存在、治理文档引用有效、组合 Skill 的相互路由未丢失。团队源码只保留在仓库，不复制到个人规则中。
 
-React Skill 参考 Vercel Labs 的 React best practices，并按 Vite 客户端、FSD、Tailwind 与多端 renderer 约束裁剪；不自动引入 Next.js、RSC、全局状态、缓存库或组件库。
+React Skill 参考 Vercel Labs 的 React best practices，并按 Next 静态导出、Server/Client、FSD、Tailwind 与多端 renderer 约束裁剪；不自动引入 Next Server、全局状态、缓存库或组件库。
 
 当前页面交付采用中文优先阶段契约：Skill 保留已有 i18n 基础，但不为普通新页面要求语言 key、`en-US` 对齐或占位翻译。只有用户明确重新开启多语言工作时，功能交付、跨切面变更和变更审查才恢复翻译完整性检查。
 
@@ -62,3 +62,5 @@ React Skill 参考 Vercel Labs 的 React best practices，并按 Vite 客户端�
 | 有价值但当前不做 | todo |
 
 Skill 负责触发判断，不能取代这些知识。未经证实的猜测、一次性日志和完整调试流水账不进入团队规则。
+
+Next 配置 agentRules:false，禁止 dev 自动往 AGENTS.md 写入框架通用块；项目治理入口与四个 Skills 继续由本仓库维护。

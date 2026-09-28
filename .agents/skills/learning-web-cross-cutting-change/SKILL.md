@@ -55,7 +55,7 @@ Apply only the rows relevant to the requested change:
 4. Do not preserve an empty or one-consumer public slice when its implementation is page-private; colocate it with the owner and remove the obsolete entry instead of adding a compatibility re-export.
 5. Tailwind classes stay literal; colors flow through semantic theme tokens; dark and light remain complete.
 6. Genuinely operable controls, links and clickable surfaces explicitly use the literal Tailwind `cursor-pointer` class; disabled and display-only content does not use a pointer cursor.
-7. Responsive contracts remain mobile-first and share one renderer across H5, tablet, PC and Electron. Repeated typography uses the semantic utilities owned by `src/app/styles/index.css`; never introduce root-font, viewport-ratio or full-page scaling.
+7. Responsive contracts remain mobile-first and share one renderer across H5, tablet, PC and Electron. Repeated typography uses the semantic utilities owned by `src/fsd/app/styles/index.css`; never introduce root-font, viewport-ratio or full-page scaling.
 8. Preserve Electron isolation, sandbox, navigation restrictions and narrow preload/IPC APIs.
 9. Update module README, global docs, ADR, env examples and executable checks. Preserve the existing i18n foundation, but update translation resources only when multilingual delivery or existing translated copy is explicitly in scope.
 10. Record only confirmed reusable problems as tests, lint, contracts, ADRs or todo items.
@@ -70,3 +70,7 @@ Apply only the rows relevant to the requested change:
 ## Verification and handoff
 
 Run `pnpm run format:check`, `pnpm run test`, `pnpm run lint` and `pnpm run build`; add `pnpm run desktop:build` when Electron boundaries or desktop build configuration change. Perform visual acceptance only on PC, using the task/design desktop size or 1440×900 when none is specified; keep tablet/H5 compatibility in implementation scope, but mark their visual and real-device acceptance as awaiting the user. Report the impact map, contract before/after, PC viewport/runtime checks, compatibility impact, assumptions and remaining product decisions.
+
+## Next static-export boundary
+
+Use Next App Router as the only framework entry. Business owners stay under src/fsd; src/app is an adapter and must not be imported from FSD. Server adapters pass serializable data; inject callbacks inside FSD app Client assemblies. Keep mixed slice index.ts barrels free of use client and export build-time enumerators through root entries. Client components are prerendered: first render must not read browser storage/viewport or random values. Restore preferences/portals after mount, place useSearchParams under local Suspense, preserve query values with replace and scroll:false. Normalize static asset imports to string URLs inside their owner. Use pnpm run typecheck for clean Next type generation, then test/lint/build and the documented production runtime smoke; file/type checks alone do not prove hydration, RSC, CSP or Electron success. Follow docs/environment.md and docs/static-deployment.md; do not introduce a Next Server or restore obsolete framework commands.

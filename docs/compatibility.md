@@ -1,6 +1,6 @@
 # 兼容性契约索引
 
-这里记录的是已经由真实环境验证、即使问题目前已解决也不能被后续实现无意删除的兼容性边界。它是[团队知识路由](./ai-skills.md#从问题到团队知识)中的运行时差异专用记录，不是待办、缺陷列表或浏览器 API 教程：每一条契约都必须能指出所属能力、必要行为和验证证据。
+这里记录的是已经由真实环境验证、即使问题目前已解决也不能被后续实现无意删除的兼容性边界。它是[团队知识路由](ai-skills.md#从问题到团队知识)中的运行时差异专用记录，不是待办、缺陷列表或浏览器 API 教程：每一条契约都必须能指出所属能力、必要行为和验证证据。
 
 ## 何时必须阅读
 
@@ -12,7 +12,8 @@
 
 | 领域 | 触发关键词 | 契约 |
 | --- | --- | --- |
-| 主题切换 | theme、View Transition、`startViewTransition`、reduced motion | [主题切换兼容性契约](./compatibility/theme-transition.md) |
+| Next 静态导出 | hydration、RSC、CSP、Electron protocol | [Next 静态运行时契约](compatibility/next-static-runtime.md) |
+| 主题切换 | theme、View Transition、`startViewTransition`、reduced motion | [主题切换兼容性契约](compatibility/theme-transition.md) |
 
 未来契约继续按领域新增为 `docs/compatibility/<capability>.md`，例如 `audio-playback.md`、`text-input.md` 或 `desktop-runtime.md`。只有出现实际能力和可复现证据时才创建对应文件，不预建空目录或模板文件。
 

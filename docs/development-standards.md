@@ -11,7 +11,7 @@
 3. 先复用后抽象；第二个真实消费者出现后再提升公共能力。
 4. 公共行为、依赖、环境、路由、主题、响应式或 Electron 边界变化时，同步文档。
 5. 包管理器唯一使用 pnpm `10.28.2`，禁止 npm、yarn、npx、bun。
-6. 新页面或新能力实现前完成[需求就绪清单](./feature-delivery-checklist.md)；路由与业务同时变化时组合使用功能交付和跨切面 Skill。
+6. 新页面或新能力实现前完成[需求就绪清单](feature-delivery-checklist.md)；路由与业务同时变化时组合使用功能交付和跨切面 Skill。
 7. 新增依赖先证明现有封装或浏览器标准 API 不能满足需求；安装期脚本默认拒绝，只有审查过的精确包名可以进入 `pnpm-workspace.yaml` 的 `onlyBuiltDependencies`。
 
 ### 1.1 代码格式化
@@ -38,7 +38,7 @@ app → pages → widgets → features → entities → shared
 | `entities` | 稳定业务对象 | 课程、课时、单词、学习记录 |
 | `shared` | 无业务含义的基础设施 | API、主题、i18n、存储、基础 UI |
 
-除 `app` 和 `shared` 外，同层不同 slice 禁止直接依赖。路由使用语义化资源路径，例如 `/courses/:courseId/lessons/:lessonId`；查询参数只表达筛选、排序、分页、Tab 等可选视图状态。
+除 `app` 和 `shared` 外，同层不同 slice 禁止直接依赖。路由使用语义化资源路径，例如 `/courses/[courseId]/lessons/[lessonId]`；查询参数只表达筛选、排序、分页、Tab 等可选视图状态。
 
 ### 2.1 轻量 FSD 与提取条件
 
@@ -68,11 +68,11 @@ app → pages → widgets → features → entities → shared
 
 ### 4.1 接口能力边界与缺失数据处理
 
-接口接入、数据加载和组件复用必须遵守[接口能力边界与缺失数据处理](./api-capability-boundaries.md)。以当前业务接口返回值实现功能，不得擅自增加详情查询、逐条请求、跨接口拼接或预加载来补字段；先检查复用组件的请求和状态写入副作用。缺项使用已有默认图、空态或契约错误处理并记录后端反馈，保留必要布局，不伪造数据。额外补齐请求必须有明确需求及授权，验证需包含请求次数与来源。
+接口接入、数据加载和组件复用必须遵守[接口能力边界与缺失数据处理](api-capability-boundaries.md)。以当前业务接口返回值实现功能，不得擅自增加详情查询、逐条请求、跨接口拼接或预加载来补字段；先检查复用组件的请求和状态写入副作用。缺项使用已有默认图、空态或契约错误处理并记录后端反馈，保留必要布局，不伪造数据。额外补齐请求必须有明确需求及授权，验证需包含请求次数与来源。
 
 ## 5. Tailwind CSS 与响应式
 
-Tailwind CSS v4 是默认样式层。Vite 通过 `@tailwindcss/vite` 接入，唯一全局入口为 `src/app/styles/index.css`。入口使用 `source("../..")` 将候选 class 扫描范围固定为 `src`，docs、scripts 和测试 fixture 不得进入 production CSS。
+Tailwind CSS v4 是默认样式层。Next 通过 `@tailwindcss/postcss` 接入，唯一全局入口为 `src/fsd/app/styles/index.css`。入口使用 `source("../../..")` 将候选 class 扫描范围固定为 `src`，docs、scripts 和测试 fixture 不得进入 production CSS。
 
 ### 5.1 布局策略
 
@@ -84,9 +84,9 @@ Tailwind CSS v4 是默认样式层。Vite 通过 `@tailwindcss/vite` 接入，�
 - 禁止 px-to-rem/px-to-vw 自动转换、通过根字号整体缩放、以 UA 判断布局。
 - Electron renderer 复用同一响应式实现；桌面专属能力不得改变 Web 布局契约。
 - 跨页面重复文字使用全局语义字号阶梯：页面标题、区块标题、卡片标题、正文、标签、辅助文字、页签和强调操作分别选择对应 utility。默认值服务 H5，`md` 服务平板，`xl` 服务普通 PC，≥1920px 达到设计稿字号上限并停止放大；特殊展示数字或品牌首屏可在所属页面保留有上下限的局部规则。
-- 响应式字号只能由 `src/app/styles/index.css` 的语义 token 或完整字面量断点 class 实现。禁止修改根字号、使用 `vw` 统一换算文字、整页 `transform: scale()`，也不得让所有文字共享同一个缩放比例。
+- 响应式字号只能由 `src/fsd/app/styles/index.css` 的语义 token 或完整字面量断点 class 实现。禁止修改根字号、使用 `vw` 统一换算文字、整页 `transform: scale()`，也不得让所有文字共享同一个缩放比例。
 
-App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列表适配](./architecture.md#mainpage-版心与列表适配)：1280～1919px 左右统一各 16px，≥1920px 左右各 250px，两个 PC 区间均不保留页面级固定最大宽度。同类页面在同一视口和侧栏状态下内容边界必须对齐，宽屏卡片按可用宽度自动排布。设计稿提供视觉基准，不意味着固定版心或永久固定列数；特殊布局须有用户确认的不同需求再记录例外，不批量改变无关页面。
+App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列表适配](architecture.md#mainpage-版心与列表适配)：1280～1919px 左右统一各 16px，≥1920px 左右各 250px，两个 PC 区间均不保留页面级固定最大宽度。同类页面在同一视口和侧栏状态下内容边界必须对齐，宽屏卡片按可用宽度自动排布。设计稿提供视觉基准，不意味着固定版心或永久固定列数；特殊布局须有用户确认的不同需求再记录例外，不批量改变无关页面。
 
 ### 5.2 Class 规则
 
@@ -101,7 +101,7 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 ### 5.3 主题
 
 - `dark`、`light` 是当前完整主题，默认 `dark`。
-- 原始色值只定义在 `src/app/styles/index.css` 的主题 token 中，并由 Tailwind `@theme inline` 映射为语义 utility。
+- 原始色值只定义在 `src/fsd/app/styles/index.css` 的主题 token 中，并由 Tailwind `@theme inline` 映射为语义 utility。
 - 组件只使用 `bg-canvas`、`text-primary`、`border-subtle` 等语义 class；不得硬编码 hex/rgb/hsl，也不得根据主题名写分支。
 - 主题注册在 `shared/config/theme.ts`，应用与持久化经 `shared/theme`，存储键来自 `sharedConfig.storageKeys.theme`。
 - 新增主题必须完整定义所有语义 token，当前阶段补齐中文名称即可；其他语言名称在翻译工作重新开启后同步。更新文档并按上述分工验证：Codex 验收 PC，平板/H5 交由用户验收。
@@ -181,6 +181,16 @@ pnpm run build
 - 运行时依赖使用 `pnpm add <package>`，开发、构建或测试依赖使用 `pnpm add -D <package>`；同一任务同步 `package.json`、`pnpm-lock.yaml`、用途说明、相关文档和 CI。
 - Prettier 是仅开发期使用的代码格式化器，不进入 Web 或 Electron 运行时产物，也不需要安装脚本白名单。
 - 禁止手改 lockfile，禁止提交或忽略 `package-lock.json`、`yarn.lock`、`bun.lock*` 等第二套锁文件。
-- `pnpm-workspace.yaml` 的 `onlyBuiltDependencies` 是依赖安装期脚本的唯一白名单。当前只允许 Vite 与 tsx 构建所需的 `esbuild`；没有实际依赖消费者的包不得保留在白名单中。
+- `pnpm-workspace.yaml` 的 `onlyBuiltDependencies` 是依赖安装期脚本的唯一白名单。当前只允许 tsx 构建所需的 `esbuild`；没有实际依赖消费者的包不得保留在白名单中。
 - 新增白名单前必须检查包的安装脚本、下载或原生编译行为、是否进入 Web/Electron 产物以及可替代方案，并在文档中记录包名、用途和风险。
 - 审批只执行 `pnpm approve-builds <明确包名>`；禁止无包名的全量批准，也不得为消除安装警告而放宽白名单。
+
+## Next 与 FSD 运行时契约
+
+- Next 16.3.6 / Turbopack 是唯一框架入口，`output: 'export'`、`trailingSlash: true`；不运行 Next Server，不使用 API Route、Server Action、cookies/headers 或按请求渲染。
+- 六层业务位于 `src/fsd`；`src/app` 只放 Next 路由、layout、Metadata 和错误边界。FSD 不反向导入适配层。
+- Server page 只 await params 并传序列化 ID/字符串。路径构造回调在 `src/fsd/app/router` Client 装配。跨 slice 使用根 index；混合公共入口不加 use client；枚举器不得依赖浏览器。
+- Client Component 仍参与预渲染；首次渲染禁止读取浏览器存储/视口或使用随机值。偏好、Portal 和动画在挂载后恢复。`useSearchParams` 放在最近的 Suspense 边界下，视图 replace 保留其他查询参数并使用 scroll:false。
+- 图片导入在 owner 内转换为 `.src`，保持 UI/model 的 string URL 契约。主题首次绘制脚本由 shared/theme 与 shared/lib/storage 生成；仅 html 的主题属性允许窄范围 hydration warning 抑制。
+- 根 tsconfig 保持 strict 与 Next 类型生成；Electron 用独立 tsconfig。新路由同步枚举测试、静态产物集合和部署文档。
+- 类型、文件断言与真实水合/导航验收分开记录。Tablet/H5 视觉和真机仍待用户验收。

@@ -2,11 +2,19 @@
 
 修改本仓库前，依次阅读：
 
-1. [开发规范](./docs/development-standards.md)
-2. [TypeScript 规范](./docs/typescript-standards.md)
-3. [测试规范](./docs/testing-standards.md)
-4. [架构约定](./docs/architecture.md)
-5. [AI 协作指南](./docs/ai-collaboration.md)
+1. [开发规范](docs/development-standards.md)
+2. [TypeScript 规范](docs/typescript-standards.md)
+3. [测试规范](docs/testing-standards.md)
+4. [架构约定](docs/architecture.md)
+5. [AI 协作指南](docs/ai-collaboration.md)
+
+## Next 静态导出
+
+- `src/app` 是 Next 适配层；业务六层位于 `src/fsd`，禁止业务反向导入适配层。
+- Server 只传序列化数据，函数在 FSD app Client 层注入；混合 slice index 不写 use client。
+- Client 首次渲染保持与预渲染一致；存储、Portal、随机值与视口在挂载后初始化，useSearchParams 配套局部 Suspense。
+- 新动态路由必须从 owner 根入口枚举全部参数，更新路由集合、产物验证和运行时冒烟。
+- 构建只经环境 runner；NEXT_PUBLIC 使用静态成员访问，禁止恢复旧框架入口。
 
 ## 核心架构
 
@@ -19,7 +27,7 @@
 
 ## AI 工作流
 
-用户提供设计稿并要求实现时，编码前必须先读取设计和仓库现状，再展示[简版实施方案](./docs/ai-collaboration.md#设计稿驱动任务的编码前方案)，覆盖布局结构、交互状态、复用/新增组件、PC/平板/H5 适配、按顺序的实现步骤与验收。方案必须写出已核实的真实模块、组件或公共入口，然后明确请求用户确认；收到确认前禁止修改实现代码、新增业务资源或安装依赖，只可继续只读检查和回答问题。已确认范围内的连续实现不重复请求确认；新增设计节点或范围实质变化时，必须更新方案并重新等待确认。
+用户提供设计稿并要求实现时，编码前必须先读取设计和仓库现状，再展示[简版实施方案](docs/ai-collaboration.md#设计稿驱动任务的编码前方案)，覆盖布局结构、交互状态、复用/新增组件、PC/平板/H5 适配、按顺序的实现步骤与验收。方案必须写出已核实的真实模块、组件或公共入口，然后明确请求用户确认；收到确认前禁止修改实现代码、新增业务资源或安装依赖，只可继续只读检查和回答问题。已确认范围内的连续实现不重复请求确认；新增设计节点或范围实质变化时，必须更新方案并重新等待确认。
 
 项目只使用 Codex 进行 AI 代码协作。开始代码改动前，从 `.agents/skills/` 读取匹配流程：
 
@@ -28,15 +36,15 @@
 - 已有 diff 的只读审查：`learning-web-change-review`
 - TSX 运行逻辑、Hook、状态、Effect、列表、客户端加载或组件重构：同时读取 `learning-web-react-engineering`
 
-新业务页面同时涉及业务交付与路由时，必须同时使用 `learning-web-feature-delivery` 和 `learning-web-cross-cutting-change`：后者负责影响图与公共契约，前者继续负责业务归属、数据边界和行为测试；不得因切换 Skill 丢弃另一侧检查。新页面或新能力开始前先完成[需求就绪清单](./docs/feature-delivery-checklist.md)。
+新业务页面同时涉及业务交付与路由时，必须同时使用 `learning-web-feature-delivery` 和 `learning-web-cross-cutting-change`：后者负责影响图与公共契约，前者继续负责业务归属、数据边界和行为测试；不得因切换 Skill 丢弃另一侧检查。新页面或新能力开始前先完成[需求就绪清单](docs/feature-delivery-checklist.md)。
 
-Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI。涉及浏览器、Electron renderer、设备或运行时差异时，先阅读[兼容性契约索引](./docs/compatibility.md)。
+Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI。涉及浏览器、Electron renderer、设备或运行时差异时，先阅读[兼容性契约索引](docs/compatibility.md)。
 
-确认会反复影响未来实现选择的问题，按 [AI Skills 与 Agent 协作](./docs/ai-skills.md#从问题到团队知识)沉淀为 lint/测试、模块说明、兼容性契约、ADR 或待办；猜测和完整调试流水账不得伪装成团队规则。
+确认会反复影响未来实现选择的问题，按 [AI Skills 与 Agent 协作](docs/ai-skills.md#从问题到团队知识)沉淀为 lint/测试、模块说明、兼容性契约、ADR 或待办；猜测和完整调试流水账不得伪装成团队规则。
 
 ## 工具链与类型
 
-- 接口接入、数据加载或带请求的组件复用必须遵守[接口能力边界与缺失数据处理](./docs/api-capability-boundaries.md)：不得擅自增加请求补字段；缺项使用默认图/空态并记录反馈，验收检查请求次数与来源。
+- 接口接入、数据加载或带请求的组件复用必须遵守[接口能力边界与缺失数据处理](docs/api-capability-boundaries.md)：不得擅自增加请求补字段；缺项使用默认图/空态并记录反馈，验收检查请求次数与来源。
 
 - 包管理器唯一使用 pnpm `10.28.2`。所有项目命令必须使用 `pnpm` 或 `pnpm run`；禁止 npm、yarn、npx、bun。
 - 源代码、脚本和配置文件统一使用 4 个空格缩进，禁止 Tab；根目录 `.editorconfig` 和 Prettier 配置是可执行契约。修改后使用 `pnpm run format`，`pnpm run lint` 会通过 `format:check` 阻断格式偏差。
@@ -50,13 +58,13 @@ Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI�
 
 ## 样式、主题与响应式
 
-- Tailwind CSS v4 是页面与组件样式的默认实现；全局入口固定为 `src/app/styles/index.css`。
+- Tailwind CSS v4 是页面与组件样式的默认实现；全局入口固定为 `src/fsd/app/styles/index.css`。
 - 采用 mobile-first：默认规则覆盖手机 H5，`md` 覆盖平板，`xl` 覆盖 PC/桌面宽屏。使用流式容器、Grid/Flex、`min-w-0` 和必要的局部滚动。
 - PC、平板和 H5 都是实现兼容目标；Codex 的人工视觉验收只覆盖 PC（优先使用任务指定的桌面设计尺寸，未指定时使用 1440×900）。平板与 H5 的视觉和真机兼容由用户验收，交接时必须标为待用户验收，不得声称已通过。
 - 禁止 px-to-rem/px-to-vw 自动转换、修改根字号整体缩放，以及用固定画布缩放冒充响应式。
 - Tailwind class 必须以完整字面量出现在源码中，禁止字符串拼接动态生成；复杂重复组合先提取组件，不建立全局业务 class。
-- 跨页面重复的页面标题、区块标题、卡片标题、正文、标签、页签与操作文案必须优先使用 `src/app/styles/index.css` 提供的语义字号 utility。字号以 H5 为默认，`md` / `xl` 逐级调整，≥1920px 达到设计稿上限；不得通过根字号或整页缩放实现。
-- 颜色只能通过 `src/app/styles/index.css` 的语义主题 token 暴露给 Tailwind；组件不得硬编码颜色，也不得按 `dark`/`light` 写业务分支。
+- 跨页面重复的页面标题、区块标题、卡片标题、正文、标签、页签与操作文案必须优先使用 `src/fsd/app/styles/index.css` 提供的语义字号 utility。字号以 H5 为默认，`md` / `xl` 逐级调整，≥1920px 达到设计稿上限；不得通过根字号或整页缩放实现。
+- 颜色只能通过 `src/fsd/app/styles/index.css` 的语义主题 token 暴露给 Tailwind；组件不得硬编码颜色，也不得按 `dark`/`light` 写业务分支。
 - 当前主题固定注册 `dark` 与 `light`，默认 dark。主题应用和持久化只经 `shared/theme`；新增主题必须补齐完整 token，当前阶段只需中文名称，其他语言在翻译工作重新开启后补齐。
 - 保留 `shared/i18n`、已有语言资源和切换基础设施，但当前版本暂不开展多语言翻译。新页面和新功能默认直接展示中文，不强制新增语言 key 或同步 `en-US`；未经后续明确需求，不得以翻译完整性阻塞页面交付。
 - 基础无障碍属于框架质量要求：优先语义 HTML、可见焦点、可访问名称、键盘可操作性和 reduced-motion。当前不承诺完整 WCAG 审计；新增第三方 a11y 库或专项验收仍需明确任务。
@@ -69,7 +77,7 @@ Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI�
 - Electron 保持 `contextIsolation`、sandbox、关闭 renderer Node integration，桌面能力只经具名 preload API 与校验 sender 的 IPC 暴露。
 - Web 构建输出隔离到 `dist/staging`、`dist/production`，Electron 主进程输出 `dist/electron`，安装包输出被忽略的 `release/`。
 - PWA 当前未启用；禁止添加 manifest、Service Worker、缓存逻辑或 PWA 插件，直到独立任务确认。
-- Vite mode 仅允许 `development`、`staging`、`production`；development 只用于开发服务器。
+- Next 是唯一框架入口。部署环境仅允许 `development`、`staging`、`production`；development 只用于开发服务器，Next 构建统一 NODE_ENV=production。
 
 ## 验证与变更同步
 

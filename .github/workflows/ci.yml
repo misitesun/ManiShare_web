@@ -18,7 +18,7 @@ jobs:
     verify:
         name: Test, lint and build
         runs-on: ubuntu-latest
-        timeout-minutes: 10
+        timeout-minutes: 20
 
         steps:
             - name: Check out source
@@ -44,11 +44,14 @@ jobs:
             - name: Test
               run: pnpm run test
 
+            - name: Generate Next types in a clean checkout
+              run: pnpm run typecheck
+
             - name: Build production bundle
               run: pnpm run build
 
             - name: Build staging bundle
               run: pnpm run build:staging
 
-            - name: Build Electron host
-              run: pnpm run desktop:build:main
+            - name: Production Web and Electron runtime smoke
+              run: xvfb-run -a pnpm run runtime:smoke

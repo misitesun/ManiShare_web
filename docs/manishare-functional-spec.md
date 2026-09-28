@@ -2,7 +2,7 @@
 
 > 已确认设计基准：[Figma「漫奇说」—「总2」](https://www.figma.com/design/NLXdsc7dSeTlfPLpCc0l3n/%25E6%25BC%25AB%25E5%25A5%2587%25E8%25AF%25B4?node-id=1093-30410&p=f)  
 > 交互与批注补充：[manishare--漫奇说只读原型](https://modao.cc/proto/T2ryRf6Utjqm0wp6YiSmXg/sharing?view_mode=read_only&screen=rbpVTSTthJGxnh5bz)  
-> 当前实现基线：本仓库 `src/`、`src/app/config/routes.ts` 与 `src/app/router/router.tsx`  
+> 当前实现基线：本仓库 `src/`、`src/fsd/app/config/routes.ts` 与 `src/app` 各路由 `page.tsx` 与 `src/fsd/app/router` Client 装配
 > 对照日期：2026-09-21  
 > 文档性质：功能范围与状态归纳，不替代正式接口、数据字典、实时通信协议或验收用例。
 
@@ -48,7 +48,7 @@ Figma「总2」节点 `1093:30410` 可只读访问，共有 191 个一级节点�
 - 侧边栏一级静态页面大部分已经开发，本轮不再逐张复述其视觉细节；原有功能归纳继续保留，后续按具体开发任务局部核对。
 - 当前重点是练习体系：单词游戏、句子游戏、音频游戏、视频游戏、指法游戏、猜词游戏、纯视频、纯音频、纯图片、纯文字，以及 PK 争霸。
 - 这些画板高度相似，应视为同一套练习会话的不同玩法与状态，不应按 Figma 画板数量建立独立业务页面。
-- 当前代码已经提供言灵觉醒课程目录 `/awakening` 和课程详情 `/awakening/courses/:courseId`；章节卡片仍是静态展示，“开始学习”明确提示内容未开放。
+- 当前代码已经提供言灵觉醒课程目录 `/awakening/` 和课程详情 `/awakening/courses/[courseId]/`；章节卡片仍是静态展示，“开始学习”明确提示内容未开放。
 - 当前路由中没有练习会话、玩法模式或 PK 页面；侧边栏 PK 入口也没有跳转目标。因此第 9、13 节描述的是主要待开发范围，而不是既有实现。
 
 ## 2. 产品概述

@@ -92,8 +92,10 @@ function walkFiles(directoryPath) {
 }
 
 function getSourceContext(filePath, sourceRoot) {
+    const fsdRoot = resolve(sourceRoot, 'fsd')
     const sourceRelativePath = toPosixPath(relative(sourceRoot, filePath))
-    const segments = sourceRelativePath.split('/')
+    if (sourceRelativePath.startsWith('fsd/')) sourceRoot = fsdRoot
+    const segments = sourceRelativePath.replace(/^fsd\//, '').split('/')
     const firstSegment = segments[0]
 
     if (firstSegment === 'App.tsx' || firstSegment === 'main.tsx') {
@@ -335,7 +337,7 @@ function findTailwindMotionViolation(classValue) {
 function validateImports(sourceFile, sourceRoot, errors) {
     const sourceContext = getSourceContext(sourceFile.fileName, sourceRoot)
     const isTestFile = /\.test\.tsx?$/.test(sourceFile.fileName)
-    const animationRoot = resolve(sourceRoot, 'shared', 'lib', 'animation')
+    const animationRoot = resolve(sourceRoot, 'fsd', 'shared', 'lib', 'animation')
     const isAnimationImplementation =
         sourceFile.fileName === animationRoot ||
         sourceFile.fileName.startsWith(`${animationRoot}${sep}`)
@@ -344,11 +346,25 @@ function validateImports(sourceFile, sourceRoot, errors) {
         const moduleSpecifier = moduleSpecifierNode.text
         const location = getNodeLocation(sourceFile, moduleSpecifierNode)
 
+        if (moduleSpecifier === 'next/headers' || moduleSpecifier === 'next/server') {
+            errors.push(`${location} Next server APIs are outside the static renderer contract`)
+        }
+
         if (!isTestFile && (moduleSpecifier === 'electron' || nodeModules.has(moduleSpecifier))) {
             errors.push(
                 `${location} renderer source must not import Node.js or Electron module "${moduleSpecifier}"`,
             )
         }
+
+        if (
+            moduleSpecifier === 'react-router-dom' ||
+            moduleSpecifier === 'vite' ||
+            moduleSpecifier.startsWith('vite/')
+        ) {
+            errors.push(`${location} obsolete renderer framework import: ${moduleSpecifier}`)
+        }
+        if (moduleSpecifier.startsWith('@/'))
+            errors.push(`${location} unconfigured source alias cannot bypass FSD checks`)
 
         const gsapPackage = moduleSpecifier.startsWith('gsap/') ? 'gsap' : moduleSpecifier
         if (!isAnimationImplementation && gsapPackages.has(gsapPackage)) {
@@ -360,6 +376,12 @@ function validateImports(sourceFile, sourceRoot, errors) {
         const targetFilePath = resolveLocalImport(sourceFile.fileName, moduleSpecifier)
         if (targetFilePath === null) return
 
+        if (
+            sourceFile.fileName.startsWith(resolve(sourceRoot, 'fsd') + sep) &&
+            targetFilePath.startsWith(resolve(sourceRoot, 'app') + sep)
+        ) {
+            errors.push(`${location} FSD must not import the Next adapter tree`)
+        }
         const targetContext = getSourceContext(targetFilePath, sourceRoot)
         const sourceRank = sourceContext.layer === null ? null : layerRanks.get(sourceContext.layer)
         const targetRank = targetContext.layer === null ? null : layerRanks.get(targetContext.layer)
@@ -416,6 +438,15 @@ function validateImports(sourceFile, sourceRoot, errors) {
             if (argument !== undefined && ts.isStringLiteral(argument))
                 inspectModuleSpecifier(argument)
         }
+        if (
+            ts.isCallExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            node.expression.text === 'require' &&
+            !isTestFile
+        )
+            errors.push(
+                `${getNodeLocation(sourceFile, node)} renderer must not use CommonJS require`,
+            )
         ts.forEachChild(node, visit)
     }
 
@@ -423,12 +454,12 @@ function validateImports(sourceFile, sourceRoot, errors) {
 }
 
 function validateRendererSource(sourceFile, sourceRoot, errors) {
-    const apiRoot = resolve(sourceRoot, 'shared', 'api')
+    const apiRoot = resolve(sourceRoot, 'fsd', 'shared', 'api')
     const isApiImplementation =
         sourceFile.fileName === apiRoot || sourceFile.fileName.startsWith(`${apiRoot}${sep}`)
     const isTestFile = /\.test\.tsx?$/.test(sourceFile.fileName)
     const constInitializers = collectConstInitializers(sourceFile)
-    const gradientTextRoot = resolve(sourceRoot, 'shared', 'ui', 'tld-gradient-text')
+    const gradientTextRoot = resolve(sourceRoot, 'fsd', 'shared', 'ui', 'tld-gradient-text')
 
     function isGradientTextOuterClassNameForwarding(node) {
         if (
@@ -529,9 +560,9 @@ function validateStyles(sourceRoot, themeStylesPath, errors) {
         }
 
         const styleContent = readFileSync(styleFile, 'utf8')
-        if (!styleContent.includes('@import "tailwindcss" source("../..");')) {
+        if (!styleContent.includes('@import "tailwindcss" source("../../..");')) {
             errors.push(
-                `${toPosixPath(styleFile)} must restrict Tailwind source detection to the src tree with source("../..")`,
+                `${toPosixPath(styleFile)} must restrict Tailwind source detection to the src tree with source("../../..")`,
             )
         }
 
@@ -549,7 +580,7 @@ function validateStyles(sourceRoot, themeStylesPath, errors) {
 export function validateSourceContracts(options = {}) {
     const sourceRoot = resolve(options.sourceRoot ?? 'src')
     const themeStylesPath = resolve(
-        options.themeStylesPath ?? resolve(sourceRoot, 'app', 'styles', 'index.css'),
+        options.themeStylesPath ?? resolve(sourceRoot, 'fsd', 'app', 'styles', 'index.css'),
     )
     const errors = []
     const sourceFiles = walkFiles(sourceRoot).filter((filePath) =>
@@ -565,6 +596,30 @@ export function validateSourceContracts(options = {}) {
             true,
             scriptKind,
         )
+        const sourceRelative = toPosixPath(relative(sourceRoot, sourceFilePath))
+        if (sourceRelative.startsWith('app/') && /(^|\/)route\.tsx?$/.test(sourceRelative))
+            errors.push(
+                `${sourceRelative} API Route handlers are outside the static renderer contract`,
+            )
+        if (!sourceRelative.startsWith('fsd/') && !sourceRelative.startsWith('app/'))
+            errors.push(`${sourceRelative} source must belong to Next app or fsd`)
+        if (sourceFile.text.includes('import.meta.env') || /\bVITE_[A-Z_]+/.test(sourceFile.text))
+            errors.push(`${sourceRelative} obsolete environment contract`)
+        if (/process\.env(?:\[|\s*[;,}])/.test(sourceFile.text))
+            errors.push(
+                `${sourceRelative} public environment access must use static member expressions`,
+            )
+        if (
+            sourceRelative.startsWith('fsd/') &&
+            /\/index\.tsx?$/.test(sourceRelative) &&
+            sourceFile.statements.some(
+                (statement) =>
+                    ts.isExpressionStatement(statement) &&
+                    ts.isStringLiteral(statement.expression) &&
+                    statement.expression.text === 'use client',
+            )
+        )
+            errors.push(`${sourceRelative} public barrel must preserve server/client boundaries`)
         validateImports(sourceFile, sourceRoot, errors)
         validateRendererSource(sourceFile, sourceRoot, errors)
     }

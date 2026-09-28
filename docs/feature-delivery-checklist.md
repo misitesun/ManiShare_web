@@ -4,7 +4,7 @@
 
 ## 1. 目标与范围
 
-- 提供设计稿并要求实现时，是否已读取设计，并核对现有路由、FSD 所有者、模块 README、公共入口、组件、状态和测试；是否在编码前向用户展示[五项简版实施方案](./ai-collaboration.md#设计稿驱动任务的编码前方案)、明确请求确认，并在收到确认前保持只读；
+- 提供设计稿并要求实现时，是否已读取设计，并核对现有路由、FSD 所有者、模块 README、公共入口、组件、状态和测试；是否在编码前向用户展示[五项简版实施方案](ai-collaboration.md#设计稿驱动任务的编码前方案)、明确请求确认，并在收到确认前保持只读；
 
 - 页面或能力解决哪个用户问题，明确不包含什么；
 - 页面语义路由、路径参数和查询状态是否确认；
@@ -24,7 +24,7 @@
 ## 3. 数据与状态
 
 - API 请求、参数、响应和错误契约是否确认；
-- 是否按[接口能力边界](./api-capability-boundaries.md)确认当前接口足够提供哪些数据、哪些字段缺失，以及默认图/空态和反馈文档；复用组件是否引入自动请求、预加载或状态写入；额外补齐请求是否有明确需求与已有授权；
+- 是否按[接口能力边界](api-capability-boundaries.md)确认当前接口足够提供哪些数据、哪些字段缺失，以及默认图/空态和反馈文档；复用组件是否引入自动请求、预加载或状态写入；额外补齐请求是否有明确需求与已有授权；
 - 外部输入是否以 `unknown` 进入校验和 DTO 转换；
 - idle、loading、success、empty、error、无权限和重试状态中哪些真实存在；
 - 是否涉及本地持久化、URL 可恢复状态、时间、上传下载或剪贴板；
@@ -43,7 +43,7 @@
 
 - 390×844、768×1024、1440×900 下的布局与信息优先级是否明确（这是实现目标，不代表三个视口均由 Codex 做视觉验收）；
 - 是否复用同一语义 DOM，通过默认、`md:`、`xl:` 重排；
-- App Shell 内常规列表/管理页是否采用[mainPage 版心约定](./architecture.md#mainpage-版心与列表适配)，取消 PC 页面级固定最大宽度，在相同视口/侧栏状态下核对同类页面的精确边距与内容边界，并按内容确定自适应列数；特殊布局例外是否有用户确认并已记录；
+- App Shell 内常规列表/管理页是否采用[mainPage 版心约定](architecture.md#mainpage-版心与列表适配)，取消 PC 页面级固定最大宽度，在相同视口/侧栏状态下核对同类页面的精确边距与内容边界，并按内容确定自适应列数；特殊布局例外是否有用户确认并已记录；
 - 长文本、空数据、窄屏溢出、Safe Area 和局部滚动是否有验收方式；
 - dark/light 是否只消费现有语义 token，是否确有新增 token 的跨组件消费者；
 - 当前阶段的用户可见文本是否已提供明确中文；默认可直接使用中文字面量，不要添加占位英文或强制新增 i18n key。只有需求明确重新开启多语言时，才检查相关语言资源是否同步。
@@ -72,3 +72,13 @@
 - 路由或公共契约同时变化：叠加 `learning-web-cross-cutting-change`，由它负责影响图；
 - TSX 运行逻辑、Hook、状态、Effect、列表、加载或组件重构：再叠加 `learning-web-react-engineering`；
 - 已有实现完成后：`learning-web-change-review` 只读审查，不直接修复。
+
+## Next 与 FSD 运行时契约
+
+- Next 16.3.6 / Turbopack 是唯一框架入口，`output: 'export'`、`trailingSlash: true`；不运行 Next Server，不使用 API Route、Server Action、cookies/headers 或按请求渲染。
+- 六层业务位于 `src/fsd`；`src/app` 只放 Next 路由、layout、Metadata 和错误边界。FSD 不反向导入适配层。
+- Server page 只 await params 并传序列化 ID/字符串。路径构造回调在 `src/fsd/app/router` Client 装配。跨 slice 使用根 index；混合公共入口不加 use client；枚举器不得依赖浏览器。
+- Client Component 仍参与预渲染；首次渲染禁止读取浏览器存储/视口或使用随机值。偏好、Portal 和动画在挂载后恢复。`useSearchParams` 放在最近的 Suspense 边界下，视图 replace 保留其他查询参数并使用 scroll:false。
+- 图片导入在 owner 内转换为 `.src`，保持 UI/model 的 string URL 契约。主题首次绘制脚本由 shared/theme 与 shared/lib/storage 生成；仅 html 的主题属性允许窄范围 hydration warning 抑制。
+- 根 tsconfig 保持 strict 与 Next 类型生成；Electron 用独立 tsconfig。新路由同步枚举测试、静态产物集合和部署文档。
+- 类型、文件断言与真实水合/导航验收分开记录。Tablet/H5 视觉和真机仍待用户验收。

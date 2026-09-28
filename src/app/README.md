@@ -1,7 +1,7 @@
-# 应用装配
+# Next 适配层
 
-- 职责：装配路由、全局 Provider 与全局样式，不承载英语学习业务逻辑。
-- 入口：`App.tsx`；浏览器启动位于 `src/main.tsx`。
-- 约束：业务能力必须留在 FSD 的 pages/widgets/features/entities/shared；全局样式仅由 `styles/index.css` 进入。
-- 扩展：路由改动进入 `router` 与 `config`，新的全局 Provider 先确认确有应用级作用域。
-- 验证：`pnpm run build && pnpm run lint`。
+- 职责：App Router 路由、布局、Metadata 和静态参数适配。
+- 入口：layout.tsx；各路由 page.tsx。
+- 约束：只传递可序列化参数，业务/UI 在 src/fsd；函数依赖在 FSD app Client 装配。
+- 扩展：动态路径从 owner 根入口导出的纯枚举器生成。
+- 验证：typegen、类型检查、269 业务 HTML 与 production 导航冒烟。

@@ -36,7 +36,7 @@ Read the owning public entry, nearby components, Hooks, tests and README. Move s
 - Pass children or focused props to isolate rerenders before adding memoization.
 - Use literal Tailwind class branches; do not construct class names dynamically.
 - Share one semantic DOM across mobile/tablet/desktop unless behavior is genuinely different.
-- Select responsive typography by semantic role through the utilities owned by `src/app/styles/index.css`. Preserve the H5 readable minimum and 1920px design maximum; do not scale renderer text through the root font size, `vw`, one global ratio or a page transform.
+- Select responsive typography by semantic role through the utilities owned by `src/fsd/app/styles/index.css`. Preserve the H5 readable minimum and 1920px design maximum; do not scale renderer text through the root font size, `vw`, one global ratio or a page transform.
 - For App Shell list/management layout, follow `docs/architecture.md#mainpage-版心与列表适配`: let CSS handle content width and adaptive columns without window-width state/Effects. Remove legacy page max-widths and compare sibling pages' actual content edges at the same PC viewport/sidebar state, including 1500px; identical padding alone does not imply identical gutters when auto margins differ. Do not assume class order or a design screenshot's fixed column count is sufficient.
 
 ## Async and loading
@@ -52,7 +52,7 @@ Read the owning public entry, nearby components, Hooks, tests and README. Move s
 - Use `memo`, `useMemo` and `useCallback` only for an identified rerender, expensive calculation or required referential identity; they are not default scaffolding.
 - For high-frequency input, media or animation, isolate the changing subtree before using deferred or transition-based rendering.
 - Establish expected collection size and interaction before choosing pagination, incremental rendering or virtualization; do not add a virtual-list dependency to an ordinary small list.
-- Use `React.lazy` and dynamic import for measured or clearly heavy, infrequently reached boundaries. Do not preconfigure Vite manual chunks for theoretical optimization.
+- Use `React.lazy` and dynamic import for measured or clearly heavy, infrequently reached boundaries. Use Next route splitting first; do not preconfigure manual chunks for theoretical optimization.
 
 ## Accessibility and motion
 
@@ -64,3 +64,7 @@ Read the owning public entry, nearby components, Hooks, tests and README. Move s
 ## Review checklist
 
 Check state ownership, Effect necessity and cleanup, stable identity, async dependency chains, rerender scope, responsive overflow, Tailwind literal detection, theme token use, keyboard/focus behavior, loading boundaries, bundle impact and `pnpm run format:check`. Inspect H5/tablet/PC responsiveness in code, but leave tablet/H5 visual and real-device acceptance to the user and never report it as passed. State which rendering risks were assessed and either the optimization made or the concrete reason it was unnecessary. Run test/lint/build and PC visual acceptance through the owning Skill.
+
+## Next static-export boundary
+
+Use Next App Router as the only framework entry. Business owners stay under src/fsd; src/app is an adapter and must not be imported from FSD. Server adapters pass serializable data; inject callbacks inside FSD app Client assemblies. Keep mixed slice index.ts barrels free of use client and export build-time enumerators through root entries. Client components are prerendered: first render must not read browser storage/viewport or random values. Restore preferences/portals after mount, place useSearchParams under local Suspense, preserve query values with replace and scroll:false. Normalize static asset imports to string URLs inside their owner. Use pnpm run typecheck for clean Next type generation, then test/lint/build and the documented production runtime smoke; file/type checks alone do not prove hydration, RSC, CSP or Electron success. Follow docs/environment.md and docs/static-deployment.md; do not introduce a Next Server or restore obsolete framework commands.

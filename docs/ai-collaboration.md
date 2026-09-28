@@ -5,14 +5,14 @@
 ## 1. 必读顺序
 
 1. [AGENTS.md](../AGENTS.md)
-2. [开发规范](./development-standards.md)
-3. [TypeScript 规范](./typescript-standards.md)
-4. [测试规范](./testing-standards.md)
-5. [架构约定](./architecture.md)
-6. 新页面或新能力先完成[需求就绪清单](./feature-delivery-checklist.md)
+2. [开发规范](development-standards.md)
+3. [TypeScript 规范](typescript-standards.md)
+4. [测试规范](testing-standards.md)
+5. [架构约定](architecture.md)
+6. 新页面或新能力先完成[需求就绪清单](feature-delivery-checklist.md)
 7. 任务涉及的模块 README、公共入口和测试
 8. 匹配团队 Skill
-9. 涉及浏览器、设备或 Electron 差异时阅读[兼容性契约](./compatibility.md)
+9. 涉及浏览器、设备或 Electron 差异时阅读[兼容性契约](compatibility.md)
 
 团队 Skill：
 
@@ -59,7 +59,7 @@
 
 本规则不要求普通问答、只读诊断或已有页面的小范围修复都输出五项方案。与 Figma 工具自身的检查点或跨切面影响图重叠时合并表达，避免重复播报。
 
-接口接入、数据加载或带请求的组件复用任务先读[接口能力边界与缺失数据处理](./api-capability-boundaries.md)。实现前核对字段缺项和隐含副作用，缺失数据按该文档记录反馈；交接报告请求次数/来源证据、额外请求的需求与授权依据及未完成联调项。不得为使页面看似完整而自行增加补偿请求。
+接口接入、数据加载或带请求的组件复用任务先读[接口能力边界与缺失数据处理](api-capability-boundaries.md)。实现前核对字段缺项和隐含副作用，缺失数据按该文档记录反馈；交接报告请求次数/来源证据、额外请求的需求与授权依据及未完成联调项。不得为使页面看似完整而自行增加补偿请求。
 
 公共模块说明必须回答：
 
@@ -78,21 +78,21 @@
 | 能力 | 唯一入口 |
 | --- | --- |
 | 技术选型与能力地图 | `docs/module-capabilities.md` |
-| 路由 | `src/app/config/routes.ts`、`src/app/router/router.tsx` |
-| 响应式壳层 | `src/widgets/app-layout` |
-| Tailwind 与主题 token | `src/app/styles/index.css` |
-| 主题 | `src/shared/config/theme.ts`、`src/shared/theme` |
-| i18n | `src/shared/i18n` |
-| HTTP | `src/shared/api` |
-| 环境与存储键 | `src/shared/config` |
-| 项目标识 | `src/shared/constants` |
-| 存储 | `src/shared/lib/storage` |
-| 时间 | `src/shared/lib/time` |
-| 剪贴板 | `src/shared/lib/clipboard` |
-| 下载 | `src/shared/lib/download` |
-| 动画 | `src/shared/lib/animation` |
-| 通知 | `src/shared/notification` |
-| PWA 预留 | `src/shared/lib/pwa` |
+| 路由 | `src/fsd/app/config/routes.ts`、`src/app` 各路由 `page.tsx` 与 `src/fsd/app/router` Client 装配 |
+| 响应式壳层 | `src/fsd/widgets/app-layout` |
+| Tailwind 与主题 token | `src/fsd/app/styles/index.css` |
+| 主题 | `src/fsd/shared/config/theme.ts`、`src/fsd/shared/theme` |
+| i18n | `src/fsd/shared/i18n` |
+| HTTP | `src/fsd/shared/api` |
+| 环境与存储键 | `src/fsd/shared/config` |
+| 项目标识 | `src/fsd/shared/constants` |
+| 存储 | `src/fsd/shared/lib/storage` |
+| 时间 | `src/fsd/shared/lib/time` |
+| 剪贴板 | `src/fsd/shared/lib/clipboard` |
+| 下载 | `src/fsd/shared/lib/download` |
+| 动画 | `src/fsd/shared/lib/animation` |
+| 通知 | `src/fsd/shared/notification` |
+| PWA 预留 | `src/fsd/shared/lib/pwa` |
 | Electron | `electron/`、`electron-builder.yml` |
 | 兼容性知识 | `docs/compatibility.md` |
 | 代码格式 | `.editorconfig`、`prettier.config.mjs`、`.prettierignore` |
@@ -124,3 +124,13 @@ pnpm run desktop:build
 ```
 
 最后一项只在 Electron 边界受影响时要求。未运行或失败必须说明。
+
+## Next 与 FSD 运行时契约
+
+- Next 16.3.6 / Turbopack 是唯一框架入口，`output: 'export'`、`trailingSlash: true`；不运行 Next Server，不使用 API Route、Server Action、cookies/headers 或按请求渲染。
+- 六层业务位于 `src/fsd`；`src/app` 只放 Next 路由、layout、Metadata 和错误边界。FSD 不反向导入适配层。
+- Server page 只 await params 并传序列化 ID/字符串。路径构造回调在 `src/fsd/app/router` Client 装配。跨 slice 使用根 index；混合公共入口不加 use client；枚举器不得依赖浏览器。
+- Client Component 仍参与预渲染；首次渲染禁止读取浏览器存储/视口或使用随机值。偏好、Portal 和动画在挂载后恢复。`useSearchParams` 放在最近的 Suspense 边界下，视图 replace 保留其他查询参数并使用 scroll:false。
+- 图片导入在 owner 内转换为 `.src`，保持 UI/model 的 string URL 契约。主题首次绘制脚本由 shared/theme 与 shared/lib/storage 生成；仅 html 的主题属性允许窄范围 hydration warning 抑制。
+- 根 tsconfig 保持 strict 与 Next 类型生成；Electron 用独立 tsconfig。新路由同步枚举测试、静态产物集合和部署文档。
+- 类型、文件断言与真实水合/导航验收分开记录。Tablet/H5 视觉和真机仍待用户验收。

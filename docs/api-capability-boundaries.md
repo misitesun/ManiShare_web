@@ -23,3 +23,13 @@
 - 使用受控请求替身验证缺失数据不会触发额外请求，以及默认图、空态或契约错误的处理；已有条件允许时，补充浏览器 Network 的实际结果。无法联调时说明验证范围，不宣称完成真实接口验收。
 - 静态 UI 任务已明确使用的 mock 数据可继续使用，但不得在真实接口缺项时混入 mock 冒充后端数据。
 - 是否必要或已获授权属于语义审查，不由关键词 lint 自动判定。Skill 路由、行为测试和请求证据共同执行本规范。
+
+## Next 与 FSD 运行时契约
+
+- Next 16.3.6 / Turbopack 是唯一框架入口，`output: 'export'`、`trailingSlash: true`；不运行 Next Server，不使用 API Route、Server Action、cookies/headers 或按请求渲染。
+- 六层业务位于 `src/fsd`；`src/app` 只放 Next 路由、layout、Metadata 和错误边界。FSD 不反向导入适配层。
+- Server page 只 await params 并传序列化 ID/字符串。路径构造回调在 `src/fsd/app/router` Client 装配。跨 slice 使用根 index；混合公共入口不加 use client；枚举器不得依赖浏览器。
+- Client Component 仍参与预渲染；首次渲染禁止读取浏览器存储/视口或使用随机值。偏好、Portal 和动画在挂载后恢复。`useSearchParams` 放在最近的 Suspense 边界下，视图 replace 保留其他查询参数并使用 scroll:false。
+- 图片导入在 owner 内转换为 `.src`，保持 UI/model 的 string URL 契约。主题首次绘制脚本由 shared/theme 与 shared/lib/storage 生成；仅 html 的主题属性允许窄范围 hydration warning 抑制。
+- 根 tsconfig 保持 strict 与 Next 类型生成；Electron 用独立 tsconfig。新路由同步枚举测试、静态产物集合和部署文档。
+- 类型、文件断言与真实水合/导航验收分开记录。Tablet/H5 视觉和真机仍待用户验收。

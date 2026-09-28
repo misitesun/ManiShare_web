@@ -7,8 +7,8 @@
 ## 技术栈
 
 - React 19 + TypeScript strict
-- Vite 8 + Tailwind CSS 4
-- React Router
+- Next.js 16.3.6 App Router + Tailwind CSS 4（PostCSS）
+- 静态导出，Web 与 Electron 共用 production 产物
 - i18next
 - GSAP + `@gsap/react`
 - Electron 薄壳
@@ -42,11 +42,20 @@ pnpm run dev
 
 ```bash
 pnpm run format:check
+pnpm run typecheck
 pnpm run test
 pnpm run lint
 pnpm run build
 pnpm run desktop:build
 ```
+
+## Next 迁移与静态部署
+
+唯一开发/路由/构建入口为 Next。业务六层在 `src/fsd`，`src/app` 只负责适配。`pnpm run build:production` 与 `pnpm run build:staging` 分别发布完整静态导出到 `dist/production` 与 `dist/staging`。所有页面保持 noindex；公开名单与正式域名尚未确认。
+
+- [迁移进度与验收](docs/migration-status.md)
+- [迁移决策](docs/decisions/0017-next-static-export.md)
+- [静态部署契约](docs/static-deployment.md)
 
 ## 架构入口
 

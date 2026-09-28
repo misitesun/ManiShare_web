@@ -50,27 +50,28 @@ function requirePublicChildReadmes(parentPath) {
 
 for (const modulePath of [
     'src/app',
-    'src/app/config',
-    'src/app/router',
-    'src/app/styles',
-    'src/features',
-    'src/shared/api',
-    'src/shared/config',
-    'src/shared/constants',
-    'src/shared/i18n',
-    'src/shared/notification',
-    'src/shared/theme',
+    'src/fsd/app',
+    'src/fsd/app/config',
+    'src/fsd/app/router',
+    'src/fsd/app/styles',
+    'src/fsd/features',
+    'src/fsd/shared/api',
+    'src/fsd/shared/config',
+    'src/fsd/shared/constants',
+    'src/fsd/shared/i18n',
+    'src/fsd/shared/notification',
+    'src/fsd/shared/theme',
 ]) {
     requireReadme(modulePath)
 }
 
 for (const parentPath of [
-    'src/entities',
-    'src/features',
-    'src/pages',
-    'src/widgets',
-    'src/shared/lib',
-    'src/shared/ui',
+    'src/fsd/entities',
+    'src/fsd/features',
+    'src/fsd/pages',
+    'src/fsd/widgets',
+    'src/fsd/shared/lib',
+    'src/fsd/shared/ui',
 ]) {
     requirePublicChildReadmes(parentPath)
 }

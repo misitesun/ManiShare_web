@@ -1,6 +1,6 @@
 # 架构约定
 
-- AI 助教归属 `pages/ai-tutor`，由 app 在 `/ai-tutor` 及 `/ai-tutor/mentors/:mentorId/scenes/:sceneId` 懒加载并复用壳层。导师、场景、聊天静态示例、输入状态与资源为页面私有，不新增 features/widgets 或接口。选择页保持响应式网格；聊天页按用户要求一屏展示，导师栏和输入区固定，场景与消息内部滚动；切换导师显式返回父页并恢复选择。
+- AI 助教归属 `pages/ai-tutor`，由 app 在 `/ai-tutor/` 及 `/ai-tutor/mentors/[mentorId]/scenes/[sceneId]/` 由 Next 按路由分包并复用壳层。导师、场景、聊天静态示例、输入状态与资源为页面私有，不新增 features/widgets 或接口。选择页保持响应式网格；聊天页按用户要求一屏展示，导师栏和输入区固定，场景与消息内部滚动；切换导师显式返回父页并恢复选择。
 
 ## 总体分层
 
@@ -46,34 +46,34 @@ app → pages → widgets → features → entities → shared
 资源 ID 使用语义化路径参数：
 
 ```text
-/courses/:courseId
-/courses/:courseId/lessons/:lessonId
+/courses/[courseId]
+/courses/[courseId]/lessons/[lessonId]
 /courses/search
 /
 /profile/learning-progress
 /profile/notes
-/profile/notes/courses/:coursePackageId
-/profile/notes/courses/:coursePackageId/chapters/:chapterId
-/profile/notes/:noteId
+/profile/notes/courses/[coursePackageId]
+/profile/notes/courses/[coursePackageId]/chapters/[chapterId]
+/profile/notes/[noteId]
 /profile/favorites
 /profile/works
 /foreign-language-guide
-/foreign-language-guide/courses/:courseId
+/foreign-language-guide/courses/[courseId]
 /leaderboard
 /branch-company
 /profile
 /login
 ```
 
-查询参数仅用于筛选、排序、分页和 Tab 等可恢复视图状态。路由表由 `src/app/config/routes.ts` 维护，路由装配在 `src/app/router/router.tsx`。
+查询参数仅用于筛选、排序、分页和 Tab 等可恢复视图状态。URL 契约由 `src/fsd/app/config/routes.ts` 维护，路由装配在 `src/app` 各路由 `page.tsx` 与 `src/fsd/app/router` Client 装配。
 
-`/profile/notes/courses/:coursePackageId` 已实现课程包笔记二级静态页，归属 `pages/notebook-course`；参数是课程包笔记索引，不是单条笔记 ID。`/profile/notes/:noteId` 仅为未来单条笔记资源的路径示例，当前未注册。一级 `?view=course-packages` 表达按课程包视图，返回入口显式保留该参数。笔记本导航前缀匹配覆盖二级页面。
+`/profile/notes/courses/[coursePackageId]/` 已实现课程包笔记二级静态页，归属 `pages/notebook-course`；参数是课程包笔记索引，不是单条笔记 ID。`/profile/notes/[noteId]/` 仅为未来单条笔记资源的路径示例，当前未注册。一级 `?view=course-packages` 表达按课程包视图，返回入口显式保留该参数。笔记本导航前缀匹配覆盖二级页面。
 
 两级笔记页共同依赖 `widgets/notebook-notes`（笔记组/记录 UI 与本地删除确认）和 `entities/notebook`（记录模型及演示数据），页面仍拥有分页、路由和页签。课程标题/封面由页面组合 `entities/course-package`，实体之间不建立同层依赖。通用返回入口使用 `shared/ui/tld-back-button`，目标由调用方提供，避免直达二级页时依赖未知浏览历史。
 
-课程包的课程列表由八个静态章节卡片组成，整卡 Link 进入 `/profile/notes/courses/:coursePackageId/chapters/:chapterId`（`pages/notebook-chapter`）。章节页同样复用 `NotebookNotes`，显示截图对应笔记组；通过明确课程包父路径加 `?view=courses` 返回列表，直达、刷新也保持该行为。章节模型及示例数据属于 entities/notebook，页面之间不互相导入。课程包和章节的 URL 参数分别查询校验，不能将未知章节默认为第一章。
+课程包的课程列表由八个静态章节卡片组成，整卡 Link 进入 `/profile/notes/courses/[coursePackageId]/chapters/[chapterId]/`（`pages/notebook-chapter`）。章节页同样复用 `NotebookNotes`，显示截图对应笔记组；通过明确课程包父路径加 `?view=courses` 返回列表，直达、刷新也保持该行为。章节模型及示例数据属于 entities/notebook，页面之间不互相导入。课程包和章节的 URL 参数分别查询校验，不能将未知章节默认为第一章。
 
-`/login` 是不套用 App Shell 的独立品牌首屏。`/` 套用 App Shell 并提供学习首页静态编排；`/profile` 提供玩家资料静态页面，`/profile/notes` 提供笔记本双视图静态分页列表，`/profile/learning-progress` 提供学习进度静态分页列表，`/profile/favorites` 提供我的收藏分类、分页、整卡多选与本地删除，`/profile/works` 提供我的作品分页、整卡多选与本地删除确认，`/foreign-language-guide` 提供外语逆袭秘籍静态课程分页列表，`/leaderboard` 提供固定头尾与内部滚动分页的学习排行榜，`/courses/search` 保留后续业务使用的空白功能区域；课程搜索词使用 `q` 查询参数。真实公告、学习统计、排行榜数据请求、资料请求、搜索、课程开通和认证动作确认后再建立对应 feature。
+`/login/` 是不套用 App Shell 的独立品牌首屏。`/` 套用 App Shell 并提供学习首页静态编排；`/profile/` 提供玩家资料静态页面，`/profile/notes/` 提供笔记本双视图静态分页列表，`/profile/learning-progress/` 提供学习进度静态分页列表，`/profile/favorites/` 提供我的收藏分类、分页、整卡多选与本地删除，`/profile/works/` 提供我的作品分页、整卡多选与本地删除确认，`/foreign-language-guide/` 提供外语逆袭秘籍静态课程分页列表，`/leaderboard/` 提供固定头尾与内部滚动分页的学习排行榜，`/courses/search/` 保留后续业务使用的空白功能区域；课程搜索词使用 `q` 查询参数。真实公告、学习统计、排行榜数据请求、资料请求、搜索、课程开通和认证动作确认后再建立对应 feature。
 
 ## App Shell 边界
 
@@ -86,7 +86,7 @@ app → pages → widgets → features → entities → shared
 - 全局课程搜索路由入口和第一版静态功能标签；
 - 内容滚动容器和 Safe Area；
 - 主题、界面语言入口；
-- Outlet 承载。
+- 通过 Next shell layout 注入的 children 承载页面。
 
 壳层不负责课程检索、会员状态、学习进度或任何具体业务。
 
@@ -108,11 +108,11 @@ Tailwind v4 使用 mobile-first：
 
 ### 响应式语义字号
 
-`src/app/styles/index.css` 是跨页面字号阶梯的唯一 owner，通过 Tailwind `@theme inline` 暴露 `text-page-title`、`text-section-title`、`text-card-title`、`text-body`、`text-label`、`text-caption`、`text-tab-label` 和 `text-action-label`。页面和共享组件按内容语义选择 utility，不复制一套自己的同名断点数值。
+`src/fsd/app/styles/index.css` 是跨页面字号阶梯的唯一 owner，通过 Tailwind `@theme inline` 暴露 `text-page-title`、`text-section-title`、`text-card-title`、`text-body`、`text-label`、`text-caption`、`text-tab-label` 和 `text-action-label`。页面和共享组件按内容语义选择 utility，不复制一套自己的同名断点数值。
 
 字号采用 mobile-first：默认值覆盖 H5，`md` 提升到平板，`xl` 调整普通 PC，≥1920px 达到设计稿尺寸上限并保持不再增长。页面标题允许比正文拥有更大的跨端变化；正文、标签和辅助文字分别保留自己的可读性下限，因此禁止统一倍率、根字号缩放、`vw` 字号或整页画布缩放。排行榜数字、登录品牌首屏、极小会员徽标等与固定几何强绑定的视觉可以留在所属 owner，并使用明确断点或局部有界缩放。
 
-共享按钮、页签、Dialog 与 AppLayout 应直接消费这些语义 utility，使业务页面只决定文字角色。添加新角色前必须有至少两个真实消费者，或证明既有角色无法表达；变更阶梯数值需要同步本章节、全局样式 README、影响页面和 PC 验收。取舍见 [ADR 0015](./decisions/0015-responsive-semantic-typography.md)。
+共享按钮、页签、Dialog 与 AppLayout 应直接消费这些语义 utility，使业务页面只决定文字角色。添加新角色前必须有至少两个真实消费者，或证明既有角色无法表达；变更阶梯数值需要同步本章节、全局样式 README、影响页面和 PC 验收。取舍见 [ADR 0015](decisions/0015-responsive-semantic-typography.md)。
 
 ### mainPage 版心与列表适配
 
@@ -139,7 +139,7 @@ App Shell 内的常规列表/管理页默认采用以下规则，玩家档案的
 
 上述精确像素覆盖使用 `xl:min-[1920px]:` 组合变体。当前 Tailwind 编译中，单独的 px 任意断点会排在 rem 命名断点之前，导致宽屏规则被 `xl` 覆盖；组合变体已通过 1920px 与 2560px 浏览器计算样式验证。维护时应核对实际边距与列数，不依赖 class 字符串书写顺序判断覆盖关系。
 
-PC 验收需覆盖 1280px、1400px、1500px、1919px、1920px 和至少一个更宽视口（如 2560px），在相同视口和侧栏状态下横向对比同类页面的实际内容左右边界，检查精确留白、阈值切换、自动列数、侧栏展开/收起、横向溢出与少量数据不异常拉伸。不能只检查 padding、单个页面或单张设计稿尺寸。平板/H5 视觉与真机兼容仍由用户验收。取舍见 [ADR 0014](./decisions/0014-main-page-content-layout.md)。
+PC 验收需覆盖 1280px、1400px、1500px、1919px、1920px 和至少一个更宽视口（如 2560px），在相同视口和侧栏状态下横向对比同类页面的实际内容左右边界，检查精确留白、阈值切换、自动列数、侧栏展开/收起、横向溢出与少量数据不异常拉伸。不能只检查 padding、单个页面或单张设计稿尺寸。平板/H5 视觉与真机兼容仍由用户验收。取舍见 [ADR 0014](decisions/0014-main-page-content-layout.md)。
 
 ## 主题与设计 token
 
@@ -147,7 +147,7 @@ PC 验收需覆盖 1280px、1400px、1500px、1919px、1920px 和至少一个更
 
 1. `shared/config/theme.ts` 注册合法主题；
 2. `shared/theme` 负责状态、DOM `data-theme` 和存储；
-3. `src/app/styles/index.css` 定义主题原始值并通过 `@theme inline` 映射 Tailwind 语义 utility。
+3. `src/fsd/app/styles/index.css` 定义主题原始值并通过 `@theme inline` 映射 Tailwind 语义 utility。
 
 组件只能消费语义 utility，不知道当前主题名。新增 token 先判断是否跨组件稳定；业务局部视觉仍用现有 Tailwind 色义组合，不能把页面文案或领域状态塞入全局 token。
 
@@ -215,7 +215,7 @@ shared/ui/tld-button/
 
 `pnpm run lint:module-docs` 检查：
 
-- `src/app` 及其公共技术 segment；
+- `src/fsd/app` 及其公共技术 segment；
 - `features` 根；
 - `shared/api`、`config`、`constants`、`i18n`、`notification`、`theme`；
 - `entities`、`features`、`pages`、`widgets`、`shared/lib`、`shared/ui` 中拥有根入口的子目录。
@@ -231,7 +231,7 @@ README 至少包含“职责、入口、约束、扩展、验证”。资源目�
 - renderer 不导入 Node.js/Electron，业务不绕过 `shared/api` 直接调用 `fetch`；
 - 业务代码不绕过 `shared/lib/animation` 直接导入 `gsap` 或 `@gsap/react`；
 - `className` 使用完整字面量分支，组件不使用原始 Tailwind 调色板、主题 variant 或内联原始颜色；`tld-gradient-text` 的无样式外层可原样转发调用方 `className` 以承载布局，但不得将该值与内部 Tailwind 外观拼接；
-- `src/app/styles/index.css` 是 `src` 内唯一 CSS 入口，并用 `source("../..")` 只扫描 renderer 源码；原始色值只存在于主题 token 声明。
+- `src/fsd/app/styles/index.css` 是 `src` 内唯一 CSS 入口，并用 `source("../../..")` 只扫描 renderer 源码；原始色值只存在于主题 token 声明。
 
 校验器位于 `scripts/validate-source-contracts.mjs`，fixture 测试位于相邻测试文件。新增路径别名、公共模块形态或合法样式能力时，必须同步契约、脚本与测试，不能只添加忽略。
 
@@ -246,3 +246,13 @@ Electron 是薄壳：
 - Web 与桌面共用生产 renderer。
 
 任何文件、媒体、通知、更新或系统集成都必须先定义权限、失败路径、Web 回退和兼容性契约，再扩展 bridge。
+
+## Next 与 FSD 运行时契约
+
+- Next 16.3.6 / Turbopack 是唯一框架入口，`output: 'export'`、`trailingSlash: true`；不运行 Next Server，不使用 API Route、Server Action、cookies/headers 或按请求渲染。
+- 六层业务位于 `src/fsd`；`src/app` 只放 Next 路由、layout、Metadata 和错误边界。FSD 不反向导入适配层。
+- Server page 只 await params 并传序列化 ID/字符串。路径构造回调在 `src/fsd/app/router` Client 装配。跨 slice 使用根 index；混合公共入口不加 use client；枚举器不得依赖浏览器。
+- Client Component 仍参与预渲染；首次渲染禁止读取浏览器存储/视口或使用随机值。偏好、Portal 和动画在挂载后恢复。`useSearchParams` 放在最近的 Suspense 边界下，视图 replace 保留其他查询参数并使用 scroll:false。
+- 图片导入在 owner 内转换为 `.src`，保持 UI/model 的 string URL 契约。主题首次绘制脚本由 shared/theme 与 shared/lib/storage 生成；仅 html 的主题属性允许窄范围 hydration warning 抑制。
+- 根 tsconfig 保持 strict 与 Next 类型生成；Electron 用独立 tsconfig。新路由同步枚举测试、静态产物集合和部署文档。
+- 类型、文件断言与真实水合/导航验收分开记录。Tablet/H5 视觉和真机仍待用户验收。

@@ -23,10 +23,10 @@ function createFixture(files) {
 
 test('accepts FSD root imports and complete literal Tailwind branches', () => {
     const fixture = createFixture({
-        'app/styles/index.css':
-            '@import "tailwindcss" source("../..");\n:root {\n  --app-color-canvas: #fff;\n}',
-        'pages/course/index.ts': "export { CoursePage } from './ui/CoursePage'\n",
-        'pages/course/ui/CoursePage.tsx': [
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss" source("../../..");\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/pages/course/index.ts': "export { CoursePage } from './ui/CoursePage'\n",
+        'fsd/pages/course/ui/CoursePage.tsx': [
             "import { TldButton } from '../../../shared/ui/tld-button'",
             'function SecondaryPanel(): JSX.Element {',
             "  const className = 'bg-surface-raised text-muted'",
@@ -37,8 +37,8 @@ test('accepts FSD root imports and complete literal Tailwind branches', () => {
             '  return <main className={className}><TldButton /><SecondaryPanel /></main>',
             '}',
         ].join('\n'),
-        'shared/ui/tld-button/index.ts': "export { TldButton } from './TldButton'\n",
-        'shared/ui/tld-button/TldButton.tsx':
+        'fsd/shared/ui/tld-button/index.ts': "export { TldButton } from './TldButton'\n",
+        'fsd/shared/ui/tld-button/TldButton.tsx':
             'export function TldButton(): JSX.Element { return <button className="bg-brand text-inverse" /> }\n',
     })
 
@@ -51,11 +51,11 @@ test('accepts FSD root imports and complete literal Tailwind branches', () => {
 
 test('allows only the gradient text outer wrapper to forward a caller class name', () => {
     const fixture = createFixture({
-        'app/styles/index.css':
-            '@import "tailwindcss" source("../..");\n:root {\n  --app-color-canvas: #fff;\n}',
-        'shared/ui/tld-gradient-text/index.ts':
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss" source("../../..");\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/shared/ui/tld-gradient-text/index.ts':
             "export { TldGradientText } from './TldGradientText'\n",
-        'shared/ui/tld-gradient-text/TldGradientText.tsx': [
+        'fsd/shared/ui/tld-gradient-text/TldGradientText.tsx': [
             'interface Props { className?: string }',
             "export function TldGradientText({ className = '' }: Props): JSX.Element {",
             '  return <span className={className}><span className="text-primary" /></span>',
@@ -72,10 +72,10 @@ test('allows only the gradient text outer wrapper to forward a caller class name
 
 test('reports architecture, renderer API and Tailwind contract violations', () => {
     const fixture = createFixture({
-        'app/styles/index.css':
-            '@import "tailwindcss" source("../..");\n:root {\n  --app-color-canvas: #fff;\n}',
-        'features/save-course/index.ts': "export { SaveCourse } from './ui/SaveCourse'\n",
-        'features/save-course/ui/SaveCourse.tsx': [
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss" source("../../..");\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/features/save-course/index.ts': "export { SaveCourse } from './ui/SaveCourse'\n",
+        'fsd/features/save-course/ui/SaveCourse.tsx': [
             "import { CoursePage } from '../../../pages/course'",
             "import { TldButton } from '../../../shared/ui/tld-button/TldButton'",
             "import { readFile } from 'node:fs'",
@@ -84,13 +84,13 @@ test('reports architecture, renderer API and Tailwind contract violations', () =
             `  return <div className={\`${invalidPaletteClass} \${readFile.name}\`}><CoursePage /><TldButton /></div>`,
             '}',
         ].join('\n'),
-        'pages/course/index.ts': "export { CoursePage } from './ui/CoursePage'\n",
-        'pages/course/ui/CoursePage.tsx':
+        'fsd/pages/course/index.ts': "export { CoursePage } from './ui/CoursePage'\n",
+        'fsd/pages/course/ui/CoursePage.tsx':
             'export function CoursePage(): JSX.Element { return <main /> }\n',
-        'shared/ui/tld-button/index.ts': "export { TldButton } from './TldButton'\n",
-        'shared/ui/tld-button/TldButton.tsx':
+        'fsd/shared/ui/tld-button/index.ts': "export { TldButton } from './TldButton'\n",
+        'fsd/shared/ui/tld-button/TldButton.tsx':
             'export function TldButton(): JSX.Element { return <button /> }\n',
-        'shared/ui/tld-button/styles.css': '.button { color: red; }',
+        'fsd/shared/ui/tld-button/styles.css': '.button { color: red; }',
     })
 
     try {
@@ -108,10 +108,10 @@ test('reports architecture, renderer API and Tailwind contract violations', () =
 
 test('reports raw Tailwind palette colors even when the class branch is literal', () => {
     const fixture = createFixture({
-        'app/styles/index.css':
-            '@import "tailwindcss" source("../..");\n:root {\n  --app-color-canvas: #fff;\n}',
-        'pages/course/index.ts': "export { CoursePage } from './ui/CoursePage'\n",
-        'pages/course/ui/CoursePage.tsx': `export function CoursePage(): JSX.Element { return <main className="${invalidPaletteClass} ${invalidThemeClass}" /> }\n`,
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss" source("../../..");\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/pages/course/index.ts': "export { CoursePage } from './ui/CoursePage'\n",
+        'fsd/pages/course/ui/CoursePage.tsx': `export function CoursePage(): JSX.Element { return <main className="${invalidPaletteClass} ${invalidThemeClass}" /> }\n`,
     })
 
     try {
@@ -129,9 +129,9 @@ test('reports raw Tailwind palette colors even when the class branch is literal'
 
 test('requires custom transitions to include the Tailwind v4 translate property', () => {
     const fixture = createFixture({
-        'app/styles/index.css':
-            '@import "tailwindcss" source("../..");\n:root {\n  --app-color-canvas: #fff;\n}',
-        'pages/course/ui/CoursePage.tsx': [
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss" source("../../..");\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/pages/course/ui/CoursePage.tsx': [
             'export function CoursePage(): JSX.Element {',
             '  return <main className="-translate-x-full transition-[transform,width]" />',
             '}',
@@ -152,7 +152,8 @@ test('requires custom transitions to include the Tailwind v4 translate property'
 
 test('reports a Tailwind entry that scans outside the renderer source tree', () => {
     const fixture = createFixture({
-        'app/styles/index.css': '@import "tailwindcss";\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss";\n:root {\n  --app-color-canvas: #fff;\n}',
     })
 
     try {
@@ -165,16 +166,16 @@ test('reports a Tailwind entry that scans outside the renderer source tree', () 
 
 test('requires GSAP imports to pass through the shared animation boundary', () => {
     const fixture = createFixture({
-        'app/styles/index.css':
-            '@import "tailwindcss" source("../..");\n:root {\n  --app-color-canvas: #fff;\n}',
-        'shared/lib/animation/index.ts': "export { gsap, useGSAP } from './animation'\n",
-        'shared/lib/animation/animation.ts': [
+        'fsd/app/styles/index.css':
+            '@import "tailwindcss" source("../../..");\n:root {\n  --app-color-canvas: #fff;\n}',
+        'fsd/shared/lib/animation/index.ts': "export { gsap, useGSAP } from './animation'\n",
+        'fsd/shared/lib/animation/animation.ts': [
             "import { useGSAP } from '@gsap/react'",
             "import { gsap } from 'gsap'",
             'gsap.registerPlugin(useGSAP)',
             'export { gsap, useGSAP }',
         ].join('\n'),
-        'pages/course/ui/CoursePage.tsx': [
+        'fsd/pages/course/ui/CoursePage.tsx': [
             "import { gsap } from '../../../shared/lib/animation'",
             "import { ScrollTrigger } from 'gsap/ScrollTrigger'",
             'export function CoursePage(): JSX.Element {',
@@ -187,6 +188,60 @@ test('requires GSAP imports to pass through the shared animation boundary', () =
         const errors = validateSourceContracts({ sourceRoot: fixture.sourceRoot })
         assert.equal(errors.filter((error) => error.includes('shared/lib/animation')).length, 1)
         assert.ok(errors.some((error) => error.includes('gsap/ScrollTrigger')))
+    } finally {
+        rmSync(fixture.fixtureRoot, { recursive: true, force: true })
+    }
+})
+
+test('Next adapters may consume root enumerators, but FSD cannot import adapter code', () => {
+    const fixture = createFixture({
+        'fsd/app/styles/index.css': '@import "tailwindcss" source("../../..");',
+        'app/example/page.tsx':
+            "import { enumerate } from '../../fsd/pages/example'\nexport default function Page() { return null }",
+        'fsd/pages/example/index.ts': "export { enumerate } from './model/params'",
+        'fsd/pages/example/model/params.ts': 'export function enumerate() { return [] }',
+    })
+    try {
+        assert.deepEqual(validateSourceContracts({ sourceRoot: fixture.sourceRoot }), [])
+        writeFileSync(
+            resolve(fixture.sourceRoot, 'fsd/pages/example/model/params.ts'),
+            "import Page from '../../../../app/example/page'\nexport function enumerate() { return [] }",
+        )
+        assert.ok(
+            validateSourceContracts({ sourceRoot: fixture.sourceRoot }).some((error) =>
+                error.includes('Next adapter'),
+            ),
+        )
+    } finally {
+        rmSync(fixture.fixtureRoot, { recursive: true, force: true })
+    }
+})
+test('rejects old directories, Router imports, client barrels and dynamic public environment access', () => {
+    const fixture = createFixture({
+        'fsd/app/styles/index.css': '@import "tailwindcss" source("../../..");',
+        'app/api/example/route.ts':
+            "import { cookies } from 'next/headers'\nconst fs = require('node:fs')",
+        'pages/old/index.ts': "import { Link } from 'react-router-dom'",
+        'fsd/pages/example/index.ts':
+            "'use client'\nexport const value = process.env['NEXT_PUBLIC_APP_NAME']",
+        'fsd/shared/config/old.ts': 'export const value = import.meta.env.VITE_APP_NAME',
+    })
+    try {
+        const errors = validateSourceContracts({ sourceRoot: fixture.sourceRoot })
+        for (const message of [
+            'source must belong',
+            'obsolete renderer framework',
+            'Next server APIs',
+            'CommonJS require',
+            'API Route handlers',
+            'public barrel',
+            'static member',
+            'obsolete environment',
+        ])
+            assert.ok(
+                errors.some((error) => error.includes(message)),
+                message,
+            )
     } finally {
         rmSync(fixture.fixtureRoot, { recursive: true, force: true })
     }
