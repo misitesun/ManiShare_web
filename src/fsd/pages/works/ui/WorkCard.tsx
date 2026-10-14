@@ -21,7 +21,7 @@ export function WorkCard({
 
     return (
         <article className="relative min-w-0 overflow-hidden rounded-xl bg-surface-raised">
-            <div className="relative h-[200px] overflow-hidden rounded-t-xl">
+            <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-xl">
                 <img
                     alt=""
                     aria-hidden="true"

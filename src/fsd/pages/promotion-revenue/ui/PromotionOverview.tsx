@@ -1,8 +1,8 @@
 'use client'
 
 import type { ReactElement } from 'react'
-import { projectConstants } from '../../../shared/constants'
 import { TldButton } from '../../../shared/ui/tld-button'
+import { VipStewardQr } from './VipStewardQr'
 import clicksIconSourceAsset from '../assets/clicks.svg'
 import copyIconSourceAsset from '../assets/copy.svg'
 import dealsIconSourceAsset from '../assets/deals.svg'
@@ -18,40 +18,40 @@ const withdrawIconSource: string = withdrawIconSourceAsset.src
 export function PromotionOverview(): ReactElement {
     return (
         <>
-            <section className="flex min-h-[120px] items-center gap-4 rounded-xl bg-surface-raised px-4 py-4 md:px-7">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-16 shrink-0 object-contain xl:min-[1920px]:size-[84px]"
-                    src={projectConstants.assets.mascotSource}
-                />
-                <p className="text-label leading-7 text-secondary">
-                    亲爱的<span className="text-warning">VIP会员</span>
-                    ，您的专属VIP小管家已就位！添加小管家，即可被邀请进入VIP群，享受专属答疑服务想参与推广、
-                    <br className="hidden md:block" />
-                    一起搞钱的小伙伴，也欢迎与小管家聊聊~
-                </p>
+            <section className="flex min-h-[120px] items-center gap-4 rounded-xl bg-surface-raised px-4 py-[18px] md:gap-[15px] md:px-[22px]">
+                <VipStewardQr />
+                <div className="min-w-0 text-label leading-[21px] text-content-strong">
+                    <p>
+                        亲爱的<span className="font-medium text-warning">VIP会员</span>
+                        ，您的专属VIP小管家已就位！添加小管家，即可被邀请进入VIP群
+                    </p>
+                    <p className="mt-[11px]">想参与推广、边学边赚的小伙伴，欢迎与小管家聊聊～</p>
+                </div>
             </section>
 
-            <section className="mt-4 rounded-xl bg-surface-raised p-4 md:px-5 md:py-4">
-                <h2 className="text-card-title font-medium text-primary">我的推广链接</h2>
-                <p className="mt-2 text-label text-muted">
-                    复制链接给朋友，还有通过此链接注册并消费，您将获得佣金
+            <section className="mt-4 rounded-xl bg-surface-raised p-4">
+                <h2 className="text-body font-medium text-content-strong">我的邀请链接</h2>
+                <p className="mt-2.5 text-label text-hint">
+                    复制链接给朋友，朋友通过此链接注册并消费，您将获得佣金
                 </p>
-                <div className="mt-2 flex flex-col gap-2 md:flex-row">
-                    <div className="flex min-w-0 flex-1 items-center rounded border border-strong">
-                        <span className="min-w-0 flex-1 truncate px-3 text-label text-accent-green">
-                            https://manqishuo.www.com
+                <div className="mt-[7px] flex flex-col gap-3 md:flex-row md:gap-4">
+                    <div className="flex min-w-0 flex-1 items-center">
+                        <span className="flex h-[34px] min-w-0 flex-1 items-center rounded border border-strong px-2.5 text-label text-accent-green">
+                            <span className="truncate">www.manishare.cn/love/8位邀请码</span>
                         </span>
-                        <TldButton size="compact">复制推广链接</TldButton>
+                        <span className="shrink-0">
+                            <TldButton size="mini" variant="solid">
+                                复制邀请链接
+                            </TldButton>
+                        </span>
                     </div>
-                    <div className="flex h-8 shrink-0 items-center gap-2 rounded border border-strong px-3 md:min-w-[356px]">
-                        <span className="text-label text-accent-green">邀请码:</span>
-                        <span className="text-label text-secondary">12345678</span>
+                    <div className="flex h-[34px] min-w-0 shrink-0 items-center rounded border border-strong px-2.5 md:w-[min(357px,40%)]">
+                        <span className="text-label font-medium text-accent-green">邀请码：</span>
+                        <span className="truncate text-label text-content-strong">12345678</span>
                         <button
                             type="button"
                             aria-label="复制邀请码"
-                            className="ml-auto grid size-6 cursor-pointer place-items-center rounded transition-colors hover:bg-surface-hover"
+                            className="ml-auto grid size-5 shrink-0 cursor-pointer place-items-center rounded outline-offset-2 transition-colors hover:bg-surface-hover focus-visible:outline-2 focus-visible:outline-focus"
                         >
                             <img
                                 alt=""
@@ -64,73 +64,83 @@ export function PromotionOverview(): ReactElement {
                 </div>
             </section>
 
-            <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.48fr)_minmax(300px,1fr)]">
-                <section className="grid gap-5 rounded-xl bg-surface-raised p-5 md:grid-cols-3 md:gap-3 md:px-9 md:py-8">
-                    <div className="flex items-center gap-3">
-                        <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-accent-blue/15">
+            <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,715fr)_minmax(300px,481fr)]">
+                <section className="grid gap-5 rounded-xl bg-surface-raised p-5 md:grid-cols-3 md:gap-3 xl:min-h-[127px] xl:gap-2 xl:px-6 xl:py-8 xl:min-[1920px]:flex xl:min-[1920px]:justify-between xl:min-[1920px]:pl-9 xl:min-[1920px]:pr-[37px] xl:min-[1920px]:pt-8 xl:min-[1920px]:pb-[31px]">
+                    <div className="flex min-w-0 items-center gap-3 xl:min-[1920px]:items-start">
+                        <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-metric-blue xl:min-[1920px]:size-16">
                             <img
                                 alt=""
                                 aria-hidden="true"
-                                className="size-10"
+                                className="size-9"
                                 src={clicksIconSource}
                             />
                         </span>
-                        <span>
-                            <span className="block text-label text-secondary">分享链接点击数</span>
-                            <strong className="mt-1 block text-section-title font-normal text-primary">
+                        <span className="xl:min-[1920px]:w-[99px]">
+                            <span className="block text-label tracking-[0.01em] text-content-strong">
+                                分享链接点击数
+                            </span>
+                            <strong className="mt-2 block text-[24px] font-medium leading-[34px] tracking-[0.01em] text-content-strong">
                                 18
                             </strong>
                         </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-brand-start/20">
+                    <div className="flex min-w-0 items-center gap-3 xl:min-[1920px]:items-start">
+                        <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-metric-purple xl:min-[1920px]:size-16">
                             <img
                                 alt=""
                                 aria-hidden="true"
-                                className="size-10"
+                                className="size-9"
                                 src={registrationsIconSource}
                             />
                         </span>
-                        <span>
-                            <span className="block text-label text-secondary">注册总数</span>
-                            <strong className="mt-1 block text-section-title font-normal text-primary">
+                        <span className="xl:min-[1920px]:w-[65px]">
+                            <span className="block text-label tracking-[0.01em] text-content-strong">
+                                注册总数
+                            </span>
+                            <strong className="mt-2 block text-[24px] font-medium leading-[34px] tracking-[0.01em] text-content-strong">
                                 8
                             </strong>
                         </span>
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className="grid size-16 shrink-0 place-items-center rounded-xl bg-accent-green/15">
+                    <div className="flex min-w-0 items-center gap-3 xl:min-[1920px]:items-start">
+                        <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-metric-green xl:min-[1920px]:size-16">
                             <img
                                 alt=""
                                 aria-hidden="true"
-                                className="size-10"
+                                className="size-9"
                                 src={dealsIconSource}
                             />
                         </span>
-                        <span>
-                            <span className="block text-label text-secondary">成交总数</span>
-                            <strong className="mt-1 block text-section-title font-normal text-primary">
+                        <span className="xl:min-[1920px]:w-[62px]">
+                            <span className="block text-label tracking-[0.01em] text-content-strong">
+                                成交总数
+                            </span>
+                            <strong className="mt-2 block text-[24px] font-medium leading-[34px] tracking-[0.01em] text-content-strong">
                                 39
                             </strong>
                         </span>
                     </div>
                 </section>
 
-                <section className="flex flex-col justify-between rounded-xl bg-surface-raised p-4">
-                    <div className="flex items-center gap-3">
+                <section className="flex min-h-[127px] flex-col justify-between rounded-xl bg-surface-raised px-4 pb-4 pt-2.5">
+                    <div className="flex h-10 items-center gap-[6px]">
                         <img
                             alt=""
                             aria-hidden="true"
                             className="size-10 shrink-0"
                             src={withdrawIconSource}
                         />
-                        <span className="text-card-title text-secondary">可提现</span>
-                        <strong className="ml-auto text-page-title font-normal text-accent-green">
-                            ¥1000
+                        <span className="text-body-tight tracking-[0.01em] text-content-strong">
+                            可提现
+                        </span>
+                        <strong className="ml-auto translate-y-[3px] whitespace-nowrap text-[30px] font-medium leading-[42px] tracking-[0.01em] text-accent-green">
+                            <span className="text-body-tight">¥</span>1000
                         </strong>
                     </div>
-                    <div className="mt-4">
-                        <TldButton fullWidth>立即提现</TldButton>
+                    <div className="mt-[11px]">
+                        <TldButton fullWidth size="plan">
+                            立即提现
+                        </TldButton>
                     </div>
                 </section>
             </div>

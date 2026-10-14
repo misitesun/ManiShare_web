@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import type { ReactElement } from 'react'
+import type { ReactElement, RefObject } from 'react'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
 import { communityMessages } from '../model/home-data'
 import type { HomeCommunityMessage } from '../model/home-data'
@@ -55,7 +55,11 @@ function MessageChip({ message }: MessageChipProps): ReactElement {
     )
 }
 
-export function CommunityMessages(): ReactElement {
+interface CommunityMessagesProps {
+    readonly mascotAnchorRef: RefObject<HTMLSpanElement | null>
+}
+
+export function CommunityMessages({ mascotAnchorRef }: CommunityMessagesProps): ReactElement {
     const [messageRows, setMessageRows] =
         useState<readonly (readonly HomeCommunityMessage[])[]>(createMessageRows)
     useEffect(() => {
@@ -65,7 +69,7 @@ export function CommunityMessages(): ReactElement {
     return (
         <section
             aria-label="学习留言"
-            className="flex h-[135px] flex-col justify-center gap-2 overflow-hidden rounded-xl border border-strong bg-canvas py-2"
+            className="relative flex h-[150px] flex-col justify-center gap-3 overflow-hidden rounded-xl border border-strong bg-canvas py-2"
         >
             {messageRows.map((messages, rowIndex) => (
                 <AutoMarquee key={rowIndex} durationSeconds={32 + rowIndex * 6}>
@@ -74,6 +78,11 @@ export function CommunityMessages(): ReactElement {
                     ))}
                 </AutoMarquee>
             ))}
+            <span
+                ref={mascotAnchorRef}
+                aria-hidden="true"
+                className="pointer-events-none absolute right-1 top-1/2 size-[70px] -translate-y-1/2"
+            />
         </section>
     )
 }

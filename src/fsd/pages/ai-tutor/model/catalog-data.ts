@@ -1,13 +1,13 @@
 export const mentors = [
-    { id: 'sarah', name: 'Sarah', voice: '美式女音', accent: 'american' },
-    { id: 'jason', name: 'Jason', voice: '美式女音', accent: 'american' },
-    { id: 'ryan', name: 'Ryan', voice: '英式男音', accent: 'british' },
+    { id: 'sarah', name: 'Sarah', voice: '美式女音', voiceGender: 'female' },
     {
         id: 'sarah-british',
-        name: 'Sarah',
-        voice: '英式男音',
-        accent: 'british',
+        name: 'Cathy',
+        voice: '英式女音',
+        voiceGender: 'female',
     },
+    { id: 'jason', name: 'Jason', voice: '美式男音', voiceGender: 'male' },
+    { id: 'ryan', name: 'Ryan', voice: '英式男音', voiceGender: 'male' },
 ] as const
 
 export const scenes = [

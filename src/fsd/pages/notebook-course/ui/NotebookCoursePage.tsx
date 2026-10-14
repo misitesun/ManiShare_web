@@ -59,7 +59,7 @@ function NotebookCourseContent({
             <header className="grid min-w-0 gap-4 rounded-xl border border-primary/30 p-[15px] md:grid-cols-[minmax(0,240px)_minmax(0,1fr)] xl:grid-cols-[321px_minmax(0,1fr)_minmax(0,345px)]">
                 <img
                     alt=""
-                    className="aspect-[321/218] w-full rounded-lg object-cover"
+                    className="aspect-[3/2] w-full rounded-lg object-cover"
                     src={summary.imageSource}
                 />
                 <div className="flex min-w-0 flex-col justify-between gap-4 py-3">

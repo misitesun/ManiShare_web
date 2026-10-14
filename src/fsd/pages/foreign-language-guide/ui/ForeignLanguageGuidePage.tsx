@@ -41,7 +41,7 @@ export function ForeignLanguageGuidePage({
     return (
         <section
             aria-label="外语逆袭秘籍"
-            className="mx-auto min-w-0 px-3 pb-6 pt-5 md:px-4 xl:min-[1920px]:px-[250px]"
+            className="mx-auto min-w-0 px-3 pb-6 pt-5 md:px-4 xl:min-[1920px]:px-[254px]"
         >
             <div className="relative h-[145px] min-w-0 overflow-hidden rounded-xl md:h-[190px] xl:h-[230px] xl:rounded-[20px]">
                 <img
@@ -57,24 +57,28 @@ export function ForeignLanguageGuidePage({
                 </div>
             </div>
 
-            <div className="mt-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <TldSegmentedTabs
-                    activeTextTone="gradient"
-                    ariaLabel="课程分类"
-                    indicatorThickness="thick"
-                    indicatorTone="brand-start"
-                    indicatorWidth={48}
-                    items={categoryTabs}
-                    layout="equal"
-                    semantics="filter"
-                    showBaseline={false}
-                    value={activeCategory}
-                    variant="underline"
-                    onValueChange={selectCategory}
-                />
+            <div className="mt-2.5 overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="mx-auto w-max max-w-full">
+                    <TldSegmentedTabs
+                        activeTextTone="accent-green"
+                        ariaLabel="课程分类"
+                        gap="spacious"
+                        indicatorThickness="thick"
+                        indicatorTone="accent-green"
+                        indicatorWidth={48}
+                        items={categoryTabs}
+                        semantics="filter"
+                        showBaseline={false}
+                        size="compact"
+                        typography="display"
+                        value={activeCategory}
+                        variant="underline"
+                        onValueChange={selectCategory}
+                    />
+                </div>
             </div>
 
-            <div className="mt-[30px] grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 md:gap-y-5 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(562px,1fr))]">
+            <div className="mt-5 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 md:gap-y-5 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(562px,1fr))]">
                 {visibleItems.map((courseItem) =>
                     courseItem.id === 'winter-speaking' ||
                     courseItem.id === 'winter-speaking-continuation' ? (

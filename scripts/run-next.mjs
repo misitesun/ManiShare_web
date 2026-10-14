@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process'
-import { mkdirSync, openSync, closeSync, rmSync } from 'node:fs'
+import { mkdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { loadEnvironment } from './environment.mjs'
+import { acquireNextProcessLock } from './next-process-lock.mjs'
 
 const [command, target = 'development', ...args] = process.argv.slice(2)
 if (!['dev', 'build', 'typecheck'].includes(command)) throw new Error('Unsupported Next command')
@@ -44,9 +45,9 @@ for (const signal of ['SIGINT', 'SIGTERM'])
     })
 mkdirSync('node_modules/.tmp', { recursive: true })
 const lockPath = resolve('node_modules/.tmp/next-process.lock')
-let lock
+let releaseLock
 try {
-    lock = openSync(lockPath, 'wx')
+    releaseLock = acquireNextProcessLock(lockPath)
     if (command === 'dev') await run(['exec', 'next', 'dev', ...args])
     else {
         // Remove generated route types first: typecheck must succeed in a clean checkout.
@@ -73,8 +74,5 @@ try {
 } catch (error) {
     if (!stopping) throw error
 } finally {
-    if (lock !== undefined) {
-        closeSync(lock)
-        rmSync(lockPath, { force: true })
-    }
+    releaseLock?.()
 }

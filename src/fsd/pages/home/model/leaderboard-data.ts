@@ -1,6 +1,6 @@
 import type { TldMembershipTone } from '../../../shared/ui/tld-membership-badge'
 
-export type HomeLeaderboardLevelTone = 'blue' | 'danger' | 'success' | 'warning'
+export type HomeLeaderboardLevelTone = 'blue' | 'danger' | 'success' | 'warning' | 'purple'
 
 export interface HomeLeaderboardRow {
     readonly avatarIndex: number
@@ -70,7 +70,7 @@ const designLeaderboardRows: readonly HomeLeaderboardTemplate[] = [
         membershipLabel: '免费体验',
         membershipTone: 'trial',
         name: '王力文',
-        time: '4小时03分钟',
+        time: '4小时53分钟',
     },
     {
         avatarIndex: 4,
@@ -102,12 +102,22 @@ const designLeaderboardRows: readonly HomeLeaderboardTemplate[] = [
     {
         avatarIndex: 7,
         level: 'Lv100言灵',
-        levelTone: 'warning',
+        levelTone: 'purple',
         membershipLabel: '终身VIP',
         membershipTone: 'lifetime',
         name: '丹青吃薄荷。',
         time: '2小时15分钟',
     },
+    {
+        avatarIndex: 8,
+        level: 'Lv66通律',
+        levelTone: 'success',
+        membershipLabel: '终身VIP',
+        membershipTone: 'lifetime',
+        name: '两百斤土豆',
+        time: '2小时15分钟',
+    },
+
     {
         avatarIndex: 8,
         level: 'Lv66通律',

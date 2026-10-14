@@ -67,7 +67,7 @@ const expectedRoutes = [
 ]
 if (JSON.stringify([...routes].sort()) !== JSON.stringify([...expectedRoutes].sort()))
     throw new Error('Next route set differs from the owner model enumerators')
-if (routes.length !== 269 || new Set(routes).size !== routes.length)
+if (routes.length !== 274 || new Set(routes).size !== routes.length)
     throw new Error('Unexpected business route set')
 const root = resolve('out')
 for (const route of routes) {

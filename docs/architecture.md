@@ -1,5 +1,8 @@
 # 架构约定
 
+- 设置归属 pages/settings，路由 `/settings/`、`?tab=` 表达七个分类。偏好校验和预览保持页面私有，主题经 shared/theme；真实课程消费者出现后再评估模型提升。
+- 三类自定义练习颜色属于已校验的用户内容数据，仅在预览根注入 `--app-color-practice-answer/text/background`，由全局语义 utility 消费；色块展示同一校验值。此边界不允许业务硬编码静态配色或输入任意 CSS。
+
 - AI 助教归属 `pages/ai-tutor`，由 app 在 `/ai-tutor/` 及 `/ai-tutor/mentors/[mentorId]/scenes/[sceneId]/` 由 Next 按路由分包并复用壳层。导师、场景、聊天静态示例、输入状态与资源为页面私有，不新增 features/widgets 或接口。选择页保持响应式网格；聊天页按用户要求一屏展示，导师栏和输入区固定，场景与消息内部滚动；切换导师显式返回父页并恢复选择。
 
 ## 总体分层
@@ -77,6 +80,8 @@ app → pages → widgets → features → entities → shared
 
 ## App Shell 边界
 
+登录改版仍归属pages/login，/login/不套用App Shell。app/router/LoginPageRoute在局部Suspense内解析view并注入onViewChange，页面通过根入口暴露纯视图解析/查询转换；九种视图包括welcome、五种登录和三种注册。页面私有表单、校验及资源不预建feature，真实认证接口确认后再建立独立业务动作。查询只恢复视图，切换丢弃草稿，不写账号/密码/验证码，不新增静态页面集合。共享TldInput的glass外观及TldButton的form/outline显式适配，默认消费者不变。
+
 `widgets/app-layout` 提供响应式壳层，但不知道 app 层导航配置。导航条目、静态标签和搜索路径由 `app` 创建并以 props 注入，避免 widget 反向依赖 app。
 
 壳层负责：
@@ -85,7 +90,7 @@ app → pages → widgets → features → entities → shared
 - H5 使用覆盖式抽屉导航，完全收起后离场，弹出时不改变或推动主内容布局；
 - 全局课程搜索路由入口和第一版静态功能标签；
 - 内容滚动容器和 Safe Area；
-- 主题、界面语言入口；
+- 设置页入口（主题由设置页操作），顶部三项二维码浮层；界面统一中文，不提供语言入口；
 - 通过 Next shell layout 注入的 children 承载页面。
 
 壳层不负责课程检索、会员状态、学习进度或任何具体业务。
@@ -102,11 +107,13 @@ Tailwind v4 使用 mobile-first：
 | `xl` | PC/Electron；默认展开 200px 侧栏，可收起为 64px 图标轨道；1280～1439px 首页保持两列，达到 1440px 后恢复设计稿三列位置并流式收缩列宽 |
 | `3xl` | 1800px 及以上宽屏增强；首页保持 1720px 最大宽度，仅在视口达到 1920px、展开侧栏后剩余宽度足够时恢复设计稿固定列宽 |
 
-首页 PC 三列布局同时以扣除 80px 顶栏后的视口高度为最小高度。设计稿 1080px 高度下保留原始几何；视口更高时，只由排行榜列表和学习花园承接额外高度，禁止为撑满高度缩放整页内容。
+首页 PC 三列布局同时以扣除 80px 顶栏后的视口高度为最小高度。首页2026-10改版采用上区738px/底部214px、749/415/484px内容列及20/16px沟槽，保留1720px最大宽度特殊布局。设计稿1080px高度下保留原始几何；视口更高时，只由排行榜列表和学习花园承接额外高度，禁止为撑满高度缩放整页内容。
 
 布局规则由真实 UI 所有者维护：页面私有布局留在 page，可复用组件维护自身布局。不要建立独立“mobile 页面”或复制两套 DOM；同一语义结构通过断点重排。只有真实交互语义不同且共享 DOM 会显著恶化时，才允许拆分视图。
 
 ### 响应式语义字号
+
+课程详情领取提示使用 `text-body-notice` 密度变体，默认14/20、md16/22、≥1920px18/25。既有body和body-tight不能表达该设计的18/25提示，新增变体由全局样式owner维护，不修改它们的默认消费者。辅助提示颜色经dark/light完整 `hint` token暴露，业务不判断主题。
 
 `src/fsd/app/styles/index.css` 是跨页面字号阶梯的唯一 owner，通过 Tailwind `@theme inline` 暴露 `text-page-title`、`text-section-title`、`text-card-title`、`text-body`、`text-label`、`text-caption`、`text-tab-label` 和 `text-action-label`。页面和共享组件按内容语义选择 utility，不复制一套自己的同名断点数值。
 
@@ -115,6 +122,14 @@ Tailwind v4 使用 mobile-first：
 共享按钮、页签、Dialog 与 AppLayout 应直接消费这些语义 utility，使业务页面只决定文字角色。添加新角色前必须有至少两个真实消费者，或证明既有角色无法表达；变更阶梯数值需要同步本章节、全局样式 README、影响页面和 PC 验收。取舍见 [ADR 0015](decisions/0015-responsive-semantic-typography.md)。
 
 ### mainPage 版心与列表适配
+
+2026-10-14用户确认推广奖励Figma `3:8830`/`3:9218`/`3:9610`：该页≥1920px左右各254px，基准内容1212px，较窄PC仍各16px，无固定最大宽度；这是本页设计例外，不改其他页面。共享页签comfortable字号16/24→18/26→20/28及generous的24→40→70px文案间距仅显式消费者启用。免费体验由页面受控isFreeTrial输入隔离明细内容，真实会员接口尚未接入。
+
+2026-10-14用户确认外语逆袭秘籍Figma `1:2226` 方案：该页≥1920px采用左右254px设计边距，较窄PC仍16px，无固定最大版心，宽屏卡片继续自动排布。基准横幅1212px、卡片598px、封面562×250。共享页签display字号由全局tab-label-display提供16/24→20/28→24/34阶梯，spacious文案间距24→40→60px；默认消费者不变。
+
+设计基准还原优先级与缩放重排见[ADR 0018](decisions/0018-reference-fidelity-and-responsive-reflow.md)。既有语义字号为默认阶梯，不代表所有设计中同类文字拥有相同字号/行高；紧凑正文、页签和操作分别使用 `text-body-tight`、`text-tab-label-compact`、`text-action-label-compact`，由共享owner提供显式选择，默认消费者不受影响。字体栈统一经全局入口维护微软雅黑、苹方与系统回退，不引入UA布局分支。
+
+用户于2026-10-14要求查漏补缺精确还原1920×1080稿：该页在≥1920px左右各254px，是下述250px默认值的显式例外；其余同类页面保持默认，不能为同步边界反向抹掉已确认设计值。该页在较窄PC继续各16px，并保留宽屏自动列数。
 
 App Shell 内的常规列表/管理页默认采用以下规则，玩家档案的查漏补缺、笔记本、学习进度、我的收藏、我的作品是当前实例。这里的 mainPage 指路由页主内容区，不是新增组件或全局业务 class。登录、首页多栏仪表盘、编辑器等特殊布局不自动套用；有明确不同需求时，在页面 README 记录例外。
 
@@ -256,3 +271,9 @@ Electron 是薄壳：
 - 图片导入在 owner 内转换为 `.src`，保持 UI/model 的 string URL 契约。主题首次绘制脚本由 shared/theme 与 shared/lib/storage 生成；仅 html 的主题属性允许窄范围 hydration warning 抑制。
 - 根 tsconfig 保持 strict 与 Next 类型生成；Electron 用独立 tsconfig。新路由同步枚举测试、静态产物集合和部署文档。
 - 类型、文件断言与真实水合/导航验收分开记录。Tablet/H5 视觉和真机仍待用户验收。
+
+奖品兑换中心按已确认的1920px设计使用254px左右版心例外，横幅1212×328，其他列表/管理页默认250px规则不变。其标题、页签与状态辅助文字使用page-title-compact（22/28→26/31）、tab-label-regular（16/22→18/25）、caption-tight（12/17）显式密度变体；dark/light颜色经foreground、surface-recessed与status-positive语义token完整提供，不改变现有primary/success消费者。
+
+- PK首页按已确认设计采用≥1920px左右24px的版心例外，左区1204/排行452/间距16；1280～1919px仍16px。局部领奖台合成区流式适配，正文与操作使用独立可读密度；现有常规页面版心及共享默认组件不改变。
+
+PK状态页面（用户确认766:49937/49998）采用独立全屏(pk-session)路由分组，无侧栏/顶栏，不套用列表250px版心。UI/model/assets保留pages/pk-arena，app/router装配导航回调；不建立全局对战状态或接口。

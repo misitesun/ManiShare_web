@@ -5,7 +5,9 @@ import type { PointerEvent as ReactPointerEvent, ReactElement, ReactNode } from 
 import { createPortal } from 'react-dom'
 import { TldButton } from '../tld-button'
 import closeIconSourceAsset from './assets/close.svg'
-import { canDismissTldDialog } from './dialog-behavior'
+import compactCloseAsset from './assets/close-compact.svg'
+import { canDismissTldDialog, getDialogTabTarget } from './dialog-behavior'
+import type { DialogFocusPosition } from './dialog-behavior'
 
 const closeIconSource: string = closeIconSourceAsset.src
 
@@ -18,9 +20,13 @@ const focusableElementSelector = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(',')
 
-export type TldDialogSize = 'small' | 'medium' | 'large'
+export type TldDialogSize = 'small' | 'medium' | 'large' | 'extra-large' | 'fit-medium' | 'fit-wide'
 
 export interface TldDialogProps {
+    readonly titleTone?: 'default' | 'soft'
+    readonly density?: 'standard' | 'compact'
+    readonly headerSpacing?: 'standard' | 'tight'
+    readonly showCloseButton?: boolean
     readonly cancelLabel?: string
     readonly children?: ReactNode
     readonly closeLabel?: string
@@ -30,6 +36,8 @@ export interface TldDialogProps {
     readonly confirmDisabled?: boolean
     readonly confirmLabel?: string
     readonly content?: ReactNode
+    readonly footer?: ReactNode
+    readonly titleAlignment?: 'start' | 'center'
     readonly onCancel?: () => void
     readonly onConfirm?: () => void
     readonly onOpenChange: (open: boolean) => void
@@ -48,6 +56,10 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 }
 
 export function TldDialog({
+    titleTone = 'default',
+    density = 'standard',
+    headerSpacing = 'standard',
+    showCloseButton = true,
     cancelLabel = '取消',
     children,
     closeLabel = '关闭对话框',
@@ -57,6 +69,8 @@ export function TldDialog({
     confirmDisabled = false,
     confirmLabel = '确认',
     content,
+    footer,
+    titleAlignment = 'start',
     onCancel,
     onConfirm,
     onOpenChange,
@@ -77,13 +91,20 @@ export function TldDialog({
     const onOpenChangeRef = useRef(onOpenChange)
     const bodyContent = children === undefined ? content : children
     const hasBodyContent = bodyContent !== undefined && bodyContent !== null
-    const showActions = showCancelButton || showConfirmButton
+    const showActions =
+        footer !== undefined ? footer !== null : showCancelButton || showConfirmButton
     const dialogFrameClassName =
-        size === 'small'
-            ? 'max-h-[calc(100dvh-24px)] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[220px] md:max-h-[calc(100dvh-48px)]'
-            : size === 'medium'
-              ? 'max-h-[calc(100dvh-24px)] w-full max-w-[576px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
-              : 'max-h-[calc(100dvh-24px)] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
+        size === 'fit-medium'
+            ? 'max-h-[calc(100dvh-24px)] w-full max-w-[470px] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+            : size === 'fit-wide'
+              ? 'max-h-[calc(100dvh-24px)] w-full max-w-[563px] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+              : size === 'small'
+                ? 'max-h-[calc(100dvh-24px)] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[220px] md:max-h-[calc(100dvh-48px)]'
+                : size === 'medium'
+                  ? 'max-h-[calc(100dvh-24px)] w-full max-w-[576px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
+                  : size === 'extra-large'
+                    ? 'max-h-[calc(100dvh-24px)] w-full max-w-[802px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
+                    : 'max-h-[calc(100dvh-24px)] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
 
     useEffect(() => {
         onOpenChangeRef.current = onOpenChange
@@ -119,25 +140,30 @@ export function TldDialog({
             const focusableElements = getFocusableElements(dialog)
             const firstFocusableElement = focusableElements[0]
             const lastFocusableElement = focusableElements.at(-1)
-            if (firstFocusableElement === undefined || lastFocusableElement === undefined) {
-                event.preventDefault()
-                dialog.focus()
-                return
-            }
-
             const activeElement = document.activeElement
-            if (
-                event.shiftKey &&
-                (activeElement === firstFocusableElement || !dialog.contains(activeElement))
-            ) {
+            const position: DialogFocusPosition =
+                activeElement === dialog
+                    ? 'frame'
+                    : !dialog.contains(activeElement)
+                      ? 'outside'
+                      : activeElement === firstFocusableElement &&
+                          activeElement === lastFocusableElement
+                        ? 'only'
+                        : activeElement === firstFocusableElement
+                          ? 'first'
+                          : activeElement === lastFocusableElement
+                            ? 'last'
+                            : 'inside'
+            const target = getDialogTabTarget(
+                position,
+                event.shiftKey,
+                firstFocusableElement !== undefined,
+            )
+            if (target !== null) {
                 event.preventDefault()
-                lastFocusableElement.focus()
-                return
-            }
-
-            if (!event.shiftKey && activeElement === lastFocusableElement) {
-                event.preventDefault()
-                firstFocusableElement.focus()
+                if (target === 'frame') dialog.focus()
+                else if (target === 'first') firstFocusableElement?.focus()
+                else lastFocusableElement?.focus()
             }
         }
 
@@ -187,29 +213,57 @@ export function TldDialog({
                     role="dialog"
                     tabIndex={-1}
                 >
-                    <button
-                        type="button"
-                        aria-label={closeLabel}
-                        className="absolute right-3 top-3 z-10 grid size-10 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-surface-hover md:right-4 md:top-4"
-                        onClick={closeDialog}
-                    >
-                        <img
-                            alt=""
-                            aria-hidden="true"
+                    {showCloseButton ? (
+                        <button
+                            type="button"
+                            aria-label={closeLabel}
                             className={
-                                showHeader
-                                    ? 'size-7 [filter:var(--app-filter-dialog-icon)]'
-                                    : 'size-6 [filter:var(--app-filter-dialog-icon)]'
+                                density === 'compact'
+                                    ? headerSpacing === 'tight'
+                                        ? 'absolute right-[7px] top-[7px] z-10 grid size-10 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-surface-hover'
+                                        : 'absolute right-[5px] top-[9px] z-10 grid size-10 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-surface-hover'
+                                    : 'absolute right-3 top-3 z-10 grid size-10 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-surface-hover md:right-4 md:top-4'
                             }
-                            src={closeIconSource}
-                        />
-                    </button>
+                            onClick={closeDialog}
+                        >
+                            <img
+                                alt=""
+                                aria-hidden="true"
+                                className={
+                                    density === 'compact'
+                                        ? 'size-5 [filter:var(--app-filter-dialog-icon)]'
+                                        : showHeader
+                                          ? 'size-7 [filter:var(--app-filter-dialog-icon)]'
+                                          : 'size-6 [filter:var(--app-filter-dialog-icon)]'
+                                }
+                                src={
+                                    density === 'compact' ? compactCloseAsset.src : closeIconSource
+                                }
+                            />
+                        </button>
+                    ) : null}
 
                     {showHeader ? (
-                        <header className="shrink-0 px-4 pb-3 pr-16 pt-4 md:px-6 md:pb-5 md:pr-20 md:pt-6">
+                        <header
+                            className={
+                                density === 'compact'
+                                    ? headerSpacing === 'tight'
+                                        ? 'shrink-0 border-b border-subtle px-[13px] pb-[14px] pr-14 pt-[13px]'
+                                        : 'shrink-0 border-b border-subtle px-[15px] pb-[15.5px] pr-14 pt-[15px]'
+                                    : titleAlignment === 'center'
+                                      ? 'shrink-0 px-16 pb-3 pt-4 text-center md:px-20 md:pb-5 md:pt-6'
+                                      : 'shrink-0 px-4 pb-3 pr-16 pt-4 md:px-6 md:pb-5 md:pr-20 md:pt-6'
+                            }
+                        >
                             <h2
                                 id={titleId}
-                                className="text-xl font-medium leading-7 md:text-[22px]"
+                                className={
+                                    density === 'compact'
+                                        ? titleTone === 'soft'
+                                            ? 'text-xl font-medium leading-7 text-dialog-title-soft'
+                                            : 'text-xl font-medium leading-7'
+                                        : 'text-xl font-medium leading-7 md:text-[22px]'
+                                }
                             >
                                 {title}
                             </h2>
@@ -222,37 +276,47 @@ export function TldDialog({
 
                     <div
                         id={hasBodyContent ? contentId : undefined}
-                        className="min-h-0 flex-1 overflow-y-auto px-4 pb-5 text-body text-secondary md:px-6 md:pb-6"
+                        className={
+                            density === 'compact'
+                                ? 'min-h-0 flex-1 overflow-y-auto text-body-tight text-secondary'
+                                : 'min-h-0 flex-1 overflow-y-auto px-4 pb-5 text-body text-secondary md:px-6 md:pb-6'
+                        }
                     >
                         {bodyContent}
                     </div>
 
                     {showActions ? (
                         <footer className="flex shrink-0 items-center justify-center gap-3 px-4 pb-4 md:gap-6 md:px-6 md:pb-6">
-                            {showCancelButton ? (
-                                <div className="min-w-0 flex-1 md:w-[180px] md:flex-none">
-                                    <TldButton
-                                        fullWidth
-                                        size="large"
-                                        variant="secondary"
-                                        onClick={handleCancel}
-                                    >
-                                        {cancelLabel}
-                                    </TldButton>
-                                </div>
-                            ) : null}
-                            {showConfirmButton ? (
-                                <div className="min-w-0 flex-1 md:w-[180px] md:flex-none">
-                                    <TldButton
-                                        fullWidth
-                                        size="large"
-                                        disabled={confirmDisabled}
-                                        onClick={handleConfirm}
-                                    >
-                                        {confirmLabel}
-                                    </TldButton>
-                                </div>
-                            ) : null}
+                            {footer !== undefined ? (
+                                footer
+                            ) : (
+                                <>
+                                    {showCancelButton ? (
+                                        <div className="min-w-0 flex-1 md:w-[180px] md:flex-none">
+                                            <TldButton
+                                                fullWidth
+                                                size="large"
+                                                variant="secondary"
+                                                onClick={handleCancel}
+                                            >
+                                                {cancelLabel}
+                                            </TldButton>
+                                        </div>
+                                    ) : null}
+                                    {showConfirmButton ? (
+                                        <div className="min-w-0 flex-1 md:w-[180px] md:flex-none">
+                                            <TldButton
+                                                fullWidth
+                                                size="large"
+                                                disabled={confirmDisabled}
+                                                onClick={handleConfirm}
+                                            >
+                                                {confirmLabel}
+                                            </TldButton>
+                                        </div>
+                                    ) : null}
+                                </>
+                            )}
                         </footer>
                     ) : null}
                 </div>

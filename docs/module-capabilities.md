@@ -1,5 +1,9 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- PK争霸：`pages/pk-arena` 提供 `/pk/` 首页示例大厅，包含三位置活动插画演示轮播、统计、我的创建、房号搜索、房间卡和三类排行榜。轮播/筛选/榜单切换/取消为页面内状态；确认取消同步移除我的创建与大厅对应示例房间。创建通过 features/pk-create-room 完整本地配置，替换自己的示例房间并清空搜索，关闭丢弃草稿，刷新恢复初始数据；新增全屏匹配/加载演示页，邀请/机器人提示未接入，开启仅进入固定72%加载；记录、真实匹配与对战尚未接入；不发起业务请求或新增持久化、依赖及桌面能力。
+
+- 设置：pages/settings 提供 `/settings/` 七个面板、完整参数选项、本机保存、颜色/字体/模糊/声纹预览和快捷键配置；系统版本与设备信息真实读取。URL tab和持久化数据挂载后恢复，主题复用shared/theme；音源、答题运行、手写、口语评测和课程快捷操作待课程功能接入，不请求额外接口。
+
 - `shared/ui/tld-moving-highlight`：无业务移动高亮层，按选项 DOM 几何适配横排、竖排、多行网格与内部滚动，支持普通滑动以及按横/纵轴拉伸、落点、回弹的橡皮形变。AI 导师选择、聊天场景、排行榜周期与指标、下拉菜单指针/焦点反馈、玩家档案子导航活动线统一复用；保留各消费者原生交互语义。
 
 - AI 助教：`pages/ai-tutor` 提供 `/ai-tutor/` 静态导师/场景选择和 `/ai-tutor/mentors/[mentorId]/scenes/[sceneId]/` 一屏聊天 UI；包含场景滑动选中、内部滚动、返回恢复选择和文字/语音输入模式切换，不接入对话或录音接口。`TldSelection` 支持 radio/name/value 和卡片指示器位置，默认 checkbox 保持兼容。
@@ -42,10 +46,9 @@
 | Next.js 16.3.6 | App Router、开发服务器、类型生成与静态导出 | bundler 为 Turbopack，构建目标 staging/production |
 | Tailwind CSS 4 | 页面和组件样式、mobile-first 响应式、跨页面语义字号 | 颜色只来自语义主题 token；字号按角色缩放且在 1920px 达到设计上限；不并行维护 Sass/CSS Modules |
 | Next App Router | page/layout/error/not-found 与 Client 导航 | URL 源在 `src/fsd/app/config`；动态参数由 owner 根入口枚举 |
-| i18next | 保留初始化、已有 `zh-CN` / `en-US` 资源和切换基础 | 当前新页面默认直接展示中文，暂不扩展多语言翻译 |
+| i18next | 仅初始化 `zh-CN` 兼容词典供已有 t() 消费者使用 | 不加载英文，不恢复旧语言偏好，不提供切换或多语言同步验收；新文案直接中文 |
 | GSAP + `@gsap/react` | 交互动效和 React 生命周期管理 | 只从 `shared/lib/animation` 导入，限定作用域并尊重 reduced-motion |
-| React Bits | 候选动画、文字和背景的可调整源码来源 | 已按源码方式接入 Aurora 用于登录页，保留默认波带并翻转纵向方向；其余组件仍按真实消费者逐个引入并适配本仓库契约 |
-| OGL 1.0.11 | 登录页 Aurora 的轻量 WebGL renderer | 只由 `pages/login` 的页面私有视觉消费；不作为通用 3D 场景层，不暴露 Node/Electron API |
+| React Bits | 候选动画、文字和背景的可调整源码来源 | 新版登录使用Figma地球位图，旧Aurora及OGL依赖已删除；未来组件仅按真实消费者逐个引入并适配本仓库契约 |
 | Electron | 安全桌面壳和窄 preload/IPC | renderer 不接触 Node/Electron API |
 | pnpm 10.28.2 | 唯一依赖与命令执行器 | lockfile 唯一；安装脚本使用精确白名单 |
 | EditorConfig + Prettier 3 | 源代码、脚本和配置的统一格式 | 4 个空格缩进、禁止 Tab；Markdown、生成锁文件和静态资源不机械改写 |
@@ -61,7 +64,7 @@
 | HTTP | `src/fsd/shared/api` | 方法封装、查询参数、超时、认证头、`HttpError` | 领域端点、DTO 校验、缓存、自动重试 |
 | 主题 | `src/fsd/shared/theme` 与 `src/fsd/app/styles/index.css` | dark/light 注册、应用、持久化、语义 token、切换过渡 | 组件内主题分支、业务颜色硬编码 |
 | 响应式字号 | `src/fsd/app/styles/index.css` | 页面/区块/卡片标题、正文、标签、辅助文字、页签和强调操作的 mobile-first 语义 utility | 根字号缩放、统一 `vw` 倍率、特殊品牌或排行榜视觉 |
-| i18n 基础 | `src/fsd/shared/i18n` | 初始化、已有中英文资源、语言切换能力 | 当前新页面的英文翻译、自动翻译、学习内容语言模型 |
+| 中文兼容词典 | `src/fsd/shared/i18n` | 只加载zh-CN供已有t()消费者使用，不恢复旧英文偏好 | 语言切换、多语言翻译、英文同步验收、学习内容语言模型 |
 | Web Storage | `src/fsd/shared/lib/storage` | `StorageSchema` 约束的 LocalStorage 访问 | SessionStorage 直连、数据库或服务端会话 |
 | 时间 | `src/fsd/shared/lib/time` | locale 和默认 IANA 时区的日期时间展示 | 学习日历、连续天数和倒计时业务规则 |
 | 剪贴板 | `src/fsd/shared/lib/clipboard` | 非空文本复制和布尔结果 | 用户提示 UI |
@@ -77,8 +80,10 @@
 | 提现明细区块 | `src/fsd/widgets/withdrawal-records` | 推广收益与分公司的提现表格、静态分页、状态徽标、收款码弹窗和审核说明提示 | 真实提现请求、审核规则、结算状态或用户通知 |
 | 通用页签 | `src/fsd/shared/ui/tld-segmented-tabs` | 受控单选页签/筛选组、橡皮形变分段渐变和动态下划线、文字/横线/底线独立配置、真实尺寸校准与基础无障碍语义 | 业务筛选状态、路由、页签文案和拖拽切换 |
 | Tooltip 文字提示 | `src/fsd/shared/ui/tooltip` | Portal 定位、四方向、自定义高度、hover/focus 交互，以及可选共享 Group 的跨触发项跟随、尺寸过渡和速度倾斜 | 业务文案、触发条件或导航状态 |
-| Dialog 对话框 | `src/fsd/shared/ui/tld-dialog` | 受控 Portal、渐变边框、2px 背景模糊遮罩、响应式尺寸、内容插槽、统一操作按钮、焦点与关闭策略 | 业务表单、提交状态、接口错误或全局弹窗队列 |
+| Dialog 对话框 | `src/fsd/shared/ui/tld-dialog` | 受控 Portal、渐变边框、2px 背景模糊遮罩、响应式尺寸（含802px）、居中标题、内容/底部插槽、统一操作按钮、首次及首尾双向焦点循环与关闭策略 | 业务表单、提交状态、接口错误或全局弹窗队列 |
 | PWA 预留 | `src/fsd/shared/lib/pwa` | 安装生命周期监听与状态 Hook | manifest、Service Worker、离线缓存和发布 |
+
+推广奖励设计使用提现区块显式contrasted外观，分公司保留默认外观；字段和行为同源。pages/promotion-revenue通过isFreeTrial受控输入显示免费体验插画与提示、阻止明细内容和分页挂载，会员/收益接口尚未接入。shared页签comfortable/generous、按钮mini/solid与全局语义token显式消费，既有默认消费者不变。
 
 新增公共能力前先搜索现有入口。页面私有 UI、Hook、状态和资源默认留在 `pages/<page>`；只有独立用户业务进入 `features`，跨页面大型组合进入 `widgets`。第二个真实消费者只触发重新判断；确认能力没有业务语义后，才下沉到双方共同允许依赖的最低层。不能先建 `shared/utils`、`hooks` 或 `services` 等万能目录。
 
@@ -86,15 +91,17 @@
 
 | 能力 | 所有者 | 当前契约 |
 | --- | --- | --- |
-| 路由 | `src/fsd/app/config/routes.ts`、`src/app` 各路由 `page.tsx` 与 `src/fsd/app/router` Client 装配 | `/` 是学习首页静态编排，`/courses/search/` 使用空白功能区域，`/profile/` 是玩家资料页，`/profile/knowledge-gaps/` 是查漏补缺静态分页列表，`/profile/notes/` 是笔记本双视图静态分页列表，`/profile/learning-progress/` 是学习进度静态分页列表，`/profile/favorites/` 是我的收藏分类、整卡多选与本地删除静态列表，`/profile/works/` 是我的作品整卡多选与本地删除静态列表，`/foreign-language-guide/` 是外语逆袭秘籍静态课程分页列表，`/collaboration/` 是联创天使静态权益和支付页，`/vip/` 是畅学 VIP 静态方案页，`/leaderboard/` 是固定头尾与内部滚动分页的学习排行榜，`/prize-center/` 是奖品兑换中心的积分兑换缺省态和待扩展面板，`/promotion/revenue/` 是推广收益概览与佣金静态分页列表，`/branch-company/` 是分公司结算概览与奖励静态分页列表，`/login/` 为独立品牌首屏 |
+| 路由 | `src/fsd/app/config/routes.ts`、`src/app` 各路由 `page.tsx` 与 `src/fsd/app/router` Client 装配 | `/` 是学习首页静态编排，`/courses/search/` 使用空白功能区域，`/profile/` 是玩家资料页，`/profile/knowledge-gaps/` 是查漏补缺静态分页列表，`/profile/notes/` 是笔记本双视图静态分页列表，`/profile/learning-progress/` 是学习进度静态分页列表，`/profile/favorites/` 是我的收藏分类、整卡多选与本地删除静态列表，`/profile/works/` 是我的作品整卡多选与本地删除静态列表，`/foreign-language-guide/` 是外语逆袭秘籍静态课程分页列表，`/collaboration/` 是联创天使静态权益和支付页，`/vip/` 是畅学 VIP 静态方案页，`/leaderboard/` 是固定头尾与内部滚动分页的学习排行榜，`/prize-center/` 是奖品兑换中心的其他兑换插画空态、未接接口的权益兑换表单与四条演示兑换记录，`/promotion/revenue/` 是推广收益概览与佣金静态分页列表，`/branch-company/` 是分公司结算概览与奖励静态分页列表，`/login/` 为独立品牌首屏 |
 | 课程集合编辑 | `src/fsd/features/edit-course-collection` | 我的收藏与我的作品共用浏览/编辑、整卡多选、取消和本地删除状态；页面仍分别拥有数据、筛选、分页和提示文案 |
+| 创建PK房间 | `src/fsd/features/pk-create-room` | 六组完整配置、课程单选、章节多选和更多展开、题型/模式联动、有效配置回调；调用方负责模拟房间替换，卸载丢弃草稿，不发起请求或新增持久化 |
 | 笔记本二级页 | `src/fsd/pages/notebook-course` | `/profile/notes/courses/[coursePackageId]/` 课程包概要、全部笔记和八个章节卡片；`view=courses` 恢复课程列表 |
 | 章节笔记页 | `src/fsd/pages/notebook-chapter` | `/profile/notes/courses/[coursePackageId]/chapters/[chapterId]/` 展示对应章节笔记，返回恢复课程列表，未知参数显示空态 |
 | 共享笔记区 | `src/fsd/widgets/notebook-notes`、`src/fsd/entities/notebook` | 两级页面统一记录展示、删除确认和演示数据；分页由一级页拥有，新增/编辑仍为静态入口 |
-| 响应式壳层 | `src/fsd/widgets/app-layout` | 同一开关状态驱动跨端侧栏动画；H5 使用不推动主内容且可完全离场的覆盖式抽屉，`md` 平板与 `xl` PC/Electron 在 200px 侧栏和保留头像/导航图标的 64px 轨道间切换，1920px 宽屏展示完整标签文案；联创天使使用整行品牌渐变，排行榜后保留风采大赛静态入口并接入奖品兑换中心路由 |
+| 响应式壳层 | `src/fsd/widgets/app-layout` | 同一开关状态驱动跨端侧栏动画；H5 使用不推动主内容且可完全离场的覆盖式抽屉，`md` 平板与 `xl` PC/Electron 在 200px 侧栏和保留头像/导航图标的 64px 轨道间切换，1920px 宽屏展示完整标签文案；联创天使使用整行品牌渐变，排行榜后接通风采大赛暂未开放页与奖品兑换中心路由 |
+| 风采大赛 | `src/fsd/pages/competition` | `/competition/` 展示设计原图与暂未开放提示；侧栏真实导航、选中高亮和刷新恢复，不接比赛接口 |
 | 分公司 | `src/fsd/pages/branch-company` | 侧栏底部钻石入口、结算概览、奖励明细静态分页，并复用跨页面提现明细区块；不发起接口请求或推导提现规则 |
-| 学习首页 | `src/fsd/pages/home` | 1920px 三栏基准布局、超宽屏 1720px 居中容器、固定前三名舞台和包含 50 条静态数据的内部滚动榜单；首次进入时通过 TldDialog 展示定位说明并持久化确认标记，不请求定位权限；平板/H5 使用同一语义 DOM 重排 |
-| 登录落地页 | `src/fsd/pages/login` | Figma 静态布局、黑白主题、三端响应式与从底部向上展开的 React Bits Aurora 流动光带；表单、认证和跳转待独立需求 |
+| 学习首页 | `src/fsd/pages/home` | 新版1920px三栏与1720px特殊版心、六项统计与五范围切换、五位置占位轮播、插画陪伴展示与分享提示、实际日历月份切换、原始三道光束星光榜和50条内部滚动示例行；70×70云朵IP通过页面私有Portal悬浮，支持鼠标/触摸拖动、方向键移动、悬停动效及两行提示、边缘校正，刷新复位且无位置持久化；首次进入时通过 TldDialog 展示定位说明并持久化确认标记，不请求定位权限；平板/H5 使用同一语义 DOM 重排 |
+| 登录与注册 | `src/fsd/pages/login` | Figma地球背景品牌首屏、五种登录与三种注册入口、输入清空/密码显隐/字段与协议校验；view查询恢复视图，dark/light卡片与三端响应式；前端交互无认证请求/敏感持久化，真实验证码与认证尚未接入 |
 | Electron | `electron/`、`electron-builder.yml` | Web/H5/Electron 共用 renderer；桌面能力只通过具名 preload API 与校验 sender 的 IPC |
 | 兼容性知识 | `docs/compatibility.md` | 运行时差异必须进入登记契约，明确 fallback、cleanup、自动验证和人工复测 |
 
@@ -138,8 +145,28 @@ pnpm run build
 
 当前明确不预建课程、练习、笔记、用户档案、音频、录音、语音识别、AI 教学、全局状态、请求缓存或完整 PWA 能力。它们必须在真实需求、数据契约和多端行为确认后，按 FSD 建立对应模块。
 - `TldInput` 同时服务查漏补缺和 AppLayout 顶部搜索，统一 hover/focus 绿色边框，提供 medium/large 尺寸与 trailingAction 尾部操作槽；不负责业务搜索或路由。
+- 设计基准与响应式重排按ADR0018分段验收；全局字体栈微软雅黑→苹方→系统字体，紧凑正文/页签/操作字号由全局入口维护。TldSegmentedTabs提供compact typography/gap，TldSwitch提供compact size，TldProgressBar提供wide spacing；查漏补缺显式消费，原默认消费者不变。
 - 收藏与作品编辑的选择覆盖层统一消费 `TldSelection layout="card"`：整卡原生 checkbox 点击区、右上角圆形指示器、主题底色与选中动画；不再维护独立选中/未选中图片。
 - `TldSelection` 使用白色对号标记选中，`tone="selection"`（默认）为绿色普通选择，`tone="danger"` 为红色删除选择；作品/收藏编辑覆盖层使用 danger，查漏补缺保持默认。
 - `TldSegmentedTabs` 分段变体用独立局部渐变层和文字裁剪层完成橡皮拉伸、落点和回弹；underline 变体复用 `TldMovingHighlight` 对固定、文字或整段宽度的横线执行同样动画，活动文字、横线与底线可独立配置。几何均依据真实 DOM 测量，reduced-motion 下立即切换，动画只经 `shared/lib/animation` 使用现有 GSAP。
 - `TldDialog` H5 高度随内容自适应，操作按钮同排等宽，单按钮占满操作区；md 及以上保留原有尺寸与最小高度，正文仍可内部滚动。
 - 言灵觉醒：`pages/awakening`，路由 `/awakening/`，三排静态选项、原稿课程封面与分页演示；`/awakening/courses/[courseId]/` 提供音标课程详情静态预览，固定面包屑、简介与章节共同内部滚动，复用进度条和开关。收藏/助手仅本地展示状态，学习、重置、筛选业务待接口确认。
+
+- 外语逆袭秘籍消费共享页签display字号变体与spacious间距，基准24/34、60px文案间距；全局tab-label-display阶梯16/24→20/28→24/34，现有default/compact契约不变。
+- 课程详情领取模块展示静态未解锁提示，本页拥有云朵锁定资源，不借用侧栏示例VIP徽标判断权限。全局body-notice为14/20→16/22→18/25提示正文阶梯，hint提供两主题的辅助提示色；真实领取、购买与会员授权未接入。
+
+全局顶部玩家俱乐部/客服咨询/玩法介绍二维码浮层由widgets/app-layout拥有，app明确注入三种action，复用设计示例二维码。玩法介绍点击仅提示链接暂未配置；真实后台二维码和超链接后续独立接入，无业务请求。
+
+首页进入流程：pages/home编排定位→本地每日签到→俱乐部→不再提示确认；daily-checkin负责签到记录，TldDemoQr共用示例码；dailyCheckin/homeClubPrompt是本机版本化存储，上海自然日去重和永久关闭只针对自动提示。当前无真实签到、学习阈值或入群接口。
+
+## VIP新版套餐展示
+
+`pages/vip-membership` 私有模型按周/月/季/年生成完整权益，价格保留四份设计稿原值；无支付和接口。共享根入口新增 `TldButton size="plan"`、`TldSegmentedTabs appearance="neutral"`，视觉token由 `app/styles` 完整定义dark/light，默认消费者不变。PC以1920×1191对照；平板/H5视觉和真机待用户验收。
+
+- 奖品兑换中心显式使用页签regular/spread与page-title-compact密度，原有共享消费者默认值保持；本页拥有横幅与期待插画。记录表使用foreground/surface-recessed/status-positive两主题token。兑换、记录请求和真实用户数据未接入。
+
+VIP分类扩展：`pages/vip-membership` 私有实现联创权益、免费体验两种状态与本地领取演示；无网络请求和持久化。顶部柔光、分类栏外框及128/162px选中态使用Figma装饰背景图，文案保持DOM。共享按钮显式扩展plan-compact与subtle，主题token完整覆盖dark/light；详见VIP及按钮README，现有默认消费者保持原样。
+
+- PK首页使用最新ManiShare 176:1234稿：1920px左右24px、150×100封面、纵向房间卡与452px榜单；三个轮播位置默认中间，左右循环，本地创建/取消/搜索/榜单继续复用。四个共享视觉变体显式消费，不改变默认消费者，未接业务接口。
+
+- PK状态页766:49937/49998：pages/pk-arena内聚两个全屏静态页面及资源，首页三个入口进入固定演示房间，取消仅离开，邀请/机器人提示，加载72%不进入练习；路由/产物同步为28/274，无业务请求与新增持久化。

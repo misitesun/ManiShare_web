@@ -17,10 +17,10 @@ export function RegistrationRecordTable({
     status,
 }: RegistrationRecordTableProps): ReactElement {
     return (
-        <>
+        <div className="flex min-h-[calc(100svh-260px)] flex-col">
             <div className="mt-4 overflow-x-auto rounded-xl">
                 <table className="w-full min-w-[1212px] table-fixed text-center">
-                    <thead className="h-[54px] bg-surface-raised text-body text-secondary">
+                    <thead className="h-[54px] bg-surface-raised text-body-tight text-content-strong">
                         <tr>
                             <th className="w-[120px] px-2 font-medium" scope="col">
                                 ID
@@ -51,13 +51,13 @@ export function RegistrationRecordTable({
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="text-label text-secondary">
+                    <tbody className="text-label tracking-[0.01em] text-content-strong">
                         {items.map((item, index) => (
                             <tr
                                 key={item.id}
                                 className={
                                     index % 2 === 0
-                                        ? 'h-[52px] bg-canvas'
+                                        ? 'h-[52px] bg-row-alternate'
                                         : 'h-[52px] bg-surface-raised'
                                 }
                             >
@@ -72,7 +72,13 @@ export function RegistrationRecordTable({
                                     />
                                 </td>
                                 <td className="truncate px-2">{item.wechatId ?? '------'}</td>
-                                <td className="whitespace-nowrap px-0 text-left">
+                                <td
+                                    className={
+                                        item.email === undefined
+                                            ? 'px-2'
+                                            : 'whitespace-nowrap px-0 text-left'
+                                    }
+                                >
                                     {item.email ?? '------'}
                                 </td>
                                 <td className="px-2">{item.vipType}</td>
@@ -85,9 +91,9 @@ export function RegistrationRecordTable({
                 </table>
             </div>
 
-            <div className={status === 'idle' ? 'pt-[300px]' : 'pt-0'}>
+            <div className="mt-auto">
                 <TldPaginationStatus status={status} onLoadNextPage={onLoadNextPage} />
             </div>
-        </>
+        </div>
     )
 }

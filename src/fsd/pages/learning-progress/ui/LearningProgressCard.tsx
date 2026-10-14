@@ -23,7 +23,7 @@ export function LearningProgressCard({
             <img
                 alt=""
                 aria-hidden="true"
-                className="aspect-[308/218] w-full rounded-lg object-cover md:h-[218px] md:w-[308px] md:shrink-0"
+                className="aspect-[3/2] w-full rounded-lg object-cover md:w-[308px] md:shrink-0 md:self-start"
                 src={item.imageSource}
             />
 

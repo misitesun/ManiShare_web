@@ -2,6 +2,10 @@ import { sharedConfig } from '../../config'
 import type { AppTheme } from '../../config'
 
 type StorageSchema = {
+    [sharedConfig.storageKeys.dailyCheckin]: unknown
+    [sharedConfig.storageKeys.homeClubPrompt]: unknown
+    // Domain owners validate this versioned payload; shared storage does not import pages.
+    [sharedConfig.storageKeys.learningPreferences]: unknown
     [sharedConfig.storageKeys.language]: string
     [sharedConfig.storageKeys.theme]: AppTheme
     [sharedConfig.storageKeys.pwaInstalled]: boolean

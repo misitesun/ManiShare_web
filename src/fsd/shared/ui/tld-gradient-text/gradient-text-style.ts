@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 export type TldGradientTextDirection = 'horizontal' | 'vertical' | 'diagonal'
 
 export interface TldGradientTextStyleOptions {
+    readonly animated?: boolean
     readonly animationSpeed: number
     readonly colors: readonly string[]
     readonly direction: TldGradientTextDirection
@@ -57,6 +58,7 @@ export function getGradientTextColors(colors: readonly string[]): GradientTextCo
 }
 
 export function getGradientTextStyle({
+    animated = true,
     animationSpeed,
     colors,
     direction,
@@ -69,10 +71,10 @@ export function getGradientTextStyle({
     return {
         backgroundImage: `linear-gradient(${getGradientAngle(direction)}, ${[
             ...gradientColors,
-            firstColor,
+            ...(animated ? [firstColor] : []),
         ].join(', ')})`,
         backgroundRepeat: 'repeat',
-        backgroundSize: getGradientSize(direction),
+        backgroundSize: animated ? getGradientSize(direction) : '100% 100%',
         '--tld-gradient-text-direction': yoyo ? 'alternate' : 'normal',
         '--tld-gradient-text-duration': `${getAnimationSpeed(animationSpeed)}s`,
         '--tld-gradient-text-end': endPosition,

@@ -38,6 +38,7 @@ export const navigationItems = [
     },
     {
         labelKey: 'navigation.collaboration',
+        accent: 'brand',
         icon: 'co-create',
         to: routePaths.collaboration,
         end: true,
@@ -51,11 +52,20 @@ export const navigationItems = [
     },
     {
         labelKey: 'navigation.revenue',
+        label: '我的推广奖励',
+        pageLabel: '我的推广奖励',
         icon: 'revenue',
         to: routePaths.promotionRevenue,
         end: true,
     },
-    { labelKey: 'navigation.pk', icon: 'pk' },
+    {
+        label: 'PK争霸',
+        labelKey: 'navigation.pk',
+        pageLabel: 'PK争霸',
+        icon: 'pk',
+        to: routePaths.pkArena,
+        end: true,
+    },
     { labelKey: 'navigation.aiTutor', icon: 'ai-tutor', to: routePaths.aiTutor },
     { labelKey: 'navigation.aiCreate', icon: 'ai-create' },
     {
@@ -66,7 +76,14 @@ export const navigationItems = [
         to: routePaths.leaderboard,
         end: true,
     },
-    { labelKey: 'navigation.competition', icon: 'competition' },
+    {
+        label: '风采大赛',
+        labelKey: 'navigation.competition',
+        pageLabel: '风采大赛',
+        icon: 'competition',
+        to: routePaths.competition,
+        end: true,
+    },
     {
         labelKey: 'navigation.prizeCenter',
         icon: 'prize-center',
@@ -76,9 +93,9 @@ export const navigationItems = [
 ] satisfies readonly AppNavigationItem[]
 
 export const utilityItems = [
-    { labelKey: 'layout.playerClub', icon: 'club' },
-    { labelKey: 'layout.customerService', icon: 'service' },
-    { labelKey: 'layout.gameGuide', icon: 'play' },
+    { labelKey: 'layout.playerClub', icon: 'club', action: 'club-qr' },
+    { labelKey: 'layout.customerService', icon: 'service', action: 'service-qr' },
+    { labelKey: 'layout.gameGuide', icon: 'play', action: 'play-qr' },
     { labelKey: 'layout.feedback', icon: 'feedback', action: 'feedback' },
     { labelKey: 'layout.systemMessages', icon: 'notification' },
     { labelKey: 'layout.addDesktop', icon: 'desktop' },

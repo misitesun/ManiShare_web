@@ -5,6 +5,9 @@ const config: NextConfig = {
     trailingSlash: true,
     images: { unoptimized: true },
     poweredByHeader: false,
+    ...(process.env.NODE_ENV === 'development' && process.env.NEXT_DEV_ALLOWED_HOST
+        ? { allowedDevOrigins: [process.env.NEXT_DEV_ALLOWED_HOST] }
+        : {}),
     ...(process.env.NODE_ENV === 'development' && process.env.API_PROXY_TARGET
         ? {
               async rewrites(): Promise<{ source: string; destination: string }[]> {

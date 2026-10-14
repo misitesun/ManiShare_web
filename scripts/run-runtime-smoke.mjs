@@ -1,7 +1,10 @@
 import { spawn } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { createServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
+const smokeProfile = mkdtempSync(join(tmpdir(), 'english-learning-runtime-smoke-'))
 const port = await new Promise((resolvePort, reject) => {
     const probe = createServer()
     probe.once('error', reject)
@@ -50,7 +53,12 @@ try {
             process.execPath,
             [resolve('node_modules/electron/cli.js'), 'scripts/runtime-smoke.cjs'],
             {
-                env: { ...process.env, DESKTOP_SMOKE: '1', SMOKE_WEB_ORIGIN: origin },
+                env: {
+                    ...process.env,
+                    DESKTOP_SMOKE: '1',
+                    SMOKE_WEB_ORIGIN: origin,
+                    DESKTOP_SMOKE_USER_DATA: smokeProfile,
+                },
                 stdio: 'inherit',
             },
         )
@@ -60,4 +68,5 @@ try {
     process.exitCode = result
 } finally {
     stop()
+    rmSync(smokeProfile, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 })
 }

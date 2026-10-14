@@ -68,3 +68,11 @@ Check state ownership, Effect necessity and cleanup, stable identity, async depe
 ## Next static-export boundary
 
 Use Next App Router as the only framework entry. Business owners stay under src/fsd; src/app is an adapter and must not be imported from FSD. Server adapters pass serializable data; inject callbacks inside FSD app Client assemblies. Keep mixed slice index.ts barrels free of use client and export build-time enumerators through root entries. Client components are prerendered: first render must not read browser storage/viewport or random values. Restore preferences/portals after mount, place useSearchParams under local Suspense, preserve query values with replace and scroll:false. Normalize static asset imports to string URLs inside their owner. Use pnpm run typecheck for clean Next type generation, then test/lint/build and the documented production runtime smoke; file/type checks alone do not prove hydration, RSC, CSP or Electron success. Follow docs/environment.md and docs/static-deployment.md; do not introduce a Next Server or restore obsolete framework commands.
+
+## Design reference fidelity and reflow
+
+Follow docs/decisions/0018-reference-fidelity-and-responsive-reflow.md. At the reference CSS viewport and 100% page zoom, verify actual font size, line height, weight, letter spacing, text-edge gaps and DOM geometry against the design; shared defaults and passing builds are not fidelity evidence. Use explicit semantic density variants when defaults differ, keeping existing consumers unchanged. Verify narrower/wider PC layouts and real browser zoom separately; reducing viewport dimensions is not a real zoom test. H5/tablet visual and real-device acceptance remains with the user. Preserve available-font fallback and never counter-scale user zoom through UA, DPR, root font size or a fixed canvas.
+
+## Chinese-only renderer
+
+Keep first render and hydration in zh-CN. Do not restore historical English preferences, add language switching or require translations. New UI copy is direct Chinese; existing t() calls consume only the Chinese compatibility dictionary.

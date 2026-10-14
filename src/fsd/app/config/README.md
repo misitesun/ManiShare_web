@@ -6,10 +6,10 @@
 
 - 职责：维护应用内导航项与语义化路由路径。
 - 顶栏动作：`utilityItems` 的意见反馈项显式声明 `action: 'feedback'`，由壳层打开反馈 feature；没有 action 的入口仍只展示，不推断业务行为。
-- 侧栏导航：“风采大赛”与“奖品兑换中心”按设计顺序位于排行榜之后；风采大赛尚无页面契约，保持无目标静态项；奖品兑换中心接入 `/prize-center/`。
+- 侧栏导航：“风采大赛”与“奖品兑换中心”按设计顺序位于排行榜之后；风采大赛接入 `/competition/` 暂未开放提示页；奖品兑换中心接入 `/prize-center/`。
 - 漫奇联创天使：`routePaths.collaboration` 为 `/collaboration/`，侧栏项通过该真实路由高亮并支持直接访问。
 - 畅学 VIP：`routePaths.vipMembership` 为 `/vip/`，复用现有 `navigation.vip` 文案和图标，支持侧栏高亮与直接访问。
-- 入口：`routes.ts` 导出学习首页 `/`、`/login/`、`/profile/`、`/profile/knowledge-gaps/`、`/profile/notes/`、`/profile/learning-progress/`、`/profile/favorites/`、`/profile/works/`、`/foreign-language-guide/`、`/collaboration/`、`/vip/`、`/leaderboard/`、`/prize-center/`、`/promotion/revenue/`、`/branch-company/` 与 `/courses/search/`；`navigation.ts` 导出壳层的 `navigationItems`、`utilityItems` 和底部钻石入口 `footerNavigationItem`，登录落地页不进入该导航。
+- 入口：`routes.ts` 导出学习首页 `/`、`/login/`、`/profile/`、`/profile/knowledge-gaps/`、`/profile/notes/`、`/profile/learning-progress/`、`/profile/favorites/`、`/profile/works/`、`/foreign-language-guide/`、`/collaboration/`、`/vip/`、`/leaderboard/`、`/competition/`、`/prize-center/`、`/promotion/revenue/`、`/branch-company/` 与 `/courses/search/`；`navigation.ts` 导出壳层的 `navigationItems`、`utilityItems` 和底部钻石入口 `footerNavigationItem`，登录落地页不进入该导航。
 - 约束：资源 ID 使用领域路径参数；查询参数只表达筛选、排序、分页或 Tab 等可选视图状态。
 - 笔记本二级路由：`notebookCourse` 为 `/profile/notes/courses/[coursePackageId]/`，参数标识课程包笔记索引；一级页的 `view=course-packages` 恢复按课程包页签。笔记本导航使用前缀匹配，涵盖二级页。
 - 章节笔记路由：`notebookChapter` 为 `/profile/notes/courses/[coursePackageId]/chapters/[chapterId]/`；课程包页 `view=courses` 恢复课程列表。章节路径包含所属课程包，两级参数必须同时校验。
@@ -17,3 +17,5 @@
 - 验证：`pnpm run build && pnpm run lint`。
 - 言灵觉醒入口为 `routePaths.awakening`（`/awakening/`），侧栏复用既有名称和图标，接通静态课程目录。
 - 课程详情模板 `routePaths.awakeningCourse`（`/awakening/courses/[courseId]/`）传入目录页；详情页返回路径由 app 注入，保持言灵觉醒侧栏归属。
+
+- PK状态新增pkMatching=/pk/matching/、pkLoading=/pk/loading/；共28个路由契约，静态导出274个业务HTML，首页随机/快速开始及等待入口经Client装配跳转，不新增侧栏项。

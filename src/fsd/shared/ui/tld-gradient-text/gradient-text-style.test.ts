@@ -39,3 +39,15 @@ test('gradient text normalizes invalid animation speed and preserves one-way loo
     assert.equal(style['--tld-gradient-text-duration'], '8s')
     assert.equal(style['--tld-gradient-text-direction'], 'normal')
 })
+
+test('stationary design gradient spans the whole text without repeating its first color', (): void => {
+    const style = getGradientTextStyle({
+        animated: false,
+        animationSpeed: 8,
+        colors: ['first-color', 'second-color'],
+        direction: 'horizontal',
+        yoyo: true,
+    })
+    assert.equal(style.backgroundImage, 'linear-gradient(to right, first-color, second-color)')
+    assert.equal(style.backgroundSize, '100% 100%')
+})

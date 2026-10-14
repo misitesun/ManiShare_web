@@ -19,7 +19,7 @@ export function FavoriteCard({
 }: FavoriteCardProps): ReactElement {
     return (
         <article className="relative min-w-0 overflow-hidden rounded-xl bg-surface-raised">
-            <div className="h-[200px] overflow-hidden rounded-t-xl">
+            <div className="aspect-[3/2] w-full overflow-hidden rounded-t-xl">
                 <img
                     alt=""
                     aria-hidden="true"

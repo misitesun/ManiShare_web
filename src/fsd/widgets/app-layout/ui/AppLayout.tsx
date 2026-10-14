@@ -6,14 +6,16 @@ import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import type { NavigationViewport } from '../model/navigation-state'
+import { isHeaderQrAction } from '../model/header-qr'
+import type { HeaderQrAction } from '../model/header-qr'
+import { HeaderQrEntry } from './HeaderQrEntry'
 import { isPathActive } from '../model/navigation-path'
 import { SubmitFeedbackDialog } from '../../../features/submit-feedback'
 import { projectConstants } from '../../../shared/constants'
-import { LanguageSwitcher } from '../../../shared/ui/language-switcher'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
 import { TldInput } from '../../../shared/ui/tld-input'
+import { TldGradientText } from '../../../shared/ui/tld-gradient-text'
 import { TldMovingHighlight } from '../../../shared/ui/tld-moving-highlight'
-import { ThemeSwitcher } from '../../../shared/ui/theme-switcher'
 import { Tooltip, TooltipGroup } from '../../../shared/ui/tooltip'
 import {
     getNavigationStateForViewport,
@@ -101,7 +103,7 @@ export type AppNavigationIcon =
     | 'vocabulary'
     | 'wisdom'
 
-export type AppNavigationAccent = 'default' | 'vip'
+export type AppNavigationAccent = 'default' | 'vip' | 'brand'
 
 export interface AppNavigationChildItem {
     readonly label?: string
@@ -125,7 +127,7 @@ export interface AppNavigationItem {
 }
 
 export type AppUtilityIcon = 'club' | 'desktop' | 'feedback' | 'notification' | 'play' | 'service'
-export type AppUtilityAction = 'feedback'
+export type AppUtilityAction = 'feedback' | HeaderQrAction
 
 export interface AppUtilityItem {
     readonly labelKey: string
@@ -145,6 +147,7 @@ export interface AppLayoutProps {
     readonly navigationItems: readonly AppNavigationItem[]
     readonly utilityItems: readonly AppUtilityItem[]
     readonly searchPath: string
+    readonly settingsPath: string
 }
 
 interface NavigationEntryProps {
@@ -421,7 +424,11 @@ function NavigationEntry({
                         : 'visible min-w-0 max-w-[9rem] flex-1 truncate opacity-100 transition-[max-width,opacity] duration-100 md:delay-300 md:motion-reduce:delay-0 motion-reduce:transition-none'
                 }
             >
-                {itemLabel}
+                {item.accent === 'brand' && !isActive ? (
+                    <TldGradientText>{itemLabel}</TldGradientText>
+                ) : (
+                    itemLabel
+                )}
             </span>
         </Link>,
     )
@@ -432,6 +439,7 @@ export function AppLayout({
     navigationItems,
     utilityItems,
     searchPath,
+    settingsPath,
     children,
 }: AppLayoutProps): ReactElement {
     const { t } = useTranslation()
@@ -440,15 +448,18 @@ export function AppLayout({
     const navigationId = useId()
     const [searchQuery, setSearchQuery] = useState('')
     const [isFeedbackDialogOpen, setIsFeedbackDialogOpen] = useState(false)
+    const [openHeaderQr, setOpenHeaderQr] = useState<HeaderQrAction | null>(null)
     const activePageLabelSource = getActivePageLabelSource(navigationItems, pathname)
     const isFooterNavigationActive = isPathActive(pathname, footerNavigationItem.to, true)
-    const activePageLabel = isFooterNavigationActive
-        ? (footerNavigationItem.pageLabel ?? footerNavigationItem.label)
-        : activePageLabelSource === undefined
-          ? undefined
-          : (activePageLabelSource.pageLabel ??
-            activePageLabelSource.label ??
-            t(activePageLabelSource.pageLabelKey ?? activePageLabelSource.labelKey))
+    const activePageLabel = isPathActive(pathname, settingsPath, true)
+        ? '设置'
+        : isFooterNavigationActive
+          ? (footerNavigationItem.pageLabel ?? footerNavigationItem.label)
+          : activePageLabelSource === undefined
+            ? undefined
+            : (activePageLabelSource.pageLabel ??
+              activePageLabelSource.label ??
+              t(activePageLabelSource.pageLabelKey ?? activePageLabelSource.labelKey))
     const [navigationState, setNavigationState] = useState(() =>
         getNavigationStateForViewport('mobile'),
     )
@@ -546,23 +557,21 @@ export function AppLayout({
         </Link>
     )
     const settingsControl = (
-        <details className="group relative">
-            <summary
-                aria-label={t('layout.interfaceSettings')}
-                className="grid h-10 cursor-pointer list-none place-items-center rounded-lg border border-subtle transition-colors hover:bg-surface-hover"
-            >
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-5 [filter:var(--app-filter-shell-icon)]"
-                    src={settingsIconSource}
-                />
-            </summary>
-            <div className="absolute bottom-12 left-0 z-10 flex w-44 flex-col gap-2 rounded-lg border border-subtle bg-surface p-2 shadow-panel">
-                <ThemeSwitcher />
-                <LanguageSwitcher />
-            </div>
-        </details>
+        <Link
+            href={settingsPath}
+            scroll={false}
+            onClick={closeOverlayNavigation}
+            aria-label="设置"
+            aria-current={isPathActive(pathname, settingsPath, true) ? 'page' : undefined}
+            className="grid h-10 cursor-pointer place-items-center rounded-lg border border-subtle transition-colors hover:bg-surface-hover aria-[current=page]:border-brand aria-[current=page]:bg-surface-hover"
+        >
+            <img
+                alt=""
+                aria-hidden="true"
+                className="size-5 [filter:var(--app-filter-shell-icon)]"
+                src={settingsIconSource}
+            />
+        </Link>
     )
 
     return (
@@ -778,34 +787,48 @@ export function AppLayout({
                         </button>
                     </form>
 
-                    <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-2">
-                        {utilityItems.map((item) => (
-                            <button
-                                key={item.labelKey}
-                                type="button"
-                                aria-label={t(item.labelKey)}
-                                className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-strong text-primary transition-colors hover:bg-surface-hover md:h-8 md:w-8 min-[1800px]:min-w-max min-[1800px]:px-[11px]"
-                                onClick={
-                                    item.action === 'feedback'
-                                        ? (): void => setIsFeedbackDialogOpen(true)
-                                        : undefined
-                                }
-                            >
-                                <img
-                                    alt=""
-                                    aria-hidden="true"
-                                    className="size-[18px] [filter:var(--app-filter-shell-icon)] min-[1800px]:size-6"
-                                    src={utilityIconSources[item.icon]}
+                    <div className="ml-auto flex shrink-0 items-center gap-1 md:gap-2 xl:min-[1800px]:gap-5">
+                        {utilityItems.map((item) => {
+                            const action = item.action
+                            return isHeaderQrAction(action) ? (
+                                <HeaderQrEntry
+                                    key={item.labelKey}
+                                    action={action}
+                                    open={openHeaderQr === action}
+                                    onOpenChange={(open): void => {
+                                        setOpenHeaderQr((current) =>
+                                            open ? action : current === action ? null : current,
+                                        )
+                                    }}
                                 />
-                                <span className="hidden whitespace-nowrap text-body font-medium min-[1800px]:inline">
-                                    {t(item.labelKey)}
-                                </span>
-                            </button>
-                        ))}
+                            ) : (
+                                <button
+                                    key={item.labelKey}
+                                    type="button"
+                                    aria-label={t(item.labelKey)}
+                                    className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-strong text-primary transition-colors hover:bg-surface-hover md:h-8 md:w-8 xl:min-[1800px]:w-[115px]"
+                                    onClick={
+                                        item.action === 'feedback'
+                                            ? (): void => setIsFeedbackDialogOpen(true)
+                                            : undefined
+                                    }
+                                >
+                                    <img
+                                        alt=""
+                                        aria-hidden="true"
+                                        className="size-[18px] [filter:var(--app-filter-shell-icon)] min-[1800px]:size-6"
+                                        src={utilityIconSources[item.icon]}
+                                    />
+                                    <span className="hidden whitespace-nowrap text-body-tight font-medium min-[1800px]:inline">
+                                        {t(item.labelKey)}
+                                    </span>
+                                </button>
+                            )
+                        })}
                         <img
                             alt=""
                             aria-hidden="true"
-                            className="size-7 shrink-0 object-cover md:size-8 xl:size-10 min-[1800px]:size-[52px]!"
+                            className="size-7 shrink-0 object-cover md:size-8 xl:size-10 xl:min-[1800px]:-ml-2 min-[1800px]:size-[52px]!"
                             src={projectConstants.assets.mascotSource}
                         />
                     </div>

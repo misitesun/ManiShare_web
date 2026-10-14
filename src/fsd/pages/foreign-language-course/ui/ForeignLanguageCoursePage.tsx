@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supportedForeignLanguageCourseId } from '../model/route-params'
+import { getClaimNoticeScrollTop } from '../model/claim-visibility'
 import type { ReactElement } from 'react'
 import { TldBackButton } from '../../../shared/ui/tld-back-button'
 import { TldButton } from '../../../shared/ui/tld-button'
@@ -11,11 +12,13 @@ import bannerSourceAsset from '../assets/winter-speaking-banner.png'
 import playSourceAsset from '../assets/play.svg'
 import paginationSourceAsset from '../assets/pagination.svg'
 import vipSourceAsset from '../assets/vip.svg'
+import claimLockedSourceAsset from '../assets/claim-locked.png'
 
 const bannerSource: string = bannerSourceAsset.src
 const playSource: string = playSourceAsset.src
 const paginationSource: string = paginationSourceAsset.src
 const vipSource: string = vipSourceAsset.src
+const claimLockedSource: string = claimLockedSourceAsset.src
 
 interface ForeignLanguageCoursePageProps {
     readonly backPath: string
@@ -32,6 +35,28 @@ export function ForeignLanguageCoursePage({
     courseId,
 }: ForeignLanguageCoursePageProps): ReactElement {
     const [activeTab, setActiveTab] = useState('details')
+    const contentRef = useRef<HTMLDivElement>(null)
+    const claimNoticeRef = useRef<HTMLParagraphElement>(null)
+
+    useEffect(() => {
+        if (activeTab !== 'claim') return
+        const content = contentRef.current
+        const notice = claimNoticeRef.current
+        if (content === null || notice === null) return
+        const viewport = content.getBoundingClientRect()
+        const target = notice.getBoundingClientRect()
+        content.scrollTo({
+            top: getClaimNoticeScrollTop({
+                viewportTop: viewport.top,
+                viewportBottom: viewport.bottom,
+                noticeTop: target.top,
+                noticeBottom: target.bottom,
+                currentScrollTop: content.scrollTop,
+                maxScrollTop: content.scrollHeight - content.clientHeight,
+            }),
+            behavior: 'auto',
+        })
+    }, [activeTab])
 
     if (courseId !== supportedForeignLanguageCourseId) {
         return (
@@ -52,6 +77,7 @@ export function ForeignLanguageCoursePage({
             </header>
 
             <div
+                ref={contentRef}
                 aria-label="课程详情内容"
                 tabIndex={0}
                 className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain outline-offset-[-2px] focus-visible:outline-2 focus-visible:outline-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -147,8 +173,23 @@ export function ForeignLanguageCoursePage({
                     role="tabpanel"
                     aria-label="领取"
                     hidden={activeTab !== 'claim'}
-                    className="min-h-48"
-                />
+                    className="min-h-48 pb-6 pt-8 md:pt-10 xl:pt-[52px]"
+                >
+                    <div className="flex min-w-0 flex-col items-center gap-4">
+                        <img
+                            alt=""
+                            aria-hidden="true"
+                            className="h-32 w-40 max-w-full object-contain md:h-36 md:w-[180px] xl:h-40 xl:w-[200px]"
+                            src={claimLockedSource}
+                        />
+                        <p
+                            ref={claimNoticeRef}
+                            className="max-w-full text-center text-body-notice font-normal tracking-[0.01em] text-hint"
+                        >
+                            VIP可见，升级VIP或直接购买，可解锁领取
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <footer

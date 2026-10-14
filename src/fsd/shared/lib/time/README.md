@@ -5,3 +5,5 @@
 - 约束：业务和私有模块不得直接使用 `Date` 或 `Intl.DateTimeFormat`；内容或用户时区不同时必须显式传入 IANA 时区。
 - 扩展：日期比较、倒计时和连续学习天数等能力须以真实需求独立设计，不在页面临时实现。
 - 验证：新增时间行为时补就近测试，并运行 `pnpm run test && pnpm run lint && pnpm run build`。
+
+getCurrentDayKey/getDayKey/isDayKey提供上海自然日YYYY-MM-DD及严格日期校验，供每日本地签到使用；时间仅在客户端挂载后或事件中读取，不进入首屏预渲染。day-key.test覆盖UTC16点换日、跨年及闰日。

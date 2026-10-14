@@ -17,7 +17,7 @@ function fixture() {
     )
     writeFileSync(
         join(directory, '.env.production'),
-        'NEXT_PUBLIC_DEPLOY_ENV=production\nNEXT_PUBLIC_DEFAULT_LANGUAGE=en-US\n',
+        'NEXT_PUBLIC_DEPLOY_ENV=production\nNEXT_PUBLIC_DEFAULT_LANGUAGE=zh-CN\n',
     )
     return directory
 }
@@ -54,11 +54,13 @@ test('validation rejects mismatched deployment, invalid metadata, language, time
             { NEXT_PUBLIC_DEPLOY_ENV: 'production' },
             { NEXT_PUBLIC_APP_NAME: '' },
             { NEXT_PUBLIC_DEFAULT_LANGUAGE: 'unsupported' },
+            { NEXT_PUBLIC_DEFAULT_LANGUAGE: 'en-US' },
             { NEXT_PUBLIC_API_TIMEOUT: 'zero' },
             { NEXT_PUBLIC_API_BASE_URL: 'javascript:bad' },
             { ROBOTS_POLICY: 'index,follow' },
             { SITE_URL: 'http://example.test/' },
             { API_PROXY_TARGET: 'file:///tmp/' },
+            { NEXT_DEV_ALLOWED_HOST: '192.168.1.10' },
         ])
             assert.throws(() => loadEnvironment('staging', { directory, inherited }))
         const override = loadEnvironment('staging', {
@@ -67,6 +69,30 @@ test('validation rejects mismatched deployment, invalid metadata, language, time
         })
         assert.equal(override.NEXT_PUBLIC_API_BASE_URL, 'https://api.example.test')
         assert.throws(() => loadEnvironment('unknown', { directory, inherited: {} }))
+    } finally {
+        rmSync(directory, { recursive: true, force: true })
+    }
+})
+test('development accepts one explicit LAN host and rejects wildcard or URL values', () => {
+    const directory = fixture()
+    try {
+        writeFileSync(
+            join(directory, '.env.development'),
+            'NEXT_PUBLIC_DEPLOY_ENV=development\nNEXT_PUBLIC_DEFAULT_LANGUAGE=zh-CN\n',
+        )
+        writeFileSync(
+            join(directory, '.env.development.local'),
+            'NEXT_DEV_ALLOWED_HOST=192.168.110.129\n',
+        )
+        const env = loadEnvironment('development', { directory, inherited: {} })
+        assert.equal(env.NEXT_DEV_ALLOWED_HOST, '192.168.110.129')
+        for (const host of ['*', '*.local', 'http://192.168.110.129:3000', '192.168.110.129:3000'])
+            assert.throws(() =>
+                loadEnvironment('development', {
+                    directory,
+                    inherited: { NEXT_DEV_ALLOWED_HOST: host },
+                }),
+            )
     } finally {
         rmSync(directory, { recursive: true, force: true })
     }

@@ -1,12 +1,41 @@
 @import "tailwindcss" source("../../..");
 
 @theme inline {
+    --text-action-label-small: 0.875rem;
+    --text-action-label-small--line-height: 1.25rem;
+    --text-tab-label-comfortable: var(--app-text-tab-label-comfortable);
+    --text-tab-label-comfortable--line-height: var(--app-leading-tab-label-comfortable);
+    --color-row-alternate: var(--app-color-row-alternate);
+    --color-content-strong: var(--app-color-content-strong);
+    --color-metric-blue: var(--app-color-metric-blue);
+    --color-metric-purple: var(--app-color-metric-purple);
+    --color-metric-green: var(--app-color-metric-green);
+    --color-review-pending: var(--app-color-review-pending);
+    --color-review-failed: var(--app-color-review-failed);
+    --color-review-approved: var(--app-color-review-approved);
+    --background-image-dialog-border: var(--app-background-dialog-border);
+    --color-checkin-highlight: var(--app-color-checkin-highlight);
+    --color-checkin-glow: var(--app-color-checkin-glow);
+    --color-dialog-title-soft: var(--app-color-dialog-title-soft);
+    --color-button-muted: var(--app-color-button-muted);
     --font-sans:
-        "Inter", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", sans-serif;
-    --font-brand: "07NikumaruFont", "Arial Rounded MT Bold", ui-rounded, sans-serif;
-    --font-login: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+        "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    --font-brand: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+    --font-login: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
 
+    --text-label-regular: 0.875rem;
+    --text-label-regular--line-height: 1.25rem;
+    --text-section-title-display: var(--app-text-section-title-display);
+    --text-section-title-display--line-height: var(--app-leading-section-title-display);
+    --text-section-title-tight: var(--app-text-section-title-display);
+    --text-section-title-tight--line-height: var(--app-leading-section-title-tight);
+    --text-page-title-compact: var(--app-text-page-title-compact);
+    --text-page-title-compact--line-height: var(--app-leading-page-title-compact);
+    --text-caption-tight: 0.75rem;
+    --text-caption-tight--line-height: 1.0625rem;
+    --text-tab-label-regular: var(--app-text-tab-label-regular);
+    --text-tab-label-regular--line-height: var(--app-leading-tab-label-regular);
     --text-page-title: var(--app-text-page-title);
     --text-page-title--line-height: var(--app-leading-page-title);
     --text-section-title: var(--app-text-section-title);
@@ -15,32 +44,99 @@
     --text-card-title--line-height: var(--app-leading-card-title);
     --text-body: var(--app-text-body);
     --text-body--line-height: var(--app-leading-body);
+    --text-body-tight: var(--app-text-body-tight);
+    --text-body-tight--line-height: var(--app-leading-body-tight);
+    --text-body-notice: var(--app-text-body-notice);
+    --text-body-notice--line-height: var(--app-leading-body-notice);
     --text-label: var(--app-text-label);
     --text-label--line-height: var(--app-leading-label);
     --text-caption: var(--app-text-caption);
     --text-caption--line-height: var(--app-leading-caption);
     --text-tab-label: var(--app-text-tab-label);
     --text-tab-label--line-height: var(--app-leading-tab-label);
+    --text-tab-label-compact: var(--app-text-tab-label-compact);
+    --text-tab-label-compact--line-height: var(--app-leading-tab-label-compact);
+    --text-tab-label-display: var(--app-text-tab-label-display);
+    --text-tab-label-display--line-height: var(--app-leading-tab-label-display);
     --text-action-label: var(--app-text-action-label);
     --text-action-label--line-height: var(--app-leading-action-label);
+    --text-action-label-compact: var(--app-text-action-label-compact);
+    --text-action-label-compact--line-height: var(--app-leading-action-label-compact);
+    --text-field-label: 0.875rem;
+    --text-field-label--line-height: 1.25rem;
+    --text-form-action: 1rem;
+    --text-form-action--line-height: 1.375rem;
+    --text-form-title: var(--app-text-form-title);
+    --text-form-title--line-height: var(--app-leading-form-title);
 
     --breakpoint-3xl: 112.5rem;
 
     --color-canvas: var(--app-color-canvas);
     --color-sidebar: var(--app-color-sidebar);
+    --color-surface-recessed: var(--app-color-surface-recessed);
+    --color-status-positive: var(--app-color-status-positive);
+    --color-muted-solid: var(--app-color-muted-solid);
+    --color-media-ink: var(--app-color-media-ink);
+    --color-room-id-surface: var(--app-color-room-id-surface);
+    --color-challenge-start: var(--app-color-challenge-start);
+    --color-challenge-end: var(--app-color-challenge-end);
+    --color-challenge-track: var(--app-color-challenge-track);
+    --color-match-panel: var(--app-color-match-panel);
+    --color-match-border: var(--app-color-match-border);
+    --color-match-warning: var(--app-color-match-warning);
+    --color-match-action: var(--app-color-match-action);
+    --color-match-writing: var(--app-color-match-writing);
+    --color-match-online: var(--app-color-match-online);
+    --color-loading-dot-middle: var(--app-color-loading-dot-middle);
+    --color-loading-dot-dim: var(--app-color-loading-dot-dim);
+    --shadow-match-panel: var(--app-shadow-match-panel);
+    --color-arena-loss: var(--app-color-arena-loss);
+    --color-arena-rate: var(--app-color-arena-rate);
+    --color-arena-action: var(--app-color-arena-action);
+    --color-arena-writing-border: var(--app-color-arena-writing-border);
+    --color-arena-writing: var(--app-color-arena-writing);
+    --color-podium-first-value: var(--app-color-podium-first-value);
+    --color-podium-second-value: var(--app-color-podium-second-value);
+    --color-podium-third-value: var(--app-color-podium-third-value);
+    --color-foreground: var(--app-color-foreground);
     --color-surface: var(--app-color-surface);
     --color-surface-raised: var(--app-color-surface-raised);
     --color-surface-hover: var(--app-color-surface-hover);
     --color-primary: var(--app-color-text-primary);
     --color-secondary: var(--app-color-text-secondary);
     --color-muted: var(--app-color-text-muted);
+    --color-hint: var(--app-color-text-hint);
     --color-inverse: var(--app-color-text-inverse);
     --color-subtle: var(--app-color-border-subtle);
     --color-strong: var(--app-color-border-strong);
     --color-brand: var(--app-color-brand);
+    --color-header-action: var(--app-color-header-action);
+    --color-practice-answer: var(--app-color-practice-answer);
+    --color-practice-text: var(--app-color-practice-text);
+    --color-practice-background: var(--app-color-practice-background);
     --color-brand-start: var(--app-color-brand-start);
     --color-brand-end: var(--app-color-brand-end);
+    --color-plan-surface: var(--app-color-plan-surface);
+    --color-plan-border: var(--app-color-plan-border);
+    --color-plan-divider: var(--app-color-plan-divider);
+    --color-plan-selected: var(--app-color-plan-selected);
+    --color-plan-note: var(--app-color-plan-note);
+    --color-plan-link: var(--app-color-plan-link);
+    --color-plan-savings: var(--app-color-plan-savings);
+    --color-plan-lifetime-text: var(--app-color-plan-lifetime-text);
+    --background-image-plan-gold: var(--app-background-plan-gold);
+    --background-image-plan-lifetime: var(--app-background-plan-lifetime);
+    --color-collaboration-panel: var(--app-color-collaboration-panel);
+    --color-collaboration-violet: var(--app-color-collaboration-violet);
+    --color-collaboration-cyan: var(--app-color-collaboration-cyan);
+    --color-collaboration-blue: var(--app-color-collaboration-blue);
+    --color-collaboration-gold: var(--app-color-collaboration-gold);
+    --color-trial-action: var(--app-color-trial-action);
+    --color-trial-action-border: var(--app-color-trial-action-border);
+    --color-trial-action-border-disabled: var(--app-color-trial-action-border-disabled);
+    --color-trial-action-disabled: var(--app-color-trial-action-disabled);
     --color-accent-green: var(--app-color-accent-green);
+    --color-tab-inactive: var(--app-color-tab-inactive);
     --color-accent-cyan: var(--app-color-accent-cyan);
     --color-accent-blue: var(--app-color-accent-blue);
     --color-accent-orange: var(--app-color-accent-orange);
@@ -64,12 +160,25 @@
     --color-login-pill: var(--app-color-login-pill-border);
     --color-login-pill-fill: var(--app-color-login-pill-fill);
     --color-login-pill-text: var(--app-color-login-pill-text);
-    --color-login-action: var(--app-color-login-action);
-    --color-login-action-text: var(--app-color-login-action-text);
-    --color-login-accent-purple: var(--app-color-login-accent-purple);
-    --color-login-accent-blue: var(--app-color-login-accent-blue);
-    --color-login-accent-green: var(--app-color-login-accent-green);
+    --color-login-form-primary: var(--app-color-login-form-primary);
+    --color-login-form-secondary: var(--app-color-login-form-secondary);
+    --color-login-form-muted: var(--app-color-login-form-muted);
+    --color-login-placeholder: var(--app-color-login-placeholder);
+    --color-login-input: var(--app-color-login-input);
+    --color-login-input-border: var(--app-color-login-input-border);
+    --color-login-divider: var(--app-color-login-divider);
+    --color-login-outline: var(--app-color-login-outline);
+    --color-login-qr-overlay: var(--app-color-login-qr-overlay);
+    --background-image-login-panel: var(--app-background-login-panel);
+    --background-image-login-panel-border: var(--app-background-login-panel-border);
     --color-home-rank-blue: var(--app-color-home-rank-blue);
+    --color-media-foreground: var(--app-color-media-foreground);
+    --color-home-star-first: var(--app-color-home-star-first);
+    --color-home-star-second: var(--app-color-home-star-second);
+    --color-home-star-third: var(--app-color-home-star-third);
+    --color-home-star-first-text: var(--app-color-home-star-first-text);
+    --color-home-star-second-text: var(--app-color-home-star-second-text);
+    --color-home-star-third-text: var(--app-color-home-star-third-text);
     --color-home-rank-number: var(--app-color-home-rank-number);
     --color-home-rank-number-text: var(--app-color-home-rank-number-text);
     --color-home-podium-purple: var(--app-color-home-podium-purple);
@@ -94,6 +203,20 @@
 }
 
 :root {
+    --app-text-form-title: 1.25rem;
+    --app-text-tab-label-comfortable: 1rem;
+    --app-leading-tab-label-comfortable: 1.5rem;
+    --app-leading-form-title: 1.75rem;
+    --app-color-practice-answer: var(--app-color-brand);
+    --app-color-practice-text: var(--app-color-text-primary);
+    --app-color-practice-background: var(--app-color-canvas);
+    --app-text-section-title-display: 1.25rem;
+    --app-leading-section-title-display: 1.75rem;
+    --app-leading-section-title-tight: 1.75rem;
+    --app-text-page-title-compact: 1.375rem;
+    --app-leading-page-title-compact: 1.75rem;
+    --app-text-tab-label-regular: 1rem;
+    --app-leading-tab-label-regular: 1.375rem;
     --app-text-page-title: 1.375rem;
     --app-leading-page-title: 1.875rem;
     --app-text-section-title: 1.125rem;
@@ -102,18 +225,39 @@
     --app-leading-card-title: 1.5rem;
     --app-text-body: 0.875rem;
     --app-leading-body: 1.375rem;
+    --app-text-body-tight: 0.875rem;
+    --app-leading-body-tight: 1.25rem;
+    --app-text-body-notice: 0.875rem;
+    --app-leading-body-notice: 1.25rem;
     --app-text-label: 0.75rem;
     --app-leading-label: 1.125rem;
     --app-text-caption: 0.75rem;
     --app-leading-caption: 1.125rem;
     --app-text-tab-label: 1rem;
     --app-leading-tab-label: 1.5rem;
+    --app-text-tab-label-compact: 0.875rem;
+    --app-leading-tab-label-compact: 1.25rem;
+    --app-text-tab-label-display: 1rem;
+    --app-leading-tab-label-display: 1.5rem;
     --app-text-action-label: 1rem;
     --app-leading-action-label: 1.5rem;
+    --app-text-action-label-compact: 1rem;
+    --app-leading-action-label-compact: 1.375rem;
 }
 
 @media (min-width: 48rem) {
     :root {
+        --app-text-form-title: 1.375rem;
+        --app-text-tab-label-comfortable: 1.125rem;
+        --app-leading-tab-label-comfortable: 1.625rem;
+        --app-leading-form-title: 1.9375rem;
+        --app-text-section-title-display: 1.375rem;
+        --app-leading-section-title-display: 1.9375rem;
+        --app-leading-section-title-tight: 1.75rem;
+        --app-text-page-title-compact: 1.625rem;
+        --app-leading-page-title-compact: 1.9375rem;
+        --app-text-tab-label-regular: 1.125rem;
+        --app-leading-tab-label-regular: 1.5625rem;
         --app-text-page-title: 1.625rem;
         --app-leading-page-title: 2.25rem;
         --app-text-section-title: 1.25rem;
@@ -122,12 +266,22 @@
         --app-leading-card-title: 1.625rem;
         --app-text-body: 1rem;
         --app-leading-body: 1.5rem;
+        --app-text-body-tight: 1rem;
+        --app-leading-body-tight: 1.375rem;
+        --app-text-body-notice: 1rem;
+        --app-leading-body-notice: 1.375rem;
         --app-text-label: 0.875rem;
         --app-leading-label: 1.25rem;
         --app-text-tab-label: 1.125rem;
         --app-leading-tab-label: 1.625rem;
+        --app-text-tab-label-compact: 1rem;
+        --app-leading-tab-label-compact: 1.375rem;
+        --app-text-tab-label-display: 1.25rem;
+        --app-leading-tab-label-display: 1.75rem;
         --app-text-action-label: 1.125rem;
         --app-leading-action-label: 1.625rem;
+        --app-text-action-label-compact: 1.125rem;
+        --app-leading-action-label-compact: 1.5625rem;
     }
 }
 
@@ -139,6 +293,14 @@
 
 @media (min-width: 120rem) {
     :root {
+        --app-text-tab-label-comfortable: 1.25rem;
+        --app-leading-tab-label-comfortable: 1.75rem;
+        --app-text-section-title-display: 1.5rem;
+        --app-leading-section-title-display: 2.125rem;
+        --app-text-body-notice: 1.125rem;
+        --app-leading-body-notice: 1.5625rem;
+        --app-text-tab-label-display: 1.5rem;
+        --app-leading-tab-label-display: 2.125rem;
         --app-text-page-title: 1.875rem;
         --app-text-action-label: 1.25rem;
         --app-leading-action-label: 1.75rem;
@@ -147,22 +309,98 @@
 
 :root,
 :root[data-theme="dark"] {
+    --app-blend-pk-art: screen;
+    --app-color-challenge-start: #8c52ff;
+    --app-color-challenge-end: #01f799;
+    --app-color-challenge-track: #3a3a3a;
+    --app-color-match-panel: #1a1a1a;
+    --app-color-match-glow: rgba(242, 242, 242, 0.5);
+    --app-color-match-border: #999999;
+    --app-color-match-rim: #b3b3b3;
+    --app-color-match-warning: #ff4a4a;
+    --app-color-match-action: #00bf63;
+    --app-color-match-writing: #569cff;
+    --app-color-match-online: #31b729;
+    --app-color-loading-dot-middle: #d9d9d9;
+    --app-color-loading-dot-dim: #a0a0a0;
+    --app-shadow-match-panel:
+        inset 0 0 22px 0 var(--app-color-match-glow), inset 0 0 0 1px var(--app-color-match-border),
+        inset -2px -2px 1px -2px var(--app-color-match-rim),
+        inset 2px 2px 1px -2px var(--app-color-match-rim),
+        inset 3px 3px 0.5px -3.5px var(--app-color-match-glow);
+
+    --app-color-row-alternate: #121317;
+    --app-color-content-strong: #ffffff;
+    --app-color-metric-blue: #25344e;
+    --app-color-metric-purple: #3f3268;
+    --app-color-metric-green: #1d3f2d;
+    --app-color-review-pending: #ffba59;
+    --app-color-review-failed: #ff5959;
+    --app-color-review-approved: #06df73;
     color-scheme: dark;
+    --app-color-plan-surface: rgba(255, 255, 255, 0.05);
+    --app-color-plan-border: rgba(255, 255, 255, 0.3);
+    --app-color-plan-divider: #5c5c5c;
+    --app-color-plan-selected: rgba(255, 255, 255, 0.2);
+    --app-color-plan-note: #666666;
+    --app-color-plan-link: #3dabff;
+    --app-color-plan-savings: #f59811;
+    --app-color-plan-lifetime-text: #9a42ff;
+    --app-color-plan-gold-start: #feefd0;
+    --app-color-plan-gold-end: #fed878;
+    --app-color-plan-lifetime-start: #e1c8fd;
+    --app-color-plan-lifetime-end: #d0a7fe;
+    --app-background-plan-gold: linear-gradient(
+        to right,
+        var(--app-color-plan-gold-start),
+        var(--app-color-plan-gold-end)
+    );
+    --app-background-plan-lifetime: linear-gradient(
+        to right,
+        var(--app-color-plan-lifetime-start),
+        var(--app-color-plan-lifetime-end)
+    );
+    --app-color-collaboration-panel: rgba(34, 35, 42, 0.4);
+    --app-color-collaboration-violet: #c17dff;
+    --app-color-collaboration-cyan: #5fc9ff;
+    --app-color-collaboration-blue: #5f83ff;
+    --app-color-collaboration-gold: #ffcf78;
+    --app-color-trial-action: rgba(255, 255, 255, 0.1);
+    --app-color-trial-action-border: rgba(255, 255, 255, 0.5);
+    --app-color-trial-action-border-disabled: rgba(255, 255, 255, 0.2);
+    --app-color-trial-action-disabled: rgba(255, 255, 255, 0.2);
     --app-color-canvas: #000000;
     --app-color-sidebar: #000000;
+    --app-color-surface-recessed: #121317;
+    --app-color-status-positive: #06df73;
+    --app-color-muted-solid: #999999;
+    --app-color-media-ink: #000000;
+    --app-color-room-id-surface: #505364;
+    --app-color-arena-loss: #ff5454;
+    --app-color-arena-rate: #ff8235;
+    --app-color-arena-action: #03f49a;
+    --app-color-arena-writing-border: #ffc689;
+    --app-color-arena-writing: #ffa953;
+    --app-color-podium-first-value: #f79603;
+    --app-color-podium-second-value: #378cf6;
+    --app-color-podium-third-value: #f36542;
+    --app-color-foreground: #ffffff;
     --app-color-surface: #1a1a1a;
     --app-color-surface-raised: #22232a;
     --app-color-surface-hover: #25292d;
     --app-color-text-primary: #f4f7f8;
     --app-color-text-secondary: #c1c7cb;
     --app-color-text-muted: #848c91;
+    --app-color-text-hint: rgba(255, 255, 255, 0.6);
     --app-color-text-inverse: #ffffff;
     --app-color-border-subtle: #2a2e31;
     --app-color-border-strong: #454a4e;
     --app-color-brand: #01f799;
+    --app-color-header-action: #00e088;
     --app-color-brand-start: #8c52ff;
     --app-color-brand-end: #01f799;
     --app-color-accent-green: #00bf63;
+    --app-color-tab-inactive: rgba(255, 255, 255, 0.6);
     --app-color-accent-cyan: #52fffc;
     --app-color-accent-blue: #52a3ff;
     --app-color-accent-orange: #ffa852;
@@ -177,21 +415,70 @@
     --app-color-overlay: rgb(0 0 0 / 68%);
     --app-color-tooltip: #303033;
     --app-color-tooltip-text: #ffffff;
+    --app-color-dialog-border-neutral: rgb(255 255 255 / 50%);
+    --app-color-dialog-border-green: rgb(1 247 153 / 40%);
+    --app-color-dialog-border-blue: rgb(208 232 255 / 40%);
+    --app-color-dialog-border-green-glow: rgb(0 191 99 / 80%);
+    --app-color-dialog-border-purple-glow: rgb(140 82 255 / 80%);
+    --app-color-checkin-highlight: #00e088;
+    --app-background-dialog-border:
+        radial-gradient(circle at 50% 0%, var(--app-color-dialog-border-neutral), transparent),
+        radial-gradient(circle at 50% 97%, var(--app-color-dialog-border-neutral), transparent),
+        radial-gradient(
+            circle at 90% 0%,
+            var(--app-color-dialog-border-green),
+            var(--app-color-dialog-border-blue)
+        ),
+        radial-gradient(circle at 95% 8%, var(--app-color-dialog-border-green-glow), transparent),
+        radial-gradient(circle at 10% 89%, var(--app-color-dialog-border-purple-glow), transparent);
+    --app-color-checkin-glow: #7673ff;
+    --app-color-dialog-title-soft: #d9d9d9;
+    --app-color-button-muted: rgb(255 255 255 / 20%);
     --app-color-dialog-overlay: rgb(0 0 0 / 50%);
     --app-color-dialog-surface: #0e0e10;
     --app-color-dialog-surface-accent: #111822;
     --app-color-login-canvas: #000000;
     --app-color-login-primary: #ffffff;
-    --app-color-login-secondary: rgb(255 255 255 / 50%);
+    --app-color-login-secondary: rgb(255 255 255 / 60%);
+    --app-color-login-form-primary: #ffffff;
+    --app-color-login-form-secondary: rgb(255 255 255 / 80%);
+    --app-color-login-form-muted: rgb(255 255 255 / 60%);
+    --app-color-login-placeholder: #777777;
+    --app-color-login-input: rgb(51 51 51 / 40%);
+    --app-color-login-input-border: #999999;
+    --app-color-login-divider: rgb(255 255 255 / 50%);
+    --app-color-login-outline: rgb(0 0 0 / 10%);
+    --app-color-login-qr-overlay: rgb(14 14 16 / 86%);
+    --app-color-login-panel-start: rgb(0 0 0 / 10%);
+    --app-color-login-panel-end: rgb(255 247 247 / 20%);
+    --app-color-login-panel-border-start: rgb(255 255 255 / 90%);
+    --app-color-login-panel-border-end: rgb(255 255 255 / 10%);
+    --app-background-login-panel: linear-gradient(
+        180deg,
+        var(--app-color-login-panel-start),
+        var(--app-color-login-panel-end)
+    );
+    --app-background-login-panel-border: linear-gradient(
+        180deg,
+        var(--app-color-login-panel-border-start),
+        var(--app-color-login-panel-border-end)
+    );
+    --app-color-login-input-glow: rgb(242 242 242 / 12%);
+    --app-color-login-input-highlight: rgb(255 255 255 / 16%);
+    --app-shadow-login-input:
+        inset 0 0 11px var(--app-color-login-input-glow),
+        inset 0 0 3px var(--app-color-login-input-highlight);
     --app-color-login-pill-border: #ffffff;
     --app-color-login-pill-fill: rgb(255 255 255 / 16%);
     --app-color-login-pill-text: rgb(255 255 255 / 80%);
-    --app-color-login-action: #ffffff;
-    --app-color-login-action-text: #000000;
-    --app-color-login-accent-purple: #8c52ff;
-    --app-color-login-accent-blue: #07a1ff;
-    --app-color-login-accent-green: #00bf63;
     --app-color-home-rank-blue: #63aeff;
+    --app-color-media-foreground: #ffffff;
+    --app-color-home-star-first: #404dbe;
+    --app-color-home-star-second: #b1568b;
+    --app-color-home-star-third: #c06335;
+    --app-color-home-star-first-text: #828eff;
+    --app-color-home-star-second-text: #ff5eb9;
+    --app-color-home-star-third-text: #ff925b;
     --app-color-home-rank-number: #ffffff;
     --app-color-home-rank-number-text: #31343a;
     --app-color-home-leaderboard-ray-purple: #986ff9;
@@ -232,10 +519,6 @@
         var(--app-color-membership-angel-gradient-cool) 68%,
         var(--app-color-membership-angel-gradient-end) 100%
     );
-    --app-color-login-aurora-purple: #8c52ff;
-    --app-color-login-aurora-blue: #029dff;
-    --app-color-login-aurora-green: #00bf63;
-    --app-filter-login-action-icon: none;
     --app-filter-dialog-icon: none;
     --app-filter-shell-icon: none;
     --app-shadow-panel: 0 18px 50px rgb(0 0 0 / 24%);
@@ -243,22 +526,97 @@
 }
 
 :root[data-theme="light"] {
+    --app-blend-pk-art: normal;
+    --app-color-challenge-start: #8c52ff;
+    --app-color-challenge-end: #01f799;
+    --app-color-challenge-track: #d1d8d5;
+    --app-color-match-panel: #ffffff;
+    --app-color-match-glow: rgba(120, 130, 125, 0.18);
+    --app-color-match-border: #78827d;
+    --app-color-match-warning: #b72929;
+    --app-color-match-action: #07834b;
+    --app-color-match-writing: #2868bd;
+    --app-color-match-online: #1e8518;
+    --app-color-loading-dot-middle: #66736d;
+    --app-color-loading-dot-dim: #9ba49f;
+    --app-shadow-match-panel:
+        inset 0 0 22px 0 var(--app-color-match-glow), inset 0 0 0 1px var(--app-color-match-border),
+        inset -2px -2px 1px -2px var(--app-color-match-rim),
+        inset 2px 2px 1px -2px var(--app-color-match-rim),
+        inset 3px 3px 0.5px -3.5px var(--app-color-match-glow);
+
+    --app-color-row-alternate: #ffffff;
+    --app-color-content-strong: #17201d;
+    --app-color-metric-blue: #e7eef9;
+    --app-color-metric-purple: #ede6fa;
+    --app-color-metric-green: #e2f4e9;
+    --app-color-review-pending: #956117;
+    --app-color-review-failed: #ba3434;
+    --app-color-review-approved: #08764a;
     color-scheme: light;
+    --app-color-plan-surface: #ffffff;
+    --app-color-plan-border: #b9c6c0;
+    --app-color-plan-divider: #b9c6c0;
+    --app-color-plan-selected: rgba(23, 32, 29, 0.1);
+    --app-color-plan-note: #6b7771;
+    --app-color-plan-link: #246aa8;
+    --app-color-plan-savings: #9a5b18;
+    --app-color-plan-lifetime-text: #7530bb;
+    --app-color-plan-gold-start: #feefd0;
+    --app-color-plan-gold-end: #fed878;
+    --app-color-plan-lifetime-start: #e1c8fd;
+    --app-color-plan-lifetime-end: #d0a7fe;
+    --app-background-plan-gold: linear-gradient(
+        to right,
+        var(--app-color-plan-gold-start),
+        var(--app-color-plan-gold-end)
+    );
+    --app-background-plan-lifetime: linear-gradient(
+        to right,
+        var(--app-color-plan-lifetime-start),
+        var(--app-color-plan-lifetime-end)
+    );
+    --app-color-collaboration-panel: rgba(255, 255, 255, 0.7);
+    --app-color-collaboration-violet: #7530bb;
+    --app-color-collaboration-cyan: #1d6e95;
+    --app-color-collaboration-blue: #3456b8;
+    --app-color-collaboration-gold: #956021;
+    --app-color-trial-action: #e8eeeb;
+    --app-color-trial-action-border: #66766f;
+    --app-color-trial-action-border-disabled: #bbc8c2;
+    --app-color-trial-action-disabled: #778a7f;
     --app-color-canvas: #f3f5f4;
     --app-color-sidebar: #ffffff;
+    --app-color-surface-recessed: #ffffff;
+    --app-color-status-positive: #078f64;
+    --app-color-muted-solid: #67736f;
+    --app-color-media-ink: #000000;
+    --app-color-room-id-surface: #e3e6ed;
+    --app-color-arena-loss: #bf2a2a;
+    --app-color-arena-rate: #a8460f;
+    --app-color-arena-action: #078f64;
+    --app-color-arena-writing-border: #b0793a;
+    --app-color-arena-writing: #965711;
+    --app-color-podium-first-value: #f79603;
+    --app-color-podium-second-value: #378cf6;
+    --app-color-podium-third-value: #f36542;
+    --app-color-foreground: #17201d;
     --app-color-surface: #ffffff;
     --app-color-surface-raised: #f6f8f7;
     --app-color-surface-hover: #edf2f0;
     --app-color-text-primary: #17201d;
     --app-color-text-secondary: #46534f;
     --app-color-text-muted: #74807c;
+    --app-color-text-hint: rgba(23, 32, 29, 0.6);
     --app-color-text-inverse: #ffffff;
     --app-color-border-subtle: #dde4e1;
     --app-color-border-strong: #bdc9c4;
     --app-color-brand: #078f64;
+    --app-color-header-action: var(--app-color-brand);
     --app-color-brand-start: #6e4de6;
     --app-color-brand-end: #009d6c;
     --app-color-accent-green: #007a50;
+    --app-color-tab-inactive: rgba(23, 32, 29, 0.6);
     --app-color-accent-cyan: #007d7a;
     --app-color-accent-blue: #246aa8;
     --app-color-accent-orange: #9a5b18;
@@ -273,21 +631,70 @@
     --app-color-overlay: rgb(17 24 21 / 48%);
     --app-color-tooltip: #303033;
     --app-color-tooltip-text: #ffffff;
+    --app-color-dialog-border-neutral: rgb(17 24 21 / 30%);
+    --app-color-dialog-border-green: rgb(1 247 153 / 40%);
+    --app-color-dialog-border-blue: rgb(208 232 255 / 40%);
+    --app-color-dialog-border-green-glow: rgb(0 143 100 / 55%);
+    --app-color-dialog-border-purple-glow: rgb(140 82 255 / 55%);
+    --app-color-checkin-highlight: var(--app-color-brand);
+    --app-background-dialog-border:
+        radial-gradient(circle at 50% 0%, var(--app-color-dialog-border-neutral), transparent),
+        radial-gradient(circle at 50% 97%, var(--app-color-dialog-border-neutral), transparent),
+        radial-gradient(
+            circle at 90% 0%,
+            var(--app-color-dialog-border-green),
+            var(--app-color-dialog-border-blue)
+        ),
+        radial-gradient(circle at 95% 8%, var(--app-color-dialog-border-green-glow), transparent),
+        radial-gradient(circle at 10% 89%, var(--app-color-dialog-border-purple-glow), transparent);
+    --app-color-checkin-glow: #7673ff;
+    --app-color-dialog-title-soft: var(--app-color-text-primary);
+    --app-color-button-muted: rgb(17 24 21 / 12%);
     --app-color-dialog-overlay: rgb(17 24 21 / 38%);
     --app-color-dialog-surface: #ffffff;
     --app-color-dialog-surface-accent: #f2f7f5;
-    --app-color-login-canvas: #ffffff;
-    --app-color-login-primary: #111513;
-    --app-color-login-secondary: rgb(17 21 19 / 56%);
-    --app-color-login-pill-border: #111513;
-    --app-color-login-pill-fill: rgb(17 21 19 / 8%);
-    --app-color-login-pill-text: rgb(17 21 19 / 80%);
-    --app-color-login-action: #111513;
-    --app-color-login-action-text: #ffffff;
-    --app-color-login-accent-purple: #6e4de6;
-    --app-color-login-accent-blue: #087dc2;
-    --app-color-login-accent-green: #008c5e;
+    --app-color-login-canvas: #000000;
+    --app-color-login-primary: #ffffff;
+    --app-color-login-secondary: rgb(255 255 255 / 60%);
+    --app-color-login-pill-border: #ffffff;
+    --app-color-login-pill-fill: rgb(255 255 255 / 16%);
+    --app-color-login-pill-text: rgb(255 255 255 / 80%);
+    --app-color-login-form-primary: #17201d;
+    --app-color-login-form-secondary: rgb(23 32 29 / 80%);
+    --app-color-login-form-muted: rgb(23 32 29 / 60%);
+    --app-color-login-placeholder: #65716c;
+    --app-color-login-input: rgb(255 255 255 / 72%);
+    --app-color-login-input-border: #8e9b96;
+    --app-color-login-divider: rgb(23 32 29 / 30%);
+    --app-color-login-outline: rgb(255 255 255 / 70%);
+    --app-color-login-qr-overlay: rgb(255 255 255 / 92%);
+    --app-color-login-panel-start: rgb(255 255 255 / 90%);
+    --app-color-login-panel-end: rgb(243 247 245 / 86%);
+    --app-color-login-panel-border-start: rgb(255 255 255 / 95%);
+    --app-color-login-panel-border-end: rgb(189 201 196 / 70%);
+    --app-background-login-panel: linear-gradient(
+        180deg,
+        var(--app-color-login-panel-start),
+        var(--app-color-login-panel-end)
+    );
+    --app-background-login-panel-border: linear-gradient(
+        180deg,
+        var(--app-color-login-panel-border-start),
+        var(--app-color-login-panel-border-end)
+    );
+    --app-color-login-input-glow: rgb(242 242 242 / 65%);
+    --app-color-login-input-highlight: rgb(255 255 255 / 50%);
+    --app-shadow-login-input:
+        inset 0 0 11px var(--app-color-login-input-glow),
+        inset 0 0 3px var(--app-color-login-input-highlight);
     --app-color-home-rank-blue: #2369a6;
+    --app-color-media-foreground: #ffffff;
+    --app-color-home-star-first: #404dbe;
+    --app-color-home-star-second: #b1568b;
+    --app-color-home-star-third: #c06335;
+    --app-color-home-star-first-text: #4351b4;
+    --app-color-home-star-second-text: #a52e73;
+    --app-color-home-star-third-text: #a3441e;
     --app-color-home-rank-number: #26302c;
     --app-color-home-rank-number-text: #ffffff;
     --app-color-home-leaderboard-ray-purple: #986ff9;
@@ -328,10 +735,6 @@
         var(--app-color-membership-angel-gradient-cool) 68%,
         var(--app-color-membership-angel-gradient-end) 100%
     );
-    --app-color-login-aurora-purple: #6e4de6;
-    --app-color-login-aurora-blue: #087dc2;
-    --app-color-login-aurora-green: #008c5e;
-    --app-filter-login-action-icon: invert(1);
     --app-filter-dialog-icon: invert(1);
     --app-filter-shell-icon: invert(1);
     --app-shadow-panel: 0 18px 50px rgb(38 55 48 / 10%);

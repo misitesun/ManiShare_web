@@ -12,6 +12,7 @@ export const managedEnvironmentKeys = [
     'ROBOTS_POLICY',
     'SITE_URL',
     'API_PROXY_TARGET',
+    'NEXT_DEV_ALLOWED_HOST',
 ]
 
 export function loadEnvironment(
@@ -61,8 +62,8 @@ export function loadEnvironment(
         throw new Error('Deployment environment must match requested target')
     if (!values.NEXT_PUBLIC_APP_NAME || !values.NEXT_PUBLIC_APP_DESCRIPTION)
         throw new Error('Application metadata is required')
-    if (!['zh-CN', 'en-US'].includes(values.NEXT_PUBLIC_DEFAULT_LANGUAGE))
-        throw new Error('Unsupported default language')
+    if (values.NEXT_PUBLIC_DEFAULT_LANGUAGE !== 'zh-CN')
+        throw new Error('Default language must be zh-CN')
     if (
         !/^\d+$/.test(values.NEXT_PUBLIC_API_TIMEOUT) ||
         Number(values.NEXT_PUBLIC_API_TIMEOUT) <= 0
@@ -89,6 +90,14 @@ export function loadEnvironment(
         const proxy = new URL(values.API_PROXY_TARGET)
         if (!['http:', 'https:'].includes(proxy.protocol) || proxy.username || proxy.password)
             throw new Error('Invalid API proxy target')
+    }
+    if (values.NEXT_DEV_ALLOWED_HOST) {
+        const host = values.NEXT_DEV_ALLOWED_HOST
+        if (
+            target !== 'development' ||
+            !/^(?:[a-z\d](?:[a-z\d-]*[a-z\d])?\.)*[a-z\d](?:[a-z\d-]*[a-z\d])?$/i.test(host)
+        )
+            throw new Error('NEXT_DEV_ALLOWED_HOST must be one development hostname or IP')
     }
     const environment = {
         ...inherited,

@@ -32,7 +32,7 @@ const periodOptions: readonly PeriodOption[] = [
 
 const metricOptions: readonly MetricOption[] = [
     { label: '时长排行', value: 'duration' },
-    { label: '积分排行', value: 'points' },
+    { label: '黄晶排行', value: 'points' },
 ]
 
 const leaderboardPages = getLeaderboardPages()
@@ -156,7 +156,7 @@ export function LeaderboardPage(): ReactElement {
                     </header>
 
                     <div className="grid h-16 shrink-0 grid-cols-[58px_minmax(0,1fr)_auto] items-center px-7 text-body text-muted">
-                        <span>排名</span>
+                        <span className="text-center">排名</span>
                         <span>用户</span>
                         <span className="min-w-20 text-right md:min-w-28">
                             {getLeaderboardMetricLabel(activeMetric)}

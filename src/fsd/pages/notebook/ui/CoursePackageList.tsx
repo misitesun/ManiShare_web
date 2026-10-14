@@ -28,10 +28,10 @@ function CoursePackageCard({
             <img
                 alt=""
                 aria-hidden="true"
-                className="aspect-[321/200] w-full object-cover"
+                className="aspect-[3/2] w-full object-cover"
                 src={summary.imageSource}
             />
-            <div className="flex min-h-[77px] flex-col justify-center px-3 py-2">
+            <div className="flex min-h-[77px] flex-col justify-center px-3 py-2 xl:min-h-[74px]">
                 <h2 className="truncate text-card-title font-medium text-primary">
                     {summary.title}
                 </h2>
@@ -50,7 +50,7 @@ export function CoursePackageList({ coursePath }: CoursePackageListProps): React
 
     return (
         <div>
-            <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 xl:grid-cols-4 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(290px,1fr))]">
+            <div className="grid min-w-0 grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2 xl:grid-cols-4 xl:gap-y-4 xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(290px,1fr))]">
                 {visibleItems.map((coursePackage) => (
                     <CoursePackageCard
                         key={coursePackage.id}

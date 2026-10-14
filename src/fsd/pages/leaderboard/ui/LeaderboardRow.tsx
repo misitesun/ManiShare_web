@@ -69,7 +69,7 @@ function RankMark({ rank }: { readonly rank: number }): ReactElement {
     }
 
     return (
-        <span className="text-[11px] font-semibold italic text-primary tabular-nums">
+        <span className="text-center text-[11px] font-semibold italic text-primary tabular-nums">
             NO.{rank}
         </span>
     )
@@ -115,7 +115,7 @@ export function LeaderboardRow({ entry, metric }: LeaderboardRowProps): ReactEle
 export function CurrentUserRow({ user }: CurrentUserRowProps): ReactElement {
     return (
         <div className="grid h-14 min-w-0 grid-cols-[58px_minmax(0,1fr)_auto] items-center rounded-t-xl bg-linear-to-r from-brand-start via-accent-blue to-brand-end px-3 text-inverse">
-            <span className="text-[11px] font-medium">未上榜</span>
+            <span className="text-center text-[11px] font-medium">未上榜</span>
 
             <div className="flex min-w-0 items-center gap-2">
                 <img

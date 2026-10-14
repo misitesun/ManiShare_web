@@ -28,7 +28,7 @@ export function KnowledgeGapCard({
     const audioSource = item.audioIcon === 'wide' ? audioWideIconSource : audioIconSource
 
     return (
-        <article className="relative flex h-[158px] min-w-0 items-center rounded-xl bg-surface-raised px-4">
+        <article className="relative flex h-[158px] min-w-0 items-stretch rounded-xl bg-surface-raised px-4">
             <div
                 inert={!batch}
                 aria-hidden={!batch}
@@ -45,8 +45,11 @@ export function KnowledgeGapCard({
                 />
             </div>
             <div className="min-w-0 flex-1 pb-3 pt-4">
-                <div className="flex min-w-0 items-center pr-[62px]">
-                    <p className="min-w-0 truncate text-body text-primary" title={item.english}>
+                <div className="flex min-w-0 items-center pl-px pr-[62px]">
+                    <p
+                        className="min-w-0 truncate text-body-tight text-primary"
+                        title={item.english}
+                    >
                         {item.english}
                     </p>
                     <button
@@ -72,17 +75,18 @@ export function KnowledgeGapCard({
                     {t('knowledgeGaps.mistakeCount', { count: item.mistakeCount })}
                 </span>
 
-                <p className="mt-2.5 truncate text-body text-brand" title={item.chinese}>
+                <p className="mt-2.5 truncate text-body-tight text-brand" title={item.chinese}>
                     {item.chinese}
                 </p>
 
-                <div className="mt-[17px] border-t border-dashed border-primary/20" />
-                <p className="mt-1.5 text-label text-primary/60">{item.createdAt}</p>
-                <div className="mt-1.5">
+                <div className="ml-[34px] mt-[22px] border-t border-dashed border-primary/20" />
+                <p className="-ml-0.5 mt-0.5 text-label text-primary/60">{item.createdAt}</p>
+                <div className="-ml-0.5 mt-[7px]">
                     <TldProgressBar
                         ariaLabel={t('knowledgeGaps.progressLabel', { sentence: item.english })}
                         max={item.progressMax}
                         value={item.progress}
+                        spacing="wide"
                     />
                 </div>
             </div>

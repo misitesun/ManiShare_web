@@ -26,11 +26,58 @@ test('batch selection supports independent items and clears on exit', () => {
 
 test('clear resets selection and blocks stale selection events', () => {
     const state = knowledgeGapListReducer(
-        { batch: true, selectedIds: ['a'], cleared: false },
-        { type: 'clear' },
+        { ...initialKnowledgeGapListState, batch: true, selectedIds: ['a'] },
+        { type: 'clear', categoryId: 'sentence-mistakes' },
     )
-    assert.deepEqual(state, { batch: false, selectedIds: [], cleared: true })
+    assert.deepEqual(state, {
+        ...initialKnowledgeGapListState,
+        clearedCategoryIds: ['sentence-mistakes'],
+    })
     assert.equal(knowledgeGapListReducer(state, { type: 'select', id: 'b', checked: true }), state)
+    assert.equal(knowledgeGapListReducer(state, { type: 'batch', checked: true }), state)
+})
+
+test('switching categories exits batch mode and clears selection without restoring deleted data', () => {
+    const cleared = knowledgeGapListReducer(initialKnowledgeGapListState, {
+        type: 'clear',
+        categoryId: 'sentence-mistakes',
+    })
+    const switched = knowledgeGapListReducer(
+        { ...cleared, batch: true, selectedIds: ['a'] },
+        { type: 'category', categoryId: 'word-mistakes' },
+    )
+    assert.equal(switched.categoryId, 'word-mistakes')
+    assert.equal(switched.batch, false)
+    assert.deepEqual(switched.selectedIds, [])
+    const restoredCategory = knowledgeGapListReducer(switched, {
+        type: 'category',
+        categoryId: 'sentence-mistakes',
+    })
+    assert.deepEqual(restoredCategory.clearedCategoryIds, ['sentence-mistakes'])
+    assert.equal(
+        knowledgeGapListReducer(restoredCategory, {
+            type: 'category',
+            categoryId: 'sentence-mistakes',
+        }),
+        restoredCategory,
+    )
+})
+
+test('deletion is scoped to its captured category and leaves another category selection intact', () => {
+    const selected = { ...initialKnowledgeGapListState, batch: true, selectedIds: ['a'] }
+    const cleared = knowledgeGapListReducer(selected, {
+        type: 'clear',
+        categoryId: 'word-mistakes',
+    })
+    assert.equal(cleared.categoryId, 'sentence-mistakes')
+    assert.deepEqual(cleared.clearedCategoryIds, ['word-mistakes'])
+    assert.deepEqual(cleared.selectedIds, ['a'])
+    assert.equal(cleared.batch, true)
+    assert.deepEqual(
+        knowledgeGapListReducer(cleared, { type: 'clear', categoryId: 'word-mistakes' })
+            .clearedCategoryIds,
+        ['word-mistakes'],
+    )
 })
 
 test('search filters all pages, ignores case and whitespace, and handles empty results', () => {

@@ -90,6 +90,15 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 
 ### 5.2 Class 规则
 
+设计基准与其他视口的职责须分开验收，详见[ADR 0018](decisions/0018-reference-fidelity-and-responsive-reflow.md)：
+
+- 在指定CSS视口、100%页面缩放、相同主题与侧栏状态下，逐项还原设计的字号、字重、行高、字距、文字边缘间距、内外边距、控件/图标尺寸与区域位置。不得把“使用了语义utility/共享组件”或“构建通过”当作精确还原证据。
+- 共享默认字号与设计冲突时，先选择正确密度变体；缺少变体则在owner扩展显式语义Props和全局字号token，保持已有消费者默认值。字号相同但行高/字重不同仍是偏差。
+- H5、平板、较窄PC分别定义各文字角色的可读下限与间距，通过Grid/Flex、局部滚动和断点重排；例如基准60px标题可在平板40px、H528px，但正文和标签不按同一比例一起缩放，具体阶梯由设计和真实内容确认。
+- 页面缩放改变CSS视口时自然采用响应式规则；不按DPR、UA或缩放倍率反向缩小字体抵消用户放大。基准验收与125%/150%/200%浏览器缩放检查分别记录；同宽但更矮通常使用纵向滚动。
+- 用户要求精确还原并确认了具体设计边距时，可在所属页面记录版心例外；查漏补缺的≥1920px左右254px例外见模块README，其他同类页面仍按架构默认版心。已知数据、字体或系统绘制差异明确列出，不能宣称截图逐像素完全一致。
+- 全局文字优先微软雅黑，再回退苹方与系统中文字体；字体栈按可用字体选择，并非严格OS分支。Android缺少微软雅黑时回退系统字体，不自行下载、打包或伪称已加载指定字体。
+
 - Tailwind class 必须以完整字面量存在于 `className`，禁止 `bg-${color}` 之类的动态拼接。
 - 条件 class 使用完整字符串分支；若组合复杂或多处重复，提取小组件或局部常量。
 - 通用字号优先使用 `text-page-title`、`text-section-title`、`text-card-title`、`text-body`、`text-label`、`text-caption`、`text-tab-label` 与 `text-action-label`；只有排行榜数字、品牌展示等真实特殊视觉保留局部字号。
@@ -99,6 +108,8 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 - `pnpm run lint:source-contracts` 会阻断动态 `className`、原始 Tailwind 调色板颜色、`dark:`/`light:` 业务 variant、内联原始颜色和额外 CSS/SCSS 文件。
 
 ### 5.3 主题
+
+- 设置页的三类练习颜色是用户数据：只接受六位十六进制值或默认主题色状态，局部注入 `--app-color-practice-answer/text/background` 并由语义 utility 消费；色块展示同一校验结果，默认色从主题 token 读取。不允许硬编码业务静态色、任意 CSS 输入或整站主题覆写。
 
 - `dark`、`light` 是当前完整主题，默认 `dark`。
 - 原始色值只定义在 `src/fsd/app/styles/index.css` 的主题 token 中，并由 Tailwind `@theme inline` 映射为语义 utility。
@@ -128,7 +139,7 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 - 环境、开关、默认值和存储键：`shared/config`
 - 项目标识和固定 URL：`shared/constants`
 - 主题：`shared/theme`
-- i18n 基础设施：`shared/i18n`（当前翻译工作暂缓）
+- i18n 基础设施：`shared/i18n`（仅加载中文兼容词典）
 - 存储：`shared/lib/storage`
 - 时间：`shared/lib/time`
 - 剪贴板：`shared/lib/clipboard`
@@ -138,7 +149,7 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 
 GSAP 与 `@gsap/react` 只能由 `shared/lib/animation` 装配和导出。React 组件优先使用带 `scope` 的 `useGSAP`，异步回调与事件处理器使用 `contextSafe`，并为 reduced-motion 提供直接结果；业务代码不得创建跨页面共享的全局时间线。
 
-当前产品阶段保留 i18next 初始化、已有资源和语言切换能力，但新页面与新功能默认直接使用中文文案。除非需求明确重新开启多语言，不要为新文案新增 i18n key、不要制造占位英文翻译，也不因页面中出现中文字面量而拒绝交付。已有 i18n 消费者和资源不在普通页面任务中主动删除或重写。
+当前产品统一只进行中文开发：界面固定zh-CN，移除语言切换入口，不读取或恢复旧英文偏好，不加载英文词典，不进行多语言处理。新文案直接使用中文，不新增i18n key、占位翻译或中英文同步要求。shared/i18n只为已有t()消费者加载中文兼容词典；历史英文资源不参与运行、维护或翻译验收。
 
 业务代码禁止直接调用 LocalStorage、SessionStorage、原生 Clipboard API、`alert`、`confirm` 或 `prompt`。不要创建 `shared/utils`。
 

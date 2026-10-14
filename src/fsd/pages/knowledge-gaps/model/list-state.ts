@@ -1,29 +1,44 @@
 import type { KnowledgeGapPage } from './knowledge-gap-items'
+import type { KnowledgeGapCategoryId } from './categories'
 
 export interface KnowledgeGapListState {
+    readonly categoryId: KnowledgeGapCategoryId
     readonly batch: boolean
     readonly selectedIds: readonly string[]
-    readonly cleared: boolean
+    readonly clearedCategoryIds: readonly KnowledgeGapCategoryId[]
 }
 
 export type KnowledgeGapListAction =
     | { readonly type: 'batch'; readonly checked: boolean }
     | { readonly type: 'select'; readonly id: string; readonly checked: boolean }
-    | { readonly type: 'clear' }
+    | { readonly type: 'category'; readonly categoryId: KnowledgeGapCategoryId }
+    | { readonly type: 'clear'; readonly categoryId: KnowledgeGapCategoryId }
 
 export const initialKnowledgeGapListState: KnowledgeGapListState = {
+    categoryId: 'sentence-mistakes',
     batch: false,
     selectedIds: [],
-    cleared: false,
+    clearedCategoryIds: [],
 }
 
 export function knowledgeGapListReducer(
     state: KnowledgeGapListState,
     action: KnowledgeGapListAction,
 ): KnowledgeGapListState {
-    if (action.type === 'clear') return { batch: false, selectedIds: [], cleared: true }
+    if (action.type === 'category') {
+        if (action.categoryId === state.categoryId) return state
+        return { ...state, categoryId: action.categoryId, batch: false, selectedIds: [] }
+    }
+    if (action.type === 'clear') {
+        return {
+            ...state,
+            clearedCategoryIds: [...new Set([...state.clearedCategoryIds, action.categoryId])],
+            ...(action.categoryId === state.categoryId ? { batch: false, selectedIds: [] } : {}),
+        }
+    }
+    if (state.clearedCategoryIds.includes(state.categoryId)) return state
     if (action.type === 'batch') return { ...state, batch: action.checked, selectedIds: [] }
-    if (!state.batch || state.cleared) return state
+    if (!state.batch) return state
     return {
         ...state,
         selectedIds: action.checked

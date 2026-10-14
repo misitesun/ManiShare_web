@@ -3,6 +3,7 @@ export type {
     TldSegmentedChoiceItem,
     TldSegmentedTabItem,
     TldSegmentedTabsActiveTextTone,
+    TldSegmentedTabsAppearance,
     TldSegmentedTabsBaselineTone,
     TldSegmentedTabsGap,
     TldSegmentedTabsIndicatorThickness,
@@ -12,5 +13,6 @@ export type {
     TldSegmentedTabsProps,
     TldSegmentedTabsSemantics,
     TldSegmentedTabsSize,
+    TldSegmentedTabsTypography,
     TldSegmentedTabsVariant,
 } from './TldSegmentedTabs'

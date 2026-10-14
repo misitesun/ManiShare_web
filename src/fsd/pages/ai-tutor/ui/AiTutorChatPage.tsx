@@ -312,7 +312,7 @@ export function AiTutorChatPage({
                                     </p>
                                 </div>
                             </div>
-                            <p className="text-center text-label text-primary">
+                            <p className="text-center text-body-tight font-medium text-primary">
                                 16:00进入：{scene.label}话题
                             </p>
                             <TutorMessage

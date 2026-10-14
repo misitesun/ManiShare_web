@@ -8,8 +8,8 @@ import exclusiveSourceAsset from '../assets/exclusive.svg'
 import launchBenefitSourceAsset from '../assets/launch-benefit.svg'
 import lifetimeSourceAsset from '../assets/lifetime.svg'
 import moreBenefitsSourceAsset from '../assets/more-benefits.svg'
-import pauseSourceAsset from '../assets/pause.svg'
 import paymentSourceAsset from '../assets/payment.svg'
+import { CollaborationMusicControl } from './CollaborationMusicControl'
 
 const coCreateSource: string = coCreateSourceAsset.src
 const earningsSource: string = earningsSourceAsset.src
@@ -17,7 +17,6 @@ const exclusiveSource: string = exclusiveSourceAsset.src
 const launchBenefitSource: string = launchBenefitSourceAsset.src
 const lifetimeSource: string = lifetimeSourceAsset.src
 const moreBenefitsSource: string = moreBenefitsSourceAsset.src
-const pauseSource: string = pauseSourceAsset.src
 const paymentSource: string = paymentSourceAsset.src
 
 interface CollaborationBenefit {
@@ -54,7 +53,7 @@ function CollaborationOffer(): ReactElement {
                             <strong className="font-medium text-danger">999</strong>名
                         </span>
                     </div>
-                    <img alt="" aria-hidden="true" className="size-7 shrink-0" src={pauseSource} />
+                    <CollaborationMusicControl />
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-baseline gap-x-2">

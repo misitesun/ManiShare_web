@@ -66,6 +66,26 @@ pnpm run build
 
 ## Production 运行时冒烟
 
-完成双环境构建后运行 `pnpm run runtime:smoke`。脚本自动启动严格静态预览和 Electron hidden sandbox 窗口，加载实际 host/preload/protocol，分别遍历23条路由的代表实例，并验证水合、query、父级返回、壳层滚动与前进/返回、AI场景草稿/内部滚动及离开重置、主题持久化、IPC、未知页面和资源/API 404。结果写入被忽略的 dist/runtime-smoke.json。CI Linux使用xvfb，干净安装还需批准 Electron 二进制安装脚本；真实PC人工视觉仍单独核对。不得用 Node 静态渲染或文件匹配代替该命令。
+设计任务另按[ADR 0018](decisions/0018-reference-fidelity-and-responsive-reflow.md)分两段验收：基准CSS视口/100%缩放下读取字号、行高、字重、字距、实际文字间距、控件尺寸及DOM位置并与Figma逐项比较，保存截图；再检查较窄/超宽PC、真实125%/150%/200%浏览器页面缩放的重排、焦点和溢出。缩小viewport只证明对应布局分支，不能冒充真实页面缩放测试；源码/class断言也不能代替计算样式。H5/平板只做布局计算检查时须明确区分，视觉与真机仍待用户验收。已确认字体回退和真实数据与设计占位的差异单列。
+
+设置页以独立来源记录测试逐项核对七Tab字段、完整选项顺序和数值范围。运行时实际修改全部选择项、滑块、开关、单选和三个快捷键，跨Tab修改后逐页刷新确认恢复；核对Tab查询保留、三个颜色确认保存与刷新恢复、取消、颜色重置后再刷新及预览计算样式，重置不影响其他外观设置或主题。PK首页增加轮播选择、房号筛选/无结果/清空、榜单指标、取消后我的创建与大厅同步、重新进入恢复示例，以及入口未开放提示。Web/Electron各访问28条路由代表实例，使用隔离测试配置，避免覆盖用户本机偏好。PC截图保存在被忽略的dist/settings-web-pc.png、dist/settings-electron-pc.png及dist/pk-web-pc.png、dist/pk-electron-pc.png。平板/H5仍待用户验收。
+
+生产冒烟每次使用独立临时 Electron userData，退出后由 runner 清理，避免测试偏好影响用户或后续运行。页面和截图统一中文，不再操作语言选择器；隔离配置中注入旧英文存储值后刷新，验证界面仍保持中文、语言入口不存在且控制台无水合错误。
+
+完成双环境构建后运行 `pnpm run runtime:smoke`。脚本自动启动严格静态预览和 Electron hidden sandbox 窗口，加载实际 host/preload/protocol，分别遍历28条路由的代表实例，并验证水合、query、父级返回、壳层滚动与前进/返回、AI场景草稿/内部滚动及离开重置、主题及学习设置持久化、PK大厅本地交互、IPC、未知页面和资源/API 404。结果写入被忽略的 dist/runtime-smoke.json。CI Linux使用xvfb，干净安装还需批准 Electron 二进制安装脚本；真实PC人工视觉仍单独核对。不得用 Node 静态渲染或文件匹配代替该命令。
 
 Node 测试与枚举阶段使用 `scripts/register-static-assets.mjs` 确认资源存在并提供静态导入对象形状；它不证明图片可渲染。真实生产导出和运行时检查仍负责 asset URL 与图片加载验收。
+
+登录前端改版由login-runtime-smoke.cjs接入同一runtime:smoke，Web/Electron均实测五种登录、三种注册、字段错误、密码显隐/账号清空、协议勾选、未接入反馈、查询直达/刷新、资源加载、无认证请求。1920×1080读取卡片/字段/文字/按钮几何与mask合成属性；1280/1440/2560重排及真实1.25/1.5/2页面缩放、light主题读取计算样式。仅使用隔离测试profile和明确示例输入，通知alert在测试窗口内替身记录，正式代码不替换notification。结果dist/login-validation.json，截图dist/login-web-*、login-electron-*；H5/平板视觉及真机仍待用户验收。
+
+首页进入流程新增隔离生产冒烟：未确认定位不启动后续、打卡X/遮罩/Escape不可关闭、单按钮焦点循环、同日去重、跨日、刷新恢复、俱乐部三关闭路径、否与关闭确认不永久隐藏、是持久化且不影响次日签到；读取三窗PC几何并捕获深浅主题，H5/平板待用户验收。
+
+登录模拟的零账号请求检查使用独立未访问过业务页的窗口；仅排除明确属于其他窗口的请求，未知来源仍计入。避免把前序业务页残留加载误归为登录行为，不按路径白名单放行账号请求，保留零请求断言及整体严格资源检查。
+
+登录冒烟区分同协议/同host的GET导出页面资源与账号请求，并记录pageRequests；englishlearning协议的URL.origin为null，不能与完整应用地址比较。login-request-kind.test覆盖HTTP/Electron及POST、API、外站和未导出路径，后四者不作为页面请求排除；零账号请求断言保持不变。
+
+Next16.3.6静态导出的segment-cache/cache.js会先HEAD目标HTML验证路由，再取RSC片段；同协议/host且在CSP产物清单中的GET/HEAD页面资源计入pageRequests，API、POST、外站、未导出路径仍进入账号请求检查。Electron origin仍按protocol/host判断。
+
+PK两个全屏状态页新增冒烟：大厅三个入口、邀请/机器人提示及关闭、取消对话框撤销/确认不删除房间、开启加载、无壳层、72%轨道/文案/ARIA一致、停留不进入练习、浏览器返回与静态直达/刷新。
+
+路由冒烟先等待当前图片加载结束，再断言naturalWidth及资源状态；readyState=complete不代表水合后插入的图片已完成。等待不忽略失败图片，最终零尺寸与404仍阻断。

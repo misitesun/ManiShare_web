@@ -10,6 +10,7 @@ export function AppShell({ children }: { readonly children: ReactNode }): ReactE
             navigationItems={navigationItems}
             utilityItems={utilityItems}
             searchPath={routePaths.courseSearch}
+            settingsPath={routePaths.settings}
         >
             {children}
         </AppLayout>

@@ -64,7 +64,7 @@ export function AiTutorPage({
                                         </p>
                                         <span
                                             className={
-                                                mentor.accent === 'american'
+                                                mentor.voiceGender === 'female'
                                                     ? 'mt-2 inline-block rounded border border-danger/40 px-1.5 py-0.5 text-caption text-danger'
                                                     : 'mt-2 inline-block rounded border border-accent-blue/40 px-1.5 py-0.5 text-caption text-accent-blue'
                                             }
@@ -138,7 +138,7 @@ export function AiTutorPage({
                             void router.push(chatPath(mentorId, sceneId), { scroll: false })
                     }}
                 >
-                    开始对话
+                    开启对话
                     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-6">
                         <path
                             d="M3 12h18m-6-6 6 6-6 6"

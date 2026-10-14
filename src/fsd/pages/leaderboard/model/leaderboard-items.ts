@@ -274,12 +274,12 @@ export function getLeaderboardPages(pageSize = 11): readonly (readonly Leaderboa
 }
 
 export function getLeaderboardMetricLabel(metric: LeaderboardMetric): string {
-    return metric === 'duration' ? '时长' : '积分'
+    return metric === 'duration' ? '时长' : '黄晶'
 }
 
 export function getLeaderboardMetricValue(
     entry: LeaderboardEntry,
     metric: LeaderboardMetric,
 ): string {
-    return metric === 'duration' ? entry.duration : `${entry.points}分`
+    return metric === 'duration' ? entry.duration : `${entry.points}黄晶`
 }

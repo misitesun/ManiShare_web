@@ -96,7 +96,7 @@ export function AwakeningCoursePage({
                     <img
                         alt="发音基础练，小学英语音标入门"
                         src={cover}
-                        className="aspect-[315/180] w-full shrink-0 rounded-lg object-cover md:w-[30%] xl:max-w-[315px]"
+                        className="aspect-[3/2] w-full shrink-0 rounded-lg object-cover md:w-[30%] xl:max-w-[315px]"
                     />
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">

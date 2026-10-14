@@ -35,7 +35,7 @@ Apply only the rows relevant to the requested change:
 | Route | route constants, router, page slice, navigation and locale copy when applicable, and route documentation |
 | Shared capability | named capability directory, public `index.ts`, focused tests, module README and `docs/module-capabilities.md` |
 | API/loading or request-bearing shared component | `docs/api-capability-boundaries.md`, consumer request triggers/counts, implicit preloads/state writes, missing-field feedback and explicit requirements/authorization for compensating requests |
-| Language key | During the current Chinese-first phase, do not create a key for ordinary new page copy. When multilingual delivery is explicitly reopened, update the requested locale resources, locale-key verification and owning module copy together. |
+| Copy and locale | UI and development are Chinese-only. Keep zh-CN initialization deterministic and ignore legacy English preferences. New copy is direct Chinese; do not add i18n keys, language switchers, English loading, translations or parity gates. |
 | Storage key | `sharedConfig.storageKeys`, `StorageSchema`, storage behavior, tests and documentation |
 | Theme/token | theme registration, complete semantic tokens, current Chinese label, PC visual acceptance and tablet/H5 user-acceptance handoff; add other locale labels only when multilingual delivery is explicitly in scope |
 | Tailwind/responsive | global style entry, literal class detection, mobile-first breakpoints, semantic typography roles, overflow/Safe Area behavior, PC viewport checks and explicit tablet/H5 user-acceptance handoff |
@@ -57,7 +57,7 @@ Apply only the rows relevant to the requested change:
 6. Genuinely operable controls, links and clickable surfaces explicitly use the literal Tailwind `cursor-pointer` class; disabled and display-only content does not use a pointer cursor.
 7. Responsive contracts remain mobile-first and share one renderer across H5, tablet, PC and Electron. Repeated typography uses the semantic utilities owned by `src/fsd/app/styles/index.css`; never introduce root-font, viewport-ratio or full-page scaling.
 8. Preserve Electron isolation, sandbox, navigation restrictions and narrow preload/IPC APIs.
-9. Update module README, global docs, ADR, env examples and executable checks. Preserve the existing i18n foundation, but update translation resources only when multilingual delivery or existing translated copy is explicitly in scope.
+9. Update module README, global docs, ADR, env examples and executable checks. Existing i18n serves only the Chinese compatibility dictionary; do not maintain historical English resources or require language synchronization.
 10. Record only confirmed reusable problems as tests, lint, contracts, ADRs or todo items.
 
 ## Safety boundaries
@@ -74,3 +74,7 @@ Run `pnpm run format:check`, `pnpm run test`, `pnpm run lint` and `pnpm run buil
 ## Next static-export boundary
 
 Use Next App Router as the only framework entry. Business owners stay under src/fsd; src/app is an adapter and must not be imported from FSD. Server adapters pass serializable data; inject callbacks inside FSD app Client assemblies. Keep mixed slice index.ts barrels free of use client and export build-time enumerators through root entries. Client components are prerendered: first render must not read browser storage/viewport or random values. Restore preferences/portals after mount, place useSearchParams under local Suspense, preserve query values with replace and scroll:false. Normalize static asset imports to string URLs inside their owner. Use pnpm run typecheck for clean Next type generation, then test/lint/build and the documented production runtime smoke; file/type checks alone do not prove hydration, RSC, CSP or Electron success. Follow docs/environment.md and docs/static-deployment.md; do not introduce a Next Server or restore obsolete framework commands.
+
+## Design reference fidelity and reflow
+
+Follow docs/decisions/0018-reference-fidelity-and-responsive-reflow.md. At the reference CSS viewport and 100% page zoom, verify actual font size, line height, weight, letter spacing, text-edge gaps and DOM geometry against the design; shared defaults and passing builds are not fidelity evidence. Use explicit semantic density variants when defaults differ, keeping existing consumers unchanged. Verify narrower/wider PC layouts and real browser zoom separately; reducing viewport dimensions is not a real zoom test. H5/tablet visual and real-device acceptance remains with the user. Preserve available-font fallback and never counter-scale user zoom through UA, DPR, root font size or a fixed canvas.

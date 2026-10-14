@@ -15,6 +15,11 @@ import { usePromotionRevenuePagination } from '../model/usePromotionRevenuePagin
 import { CommissionRecordTable } from './CommissionRecordTable'
 import { PromotionOverview } from './PromotionOverview'
 import { RegistrationRecordTable } from './RegistrationRecordTable'
+import { PromotionUnavailable } from './PromotionUnavailable'
+
+export interface PromotionRevenuePageProps {
+    readonly isFreeTrial?: boolean
+}
 
 type PromotionRevenueView = 'commission' | 'withdrawal' | 'registration'
 
@@ -28,7 +33,13 @@ const promotionRevenueTabs = [
     { id: 'registration', label: '注册明细', panelId: registrationPanelId },
 ] satisfies readonly TldSegmentedTabItem[]
 
-export function PromotionRevenuePage(): ReactElement {
+export function PromotionRevenuePage({
+    isFreeTrial = false,
+}: PromotionRevenuePageProps): ReactElement {
+    return isFreeTrial ? <PromotionUnavailable /> : <PromotionRevenueDetails />
+}
+
+function PromotionRevenueDetails(): ReactElement {
     const [activeView, setActiveView] = useState<PromotionRevenueView>('commission')
     const commissionPagination = usePromotionRevenuePagination(commissionRecordPages)
     const registrationPagination = usePromotionRevenuePagination(registrationRecordPages)
@@ -42,20 +53,23 @@ export function PromotionRevenuePage(): ReactElement {
 
     return (
         <section
-            aria-label="推广收益后台"
-            className="mx-auto min-w-0 px-3 pb-6 pt-4 md:px-4 md:pt-5 xl:min-[1920px]:px-[250px]"
+            aria-label="我的推广奖励"
+            className="mx-auto min-w-0 px-3 pb-6 pt-4 md:px-4 md:pt-5 xl:min-[1920px]:px-[254px]"
         >
             <PromotionOverview />
 
-            <div className="mt-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="mt-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <TldSegmentedTabs
                     activeTextTone="brand"
                     ariaLabel="推广收益明细类型"
                     baselineTone="strong"
                     indicatorTone="brand"
-                    indicatorWidth="segment"
+                    indicatorWidth="item"
                     items={promotionRevenueTabs}
-                    layout="equal"
+                    layout="content"
+                    gap="generous"
+                    typography="comfortable"
+                    size="compact"
                     showBaseline
                     value={activeView}
                     variant="underline"
@@ -74,6 +88,7 @@ export function PromotionRevenuePage(): ReactElement {
             ) : activeView === 'withdrawal' ? (
                 <div id={withdrawalPanelId} aria-label="提现记录" role="tabpanel">
                     <WithdrawalRecordTable
+                        appearance="contrasted"
                         items={withdrawalPagination.visibleItems}
                         status={withdrawalPagination.status}
                         onLoadNextPage={withdrawalPagination.loadNextPage}

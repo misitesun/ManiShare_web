@@ -6,3 +6,7 @@
 - 扩展：新增会员视觉类型时补充显式 `tone`、两套主题 token 与对应资源；权益逻辑仍留在所属业务模块。
 - 响应式：`micro` 使用 18px 图标覆盖 16px 高底托，服务排行榜等紧凑列表；`compact` 使用 25px 图标覆盖 20px 高底托，服务首页与 App Shell；`default` 使用 28px 图标覆盖 24px 高底托，并维持原有 28px 外部高度。标签宽度随文案增长，不在 H5、平板或 PC 使用固定画布缩放。
 - 验证：运行 `pnpm run test && pnpm run lint && pnpm run build`；PC 在 1920×1080 检查首页和 App Shell，平板/H5 视觉与真机效果由用户验收。
+
+- podium为PK前三名密度：H5保持微型图标/标签，podium命名容器宽度达到400px时26px图标、20px底托、12/17标签与28px外部区域；原micro/compact/default保持。
+
+- waiting适配匹配房主69×25、12/17标签与21×25裁切图标；challenge仅gold/lifetime适配加载88×31.88/89×32.4、26px底托与14/20标签，裁切资源就近归属共享owner。原micro/compact/default/podium默认不变。

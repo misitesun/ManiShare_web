@@ -1,23 +1,18 @@
 import { projectConstants } from '../constants'
+import applicationManifest from '../../../../package.json'
 
 const DEFAULT_API_TIMEOUT = 15_000
 const DEFAULT_TIME_ZONE = 'Asia/Shanghai'
-const supportedLanguages = ['zh-CN', 'en-US'] as const
-type SupportedLanguage = (typeof supportedLanguages)[number]
+const supportedLanguages = ['zh-CN'] as const
 
 function getPositiveInteger(value: string | undefined, fallback: number): number {
     const parsedValue = Number(value)
     return Number.isInteger(parsedValue) && parsedValue > 0 ? parsedValue : fallback
 }
 
-function getDefaultLanguage(value: string | undefined): SupportedLanguage {
-    return supportedLanguages.includes(value as SupportedLanguage)
-        ? (value as SupportedLanguage)
-        : 'zh-CN'
-}
-
 export const sharedConfig = {
     application: {
+        version: applicationManifest.version,
         name: process.env.NEXT_PUBLIC_APP_NAME ?? projectConstants.shortName,
         mode: process.env.NEXT_PUBLIC_DEPLOY_ENV,
         environment: process.env.NEXT_PUBLIC_DEPLOY_ENV ?? 'development',
@@ -27,7 +22,7 @@ export const sharedConfig = {
         timeout: getPositiveInteger(process.env.NEXT_PUBLIC_API_TIMEOUT, DEFAULT_API_TIMEOUT),
     },
     locale: {
-        defaultLanguage: getDefaultLanguage(process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE),
+        defaultLanguage: 'zh-CN',
         supportedLanguages,
     },
     time: {
@@ -40,6 +35,9 @@ export const sharedConfig = {
         maxPageSize: 100,
     },
     storageKeys: {
+        dailyCheckin: 'english-learning-daily-checkin-v1',
+        homeClubPrompt: 'english-learning-home-club-prompt-v1',
+        learningPreferences: 'english-learning-preferences-v1',
         language: 'english-learning-language',
         theme: 'english-learning-theme',
         pwaInstalled: 'english-learning-pwa-installed',

@@ -25,17 +25,22 @@ export interface TldSegmentedTabItem extends TldSegmentedChoiceItem {
 }
 
 export type TldSegmentedTabsActiveTextTone = 'accent-green' | 'brand' | 'gradient' | 'primary'
+export type TldSegmentedTabsAppearance = 'brand' | 'neutral' | 'outlined'
 export type TldSegmentedTabsBaselineTone = 'strong' | 'subtle'
-export type TldSegmentedTabsGap = 'standard' | 'wide'
+export type TldSegmentedTabsGap =
+    'compact' | 'generous' | 'spacious' | 'spread' | 'standard' | 'wide'
 export type TldSegmentedTabsIndicatorThickness = 'medium' | 'thick' | 'thin'
 export type TldSegmentedTabsIndicatorTone = 'accent-green' | 'brand' | 'brand-start'
 export type TldSegmentedTabsIndicatorWidth = 'item' | 'segment' | number
 export type TldSegmentedTabsLayout = 'content' | 'equal'
 export type TldSegmentedTabsSemantics = 'filter' | 'tabs'
 export type TldSegmentedTabsSize = 'compact' | 'default'
+export type TldSegmentedTabsTypography =
+    'comfortable' | 'compact' | 'default' | 'display' | 'regular'
 export type TldSegmentedTabsVariant = 'segmented' | 'underline'
 
 interface TldSegmentedTabsBaseProps {
+    readonly appearance?: TldSegmentedTabsAppearance
     readonly activeTextTone?: TldSegmentedTabsActiveTextTone
     readonly ariaLabel: string
     readonly baselineTone?: TldSegmentedTabsBaselineTone
@@ -47,6 +52,7 @@ interface TldSegmentedTabsBaseProps {
     readonly onValueChange: (value: string) => void
     readonly showBaseline?: boolean
     readonly size?: TldSegmentedTabsSize
+    readonly typography?: TldSegmentedTabsTypography
     readonly value: string
     readonly variant?: TldSegmentedTabsVariant
 }
@@ -100,6 +106,7 @@ function getPanelId(item: TldSegmentedChoiceItem): string | undefined {
 
 export function TldSegmentedTabs({
     activeTextTone = 'brand',
+    appearance = 'brand',
     ariaLabel,
     baselineTone = 'strong',
     gap = 'standard',
@@ -112,6 +119,7 @@ export function TldSegmentedTabs({
     semantics = 'tabs',
     showBaseline = true,
     size = 'default',
+    typography = 'default',
     value,
     variant = 'segmented',
 }: TldSegmentedTabsProps): ReactElement {
@@ -156,20 +164,37 @@ export function TldSegmentedTabs({
             ? Math.max(1, indicatorWidth)
             : indicatorWidth
     const tabListClassName =
-        variant === 'segmented'
-            ? 'relative isolate flex h-[46px] w-full overflow-hidden rounded-lg border border-strong bg-surface'
-            : layout === 'equal'
-              ? size === 'compact'
-                  ? 'relative isolate flex h-11 w-full min-w-max'
-                  : 'relative isolate flex h-[62px] w-full min-w-max'
-              : gap === 'wide'
-                ? size === 'compact'
-                    ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-12 xl:gap-14'
-                    : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-12 xl:gap-14'
-                : size === 'compact'
-                  ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:gap-12'
-                  : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:gap-12'
-
+        variant === 'segmented' && appearance === 'outlined'
+            ? 'relative isolate flex h-8 w-full overflow-hidden rounded-full bg-canvas [--app-text-tab-label:1rem] [--app-leading-tab-label:1.375rem]'
+            : variant === 'underline' && layout === 'content' && gap === 'generous'
+              ? 'relative isolate flex h-[45px] w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[70px]'
+              : variant === 'segmented' && appearance === 'neutral'
+                ? 'relative isolate flex h-8 w-full overflow-hidden rounded-lg bg-transparent ring-1 ring-inset ring-plan-divider [--app-text-tab-label:var(--app-text-tab-label-compact)] [--app-leading-tab-label:var(--app-leading-tab-label-compact)]'
+                : variant === 'segmented'
+                  ? 'relative isolate flex h-[46px] w-full overflow-hidden rounded-lg border border-strong bg-surface data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                  : typography === 'regular' && layout === 'content'
+                    ? gap === 'spread'
+                        ? 'relative isolate flex h-10 w-max min-w-0 gap-6 md:gap-16 xl:min-[1920px]:gap-[130px] [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
+                        : 'relative isolate flex h-10 w-max min-w-0 gap-6 md:gap-10 xl:gap-12 [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
+                    : layout === 'equal'
+                      ? size === 'compact'
+                          ? 'relative isolate flex h-11 w-full min-w-max data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                          : 'relative isolate flex h-[62px] w-full min-w-max data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                      : gap === 'spacious'
+                        ? size === 'compact'
+                            ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[60px] data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                            : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[60px] data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                        : gap === 'compact'
+                          ? size === 'compact'
+                              ? 'relative isolate flex h-11 w-max min-w-full gap-4 md:gap-5 xl:gap-9 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                              : 'relative isolate flex h-[62px] w-max min-w-full gap-4 md:gap-5 xl:gap-9 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                          : gap === 'wide'
+                            ? size === 'compact'
+                                ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-12 xl:gap-14 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                                : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-12 xl:gap-14 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                            : size === 'compact'
+                              ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:gap-12 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                              : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:gap-12 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
     function applyIndicatorVisual(): void {
         const highlight = highlightRef.current
         const labelOverlay = labelOverlayRef.current
@@ -358,6 +383,7 @@ export function TldSegmentedTabs({
     return (
         <div
             ref={tabListRef}
+            data-typography={typography}
             aria-label={ariaLabel}
             className={tabListClassName}
             role={semantics === 'tabs' ? 'tablist' : 'group'}
@@ -365,10 +391,11 @@ export function TldSegmentedTabs({
             {variant === 'underline' && showBaseline ? (
                 <span
                     aria-hidden="true"
+                    data-typography={typography}
                     className={
                         baselineTone === 'subtle'
-                            ? 'pointer-events-none absolute inset-x-0 bottom-0 z-0 h-px bg-subtle'
-                            : 'pointer-events-none absolute inset-x-0 bottom-0 z-0 h-px bg-strong'
+                            ? 'pointer-events-none absolute inset-x-0 bottom-0 z-0 h-px bg-subtle data-[typography=comfortable]:h-0.5'
+                            : 'pointer-events-none absolute inset-x-0 bottom-0 z-0 h-px bg-strong data-[typography=comfortable]:h-0.5'
                     }
                 />
             ) : null}
@@ -387,7 +414,13 @@ export function TldSegmentedTabs({
                     <div
                         ref={highlightRef}
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-y-0 z-20 rounded-lg bg-linear-to-r from-brand-start to-brand-end"
+                        className={
+                            appearance === 'outlined'
+                                ? 'pointer-events-none absolute inset-y-0 z-20 bg-linear-to-r/srgb from-brand-start to-brand-end'
+                                : appearance === 'neutral'
+                                  ? 'pointer-events-none absolute inset-y-0 z-20 bg-plan-selected'
+                                  : 'pointer-events-none absolute inset-y-0 z-20 rounded-lg bg-linear-to-r from-brand-start to-brand-end'
+                        }
                         style={{
                             left: initialVisualRef.current?.left,
                             width: initialVisualRef.current?.width,
@@ -396,13 +429,21 @@ export function TldSegmentedTabs({
                     <div
                         ref={labelOverlayRef}
                         aria-hidden="true"
-                        className="pointer-events-none absolute inset-0 z-30 flex text-inverse"
+                        className={
+                            appearance === 'neutral'
+                                ? 'pointer-events-none absolute inset-0 z-30 flex text-primary'
+                                : 'pointer-events-none absolute inset-0 z-30 flex text-inverse'
+                        }
                         style={{ clipPath: initialVisualRef.current?.clipPath }}
                     >
                         {items.map((item) => (
                             <span
                                 key={item.id}
-                                className="flex min-w-0 flex-1 items-center justify-center px-3 text-tab-label font-medium"
+                                className={
+                                    appearance === 'outlined'
+                                        ? 'flex min-w-0 flex-1 items-center justify-center px-3 text-label-regular font-medium'
+                                        : 'flex min-w-0 flex-1 items-center justify-center px-3 text-tab-label font-medium'
+                                }
                             >
                                 <span className="truncate">{item.label}</span>
                             </span>
@@ -424,14 +465,19 @@ export function TldSegmentedTabs({
                         id={`${componentId}-${item.id}`}
                         type="button"
                         aria-controls={semantics === 'tabs' ? panelId : undefined}
+                        data-typography={typography}
                         aria-pressed={semantics === 'filter' ? isActive : undefined}
                         aria-selected={semantics === 'tabs' ? isActive : undefined}
                         className={
-                            variant === 'segmented'
-                                ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-primary/60 outline-none hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
-                                : layout === 'equal'
-                                  ? 'relative z-20 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-5 text-tab-label outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
-                                  : 'relative z-20 flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-1 text-tab-label outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
+                            variant === 'segmented' && appearance === 'outlined'
+                                ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-hint before:absolute before:inset-y-0 before:left-0 before:w-px before:bg-linear-to-b/srgb before:from-brand-start before:to-brand-end first:before:hidden outline-none first:border-l-0 hover:text-foreground focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                : variant === 'segmented' && appearance === 'neutral'
+                                  ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center border-l border-plan-divider px-2 text-tab-label text-hint outline-none first:border-l-0 hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                  : variant === 'segmented'
+                                    ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-primary/60 outline-none hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                    : layout === 'equal'
+                                      ? 'relative z-20 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-5 text-tab-label outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
+                                      : 'relative z-20 flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-1 text-tab-label data-[typography=comfortable]:items-start data-[typography=comfortable]:px-0 data-[typography=comfortable]:text-tab-label-comfortable data-[typography=comfortable]:tracking-[0.01em] data-[typography=compact]:px-0 data-[typography=display]:px-0 data-[typography=regular]:px-0 data-[typography=regular]:items-start data-[typography=display]:tracking-[0.01em] outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
                         }
                         role={semantics === 'tabs' ? 'tab' : undefined}
                         onClick={(): void => onValueChange(item.id)}
@@ -446,7 +492,12 @@ export function TldSegmentedTabs({
                                           : activeTextTone === 'accent-green'
                                             ? 'truncate font-medium text-accent-green'
                                             : 'truncate font-medium text-brand'
-                                    : 'truncate text-primary/60'
+                                    : appearance === 'outlined' ||
+                                        typography === 'comfortable' ||
+                                        typography === 'display' ||
+                                        typography === 'regular'
+                                      ? 'truncate text-tab-inactive'
+                                      : 'truncate text-primary/60'
                             }
                         >
                             {variant === 'underline' &&
@@ -460,19 +511,20 @@ export function TldSegmentedTabs({
                         {variant === 'underline' ? (
                             <span
                                 aria-hidden="true"
+                                data-typography={typography}
                                 data-highlight-key={underlineTargetKey}
                                 className={
                                     normalizedIndicatorWidth === 'segment'
                                         ? indicatorThickness === 'thick'
-                                            ? 'pointer-events-none absolute inset-x-0 bottom-[-1px] h-1 opacity-0'
+                                            ? 'pointer-events-none absolute inset-x-0 bottom-[-1px] h-1 opacity-0 data-[typography=comfortable]:bottom-0 data-[typography=comfortable]:overflow-hidden data-[typography=compact]:bottom-0 data-[typography=compact]:overflow-hidden data-[typography=display]:bottom-0 data-[typography=display]:overflow-hidden data-[typography=regular]:bottom-0 data-[typography=regular]:overflow-hidden'
                                             : indicatorThickness === 'medium'
-                                              ? 'pointer-events-none absolute inset-x-0 bottom-[-1px] h-[3px] opacity-0'
-                                              : 'pointer-events-none absolute inset-x-0 bottom-[-1px] h-0.5 opacity-0'
+                                              ? 'pointer-events-none absolute inset-x-0 bottom-[-1px] h-[3px] opacity-0 data-[typography=comfortable]:bottom-0 data-[typography=comfortable]:overflow-hidden data-[typography=compact]:bottom-0 data-[typography=compact]:overflow-hidden data-[typography=display]:bottom-0 data-[typography=display]:overflow-hidden data-[typography=regular]:bottom-0 data-[typography=regular]:overflow-hidden'
+                                              : 'pointer-events-none absolute inset-x-0 bottom-[-1px] h-0.5 opacity-0 data-[typography=comfortable]:bottom-0 data-[typography=comfortable]:overflow-hidden data-[typography=compact]:bottom-0 data-[typography=compact]:overflow-hidden data-[typography=display]:bottom-0 data-[typography=display]:overflow-hidden data-[typography=regular]:bottom-0 data-[typography=regular]:overflow-hidden'
                                         : indicatorThickness === 'thick'
-                                          ? 'pointer-events-none absolute bottom-[-1px] left-1/2 h-1 w-max -translate-x-1/2 whitespace-nowrap text-transparent opacity-0'
+                                          ? 'pointer-events-none absolute bottom-[-1px] left-1/2 h-1 w-max -translate-x-1/2 whitespace-nowrap text-transparent opacity-0 data-[typography=comfortable]:bottom-0 data-[typography=comfortable]:overflow-hidden data-[typography=compact]:bottom-0 data-[typography=compact]:overflow-hidden data-[typography=display]:bottom-0 data-[typography=display]:overflow-hidden data-[typography=regular]:bottom-0 data-[typography=regular]:overflow-hidden'
                                           : indicatorThickness === 'medium'
-                                            ? 'pointer-events-none absolute bottom-[-1px] left-1/2 h-[3px] w-max -translate-x-1/2 whitespace-nowrap text-transparent opacity-0'
-                                            : 'pointer-events-none absolute bottom-[-1px] left-1/2 h-0.5 w-max -translate-x-1/2 whitespace-nowrap text-transparent opacity-0'
+                                            ? 'pointer-events-none absolute bottom-[-1px] left-1/2 h-[3px] w-max -translate-x-1/2 whitespace-nowrap text-transparent opacity-0 data-[typography=comfortable]:bottom-0 data-[typography=comfortable]:overflow-hidden data-[typography=compact]:bottom-0 data-[typography=compact]:overflow-hidden data-[typography=display]:bottom-0 data-[typography=display]:overflow-hidden data-[typography=regular]:bottom-0 data-[typography=regular]:overflow-hidden'
+                                            : 'pointer-events-none absolute bottom-[-1px] left-1/2 h-0.5 w-max -translate-x-1/2 whitespace-nowrap text-transparent opacity-0 data-[typography=comfortable]:bottom-0 data-[typography=comfortable]:overflow-hidden data-[typography=compact]:bottom-0 data-[typography=compact]:overflow-hidden data-[typography=display]:bottom-0 data-[typography=display]:overflow-hidden data-[typography=regular]:bottom-0 data-[typography=regular]:overflow-hidden'
                                 }
                                 style={
                                     typeof normalizedIndicatorWidth === 'number'

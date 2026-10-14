@@ -1,4 +1,8 @@
 export const routePaths = {
+    pkArena: '/pk/',
+    pkMatching: '/pk/matching/',
+    pkLoading: '/pk/loading/',
+    settings: '/settings/',
     home: '/',
     aiTutor: '/ai-tutor/',
     aiTutorChat: '/ai-tutor/mentors/[mentorId]/scenes/[sceneId]/',
@@ -18,6 +22,7 @@ export const routePaths = {
     collaboration: '/collaboration/',
     vipMembership: '/vip/',
     leaderboard: '/leaderboard/',
+    competition: '/competition/',
     prizeCenter: '/prize-center/',
     promotionRevenue: '/promotion/revenue/',
     branchCompany: '/branch-company/',

@@ -9,26 +9,34 @@ import { Tooltip } from '../../../shared/ui/tooltip'
 import type { WithdrawalRecord, WithdrawalStatus } from '../model/withdrawal-records'
 
 export interface WithdrawalRecordTableProps {
+    readonly appearance?: 'default' | 'contrasted'
     readonly items: readonly WithdrawalRecord[]
     readonly onLoadNextPage: () => void
     readonly status: TldPaginationStatusValue
 }
 
 interface WithdrawalStatusBadgeProps {
+    readonly appearance: 'default' | 'contrasted'
     readonly status: WithdrawalStatus
 }
 
-function WithdrawalStatusBadge({ status }: WithdrawalStatusBadgeProps): ReactElement {
+function WithdrawalStatusBadge({ status, appearance }: WithdrawalStatusBadgeProps): ReactElement {
     const label = status === 'reviewing' ? '审核中' : status === 'failed' ? '审核失败' : '审核通过'
 
     return (
         <span
             className={
-                status === 'reviewing'
-                    ? 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-warning/40 bg-warning/10 px-3 text-caption text-warning'
-                    : status === 'failed'
-                      ? 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-danger/40 bg-danger/10 px-3 text-caption text-danger'
-                      : 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-success/40 bg-success/10 px-3 text-caption text-success'
+                appearance === 'contrasted'
+                    ? status === 'reviewing'
+                        ? 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-review-pending/40 bg-review-pending/10 px-[14px] text-caption-tight text-review-pending'
+                        : status === 'failed'
+                          ? 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-review-failed/40 bg-review-failed/10 px-2 text-caption-tight text-review-failed'
+                          : 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-review-approved/40 bg-review-approved/10 px-2 text-caption-tight text-review-approved'
+                    : status === 'reviewing'
+                      ? 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-warning/40 bg-warning/10 px-3 text-caption text-warning'
+                      : status === 'failed'
+                        ? 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-danger/40 bg-danger/10 px-3 text-caption text-danger'
+                        : 'inline-flex h-6 items-center justify-center whitespace-nowrap rounded-full border border-success/40 bg-success/10 px-3 text-caption text-success'
             }
         >
             {label}
@@ -57,6 +65,7 @@ function formatBankName(bankName: string): ReactElement {
 }
 
 export function WithdrawalRecordTable({
+    appearance = 'default',
     items,
     onLoadNextPage,
     status,
@@ -73,7 +82,13 @@ export function WithdrawalRecordTable({
             <div className="flex min-h-[calc(100svh-260px)] flex-col">
                 <div className="mt-4 overflow-x-auto rounded-xl">
                     <table className="w-full min-w-[1212px] table-fixed text-center">
-                        <thead className="h-[54px] bg-surface-raised text-body text-secondary">
+                        <thead
+                            className={
+                                appearance === 'contrasted'
+                                    ? 'h-[54px] bg-surface-raised text-body-tight text-content-strong'
+                                    : 'h-[54px] bg-surface-raised text-body text-secondary'
+                            }
+                        >
                             <tr>
                                 <th className="w-[72px] px-2 font-medium">提现ID</th>
                                 <th className="w-[88px] px-2 font-medium">用户ID</th>
@@ -90,13 +105,21 @@ export function WithdrawalRecordTable({
                                 <th className="w-[136px] px-2 font-medium">审核时间</th>
                             </tr>
                         </thead>
-                        <tbody className="text-label text-secondary">
+                        <tbody
+                            className={
+                                appearance === 'contrasted'
+                                    ? 'text-label tracking-[0.01em] text-content-strong'
+                                    : 'text-label text-secondary'
+                            }
+                        >
                             {items.map((item, index) => (
                                 <tr
                                     key={item.id}
                                     className={
                                         index % 2 === 0
-                                            ? 'h-[52px] bg-canvas'
+                                            ? appearance === 'contrasted'
+                                                ? 'h-[52px] bg-row-alternate'
+                                                : 'h-[52px] bg-canvas'
                                             : 'h-[52px] bg-surface-raised'
                                     }
                                 >
@@ -123,12 +146,24 @@ export function WithdrawalRecordTable({
                                             </button>
                                         )}
                                     </td>
-                                    <td className="px-2 leading-[18px]">
+                                    <td
+                                        className={
+                                            appearance === 'contrasted'
+                                                ? 'px-2 leading-5'
+                                                : 'px-2 leading-[18px]'
+                                        }
+                                    >
                                         {item.bankCardNumber === undefined
                                             ? '------'
                                             : formatBankCardNumber(item.bankCardNumber)}
                                     </td>
-                                    <td className="px-2 leading-[18px]">
+                                    <td
+                                        className={
+                                            appearance === 'contrasted'
+                                                ? 'px-2 leading-5'
+                                                : 'px-2 leading-[18px]'
+                                        }
+                                    >
                                         {item.bankName === undefined
                                             ? '------'
                                             : formatBankName(item.bankName)}
@@ -138,7 +173,10 @@ export function WithdrawalRecordTable({
                                     <td className="px-2">{item.fee}</td>
                                     <td className="px-2">{item.actualAmount}</td>
                                     <td className="px-2">
-                                        <WithdrawalStatusBadge status={item.status} />
+                                        <WithdrawalStatusBadge
+                                            status={item.status}
+                                            appearance={appearance}
+                                        />
                                     </td>
                                     <td className="px-2">
                                         {item.reviewNote === undefined ? (

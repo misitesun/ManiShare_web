@@ -11,8 +11,8 @@ export function ForeignLanguageCourseCard({
     courseItem,
 }: ForeignLanguageCourseCardProps): ReactElement {
     return (
-        <article className="min-w-0 rounded-xl border border-strong bg-canvas p-3 md:p-4 xl:min-h-[370px] xl:p-[18px]">
-            <div className="aspect-[562/250] min-w-0 overflow-hidden rounded-xl">
+        <article className="min-w-0 rounded-xl border border-strong bg-canvas p-3 md:p-4 xl:min-h-[370px] xl:px-[17px] xl:pb-[17px] xl:pt-[19px]">
+            <div className="aspect-[562/250] min-w-0 overflow-hidden rounded-xl xl:rounded-[20px]">
                 <img
                     alt={`${courseItem.title}课程封面`}
                     className="size-full object-cover"

@@ -1,149 +1,179 @@
 'use client'
-
 import type { ReactElement } from 'react'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
-import firstAvatarSourceAsset from '../assets/leaderboard/avatar-first.webp'
-import secondAvatarSourceAsset from '../assets/leaderboard/avatar-second.webp'
-import thirdAvatarSourceAsset from '../assets/leaderboard/avatar-third.webp'
-import podiumCenterTopSourceAsset from '../assets/leaderboard/podium-center-top.svg'
-import podiumLeftTopSourceAsset from '../assets/leaderboard/podium-left-top.svg'
-import podiumRightTopSourceAsset from '../assets/leaderboard/podium-right-top.svg'
+import type { TldMembershipTone } from '../../../shared/ui/tld-membership-badge'
+import firstAvatar from '../assets/redesign/avatar-first.png'
+import secondAvatar from '../assets/redesign/avatar-second.png'
+import thirdAvatar from '../assets/redesign/avatar-third.png'
+import firstBeam from '../assets/redesign/podium-first-beam.svg'
+import secondBeam from '../assets/redesign/podium-second-beam.svg'
+import thirdBeam from '../assets/redesign/podium-third-beam.svg'
+import firstTop from '../assets/redesign/podium-first-top.svg'
+import secondTop from '../assets/redesign/podium-second-top.svg'
+import thirdTop from '../assets/redesign/podium-third-top.svg'
 import { leaderboardEntries } from '../model/home-data'
-import { LightRays } from './LightRays'
-
-const firstAvatarSource: string = firstAvatarSourceAsset.src
-const secondAvatarSource: string = secondAvatarSourceAsset.src
-const thirdAvatarSource: string = thirdAvatarSourceAsset.src
-const podiumCenterTopSource: string = podiumCenterTopSourceAsset.src
-const podiumLeftTopSource: string = podiumLeftTopSourceAsset.src
-const podiumRightTopSource: string = podiumRightTopSourceAsset.src
-
+interface StarEntry {
+    readonly place: 'first' | 'second' | 'third'
+    readonly name: string
+    readonly time: string
+    readonly level: string
+    readonly label: string
+    readonly membership: TldMembershipTone
+    readonly avatar: string
+    readonly beam: string
+    readonly top: string
+}
+const podiumEntries: readonly StarEntry[] = [
+    {
+        place: 'second',
+        name: '艾琳',
+        time: '5小时30分钟',
+        level: 'Lv9词启',
+        label: '黄金VIP',
+        membership: 'gold',
+        avatar: secondAvatar.src,
+        beam: secondBeam.src,
+        top: secondTop.src,
+    },
+    {
+        place: 'first',
+        name: '啷个哩个啷',
+        time: '6小时44分钟',
+        level: 'Lv2初音',
+        label: '终身VIP',
+        membership: 'lifetime',
+        avatar: firstAvatar.src,
+        beam: firstBeam.src,
+        top: firstTop.src,
+    },
+    {
+        place: 'third',
+        name: 'charles',
+        time: '5小时27分钟',
+        level: 'Lv99言御',
+        label: '漫奇天使',
+        membership: 'angel',
+        avatar: thirdAvatar.src,
+        beam: thirdBeam.src,
+        top: thirdTop.src,
+    },
+]
 function LeaderboardPodium(): ReactElement {
     return (
-        <div className="relative h-64 w-[422px]" aria-label="前三名：summer、冬雪晚晴、左兔先生">
-            <div className="absolute left-[173px] top-0 flex w-[76px] flex-col items-center">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-[76px] rounded-full object-cover"
-                    src={firstAvatarSource}
-                />
-                <span className="mt-[-10px]">
-                    <TldMembershipBadge label="黄金VIP" size="compact" tone="gold" />
-                </span>
-                <span className="mt-0.5 whitespace-nowrap text-xs font-semibold text-home-rank-blue">
-                    Lv99言御
-                </span>
-            </div>
-            <div className="absolute left-[29px] top-[45px] flex w-[76px] flex-col items-center">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-[76px] rounded-full object-cover"
-                    src={secondAvatarSource}
-                />
-                <span className="mt-[-10px]">
-                    <TldMembershipBadge label="黄金VIP" size="compact" tone="gold" />
-                </span>
-                <span className="mt-0.5 whitespace-nowrap text-xs font-semibold text-danger">
-                    Lv2初音
-                </span>
-            </div>
-            <div className="absolute left-[315px] top-[45px] flex w-[76px] flex-col items-center">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-[76px] rounded-full object-cover"
-                    src={thirdAvatarSource}
-                />
-                <span className="mt-[-10px]">
-                    <TldMembershipBadge label="终身VIP" size="compact" tone="lifetime" />
-                </span>
-                <span className="mt-0.5 whitespace-nowrap text-xs font-semibold text-warning">
-                    Lv9词启
-                </span>
-            </div>
-
-            <div className="absolute bottom-0 left-0 h-[101px] w-[126px]">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute left-0 top-0 h-[26px] w-[126px]"
-                    src={podiumLeftTopSource}
-                />
-                <div className="absolute bottom-0 h-[75px] w-full rounded-bl-xl bg-linear-to-b from-home-podium-purple to-home-podium-purple-soft text-center text-inverse">
-                    <p className="pt-1 text-sm font-medium">冬雪晚晴</p>
-                    <p className="mt-1 text-[38px] font-semibold leading-none text-inverse/35">2</p>
+        <div
+            aria-label="前三名：啷个哩个啷、艾琳、charles"
+            className="absolute inset-x-0 top-[92px] mx-auto grid h-[273px] max-w-[462px] grid-cols-3"
+        >
+            {podiumEntries.map((entry) => (
+                <div key={entry.place} className="relative min-w-0">
+                    <div
+                        aria-hidden="true"
+                        className={
+                            entry.place === 'first'
+                                ? 'absolute left-1/2 top-[-5px] h-[250px] w-[164px] -translate-x-1/2 origin-top scale-[0.75] @min-[400px]:scale-[0.9] @min-[460px]:scale-100'
+                                : entry.place === 'second'
+                                  ? 'absolute left-1/2 top-5 h-[250px] w-[164px] -translate-x-1/2 origin-top scale-[0.75] @min-[400px]:scale-[0.9] @min-[460px]:scale-100'
+                                  : 'absolute left-1/2 top-7 h-[250px] w-[164px] -translate-x-1/2 origin-top scale-[0.75] @min-[400px]:scale-[0.9] @min-[460px]:scale-100'
+                        }
+                    >
+                        <img
+                            src={entry.beam}
+                            alt=""
+                            width={164}
+                            height={134}
+                            className="absolute left-0 top-0"
+                        />
+                        <div
+                            className={
+                                entry.place === 'first'
+                                    ? 'absolute left-[18px] top-[112px] h-[143px] w-[128px] bg-linear-to-b from-home-star-first to-transparent'
+                                    : entry.place === 'second'
+                                      ? 'absolute left-[18px] top-[127px] h-[118px] w-[128px] bg-linear-to-b from-home-star-second to-transparent'
+                                      : 'absolute left-[18px] top-[121px] h-[124px] w-[128px] bg-linear-to-b from-home-star-third to-transparent'
+                            }
+                        />
+                        <img
+                            src={entry.top}
+                            alt=""
+                            width={128}
+                            height={40}
+                            className={
+                                entry.place === 'first'
+                                    ? 'absolute left-[18px] top-[92px]'
+                                    : entry.place === 'second'
+                                      ? 'absolute left-[18px] top-[107px]'
+                                      : 'absolute left-[18px] top-[101px]'
+                            }
+                        />
+                    </div>
+                    <div
+                        className={
+                            entry.place === 'first'
+                                ? 'relative flex min-w-0 flex-col items-center px-1 pt-[37px]'
+                                : 'relative flex min-w-0 flex-col items-center px-1 pt-[77px]'
+                        }
+                    >
+                        <img
+                            src={entry.avatar}
+                            alt={entry.name + '的头像'}
+                            width={50}
+                            height={50}
+                            className="size-[50px] rounded-full object-cover"
+                        />
+                        <div className="-mt-[13px]">
+                            <TldMembershipBadge
+                                size="compact"
+                                label={entry.label}
+                                tone={entry.membership}
+                            />
+                        </div>
+                        <p className="mt-0.5 max-w-full truncate text-label font-medium text-media-foreground">
+                            {entry.name}
+                        </p>
+                        <p
+                            className={
+                                entry.place === 'first'
+                                    ? 'mt-[18px] whitespace-nowrap text-label text-home-star-first-text'
+                                    : entry.place === 'second'
+                                      ? 'mt-[18px] whitespace-nowrap text-label text-home-star-second-text'
+                                      : 'mt-[18px] whitespace-nowrap text-label text-home-star-third-text'
+                            }
+                        >
+                            {entry.time}
+                        </p>
+                        <p
+                            className={
+                                entry.place === 'first'
+                                    ? 'mt-1 text-caption font-semibold text-danger'
+                                    : entry.place === 'second'
+                                      ? 'mt-1 text-caption font-semibold text-accent-orange'
+                                      : 'mt-1 text-caption font-semibold text-home-rank-blue'
+                            }
+                        >
+                            {entry.level}
+                        </p>
+                    </div>
                 </div>
-                <span className="absolute top-0 flex h-[26px] w-full items-center justify-center text-sm text-home-podium-purple-text">
-                    5小时30分钟
-                </span>
-            </div>
-            <div className="absolute bottom-0 left-[126px] h-[130px] w-[170px]">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute left-0 top-0 h-[29px] w-[170px]"
-                    src={podiumCenterTopSource}
-                />
-                <div className="absolute bottom-0 h-[101px] w-full bg-linear-to-b from-home-podium-gold to-home-podium-gold-soft text-center text-inverse">
-                    <p className="pt-1 text-sm font-medium">summer</p>
-                    <p className="mt-2 text-[42px] font-semibold leading-none text-inverse/35">1</p>
-                </div>
-                <span className="absolute top-0 flex h-[29px] w-full items-center justify-center text-sm text-home-podium-gold-text">
-                    6小时44分钟
-                </span>
-            </div>
-            <div className="absolute bottom-0 right-0 h-[101px] w-[126px]">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute left-0 top-0 h-[26px] w-[126px] -scale-x-100"
-                    src={podiumRightTopSource}
-                />
-                <div className="absolute bottom-0 h-[75px] w-full rounded-br-xl bg-linear-to-b from-home-podium-blue to-home-podium-blue-soft text-center text-inverse">
-                    <p className="pt-1 text-sm font-medium">左兔先生</p>
-                    <p className="mt-1 text-[38px] font-semibold leading-none text-inverse/35">3</p>
-                </div>
-                <span className="absolute top-0 flex h-[26px] w-full items-center justify-center text-sm text-home-podium-blue-text">
-                    5小时27分钟
-                </span>
-            </div>
+            ))}
         </div>
     )
 }
-
 export function Leaderboard(): ReactElement {
     return (
         <aside
             aria-labelledby="leaderboard-title"
             className="@container flex h-auto min-w-0 flex-col overflow-hidden rounded-xl border border-strong bg-canvas lg:h-[968px] xl:min-[1440px]:h-full"
         >
-            <div className="relative h-[358px] shrink-0 overflow-hidden">
-                <LightRays
-                    raysColor="var(--app-color-home-leaderboard-ray-purple)"
-                    raysOrigin="top-center"
-                    raysSpeed={1.5}
-                    lightSpread={2}
-                    rayLength={1.5}
-                    followMouse={true}
-                    mouseInfluence={0.1}
-                    noiseAmount={0.1}
-                    distortion={0.05}
-                    saturation={2}
-                />
+            <div className="relative h-[312px] shrink-0">
                 <h2
                     id="leaderboard-title"
-                    className="relative pt-8 text-center text-[22px] font-medium tracking-[0.01em] text-primary md:text-[26px] xl:text-[30px] min-[1920px]:text-[32px]"
+                    className="relative pt-8 text-center text-[22px] font-medium tracking-[0.01em] text-primary md:text-[26px] xl:text-[30px]"
                 >
-                    今日风云榜
+                    今日星光榜
                 </h2>
-                <div className="absolute bottom-0 left-1/2 origin-bottom -translate-x-1/2 scale-[0.76] @min-[350px]:scale-[0.82] @min-[390px]:scale-[0.9] @min-[430px]:scale-100">
-                    <LeaderboardPodium />
-                </div>
+                <LeaderboardPodium />
             </div>
-
-            <div className="mt-[29px] min-h-0 flex-1 overflow-y-auto px-3 pb-3 [scrollbar-color:var(--app-color-border-strong)_transparent] [scrollbar-width:thin]">
+            <div className="relative z-10 mt-4 min-h-0 flex-1 overflow-y-auto px-3 pb-3 [scrollbar-color:var(--app-color-border-strong)_transparent] [scrollbar-width:thin]">
                 <ol className="flex flex-col gap-3">
                     {leaderboardEntries.map((entry) => (
                         <li
@@ -169,9 +199,11 @@ export function Leaderboard(): ReactElement {
                                             ? 'truncate text-xs font-semibold text-danger'
                                             : entry.levelTone === 'success'
                                               ? 'truncate text-xs font-semibold text-success'
-                                              : entry.levelTone === 'blue'
-                                                ? 'truncate text-xs font-semibold text-home-rank-blue'
-                                                : 'truncate text-xs font-semibold text-warning'
+                                              : entry.levelTone === 'purple'
+                                                ? 'truncate text-xs font-semibold text-brand-start'
+                                                : entry.levelTone === 'blue'
+                                                  ? 'truncate text-xs font-semibold text-home-rank-blue'
+                                                  : 'truncate text-xs font-semibold text-warning'
                                     }
                                 >
                                     {entry.level}

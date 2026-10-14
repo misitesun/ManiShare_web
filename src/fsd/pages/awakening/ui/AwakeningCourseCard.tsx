@@ -25,7 +25,7 @@ export function AwakeningCourseCard({
         course.access === 'free' ? '免费' : course.access === 'vip' ? 'VIP会员' : '终身VIP'
     return (
         <article className="min-w-0 rounded-xl bg-surface-raised">
-            <div className="aspect-[291/186] overflow-hidden rounded-t-xl">
+            <div className="aspect-[3/2] overflow-hidden rounded-t-xl">
                 <img alt="" className="size-full object-cover" src={course.image} loading="lazy" />
             </div>
             <div className="relative flex min-h-[106px] min-w-0 flex-col gap-2 px-2.5 py-2.5">
