@@ -169,3 +169,8 @@ PK两个全屏状态页新增冒烟：大厅三个入口、邀请/机器人提�
 pnpm run settings-effects:smoke复用run-runtime-smoke的严格生产预览、真实Electron主机和独立profile，不触碰开发锁。独立settings-effects-runtime-smoke.cjs检查8份Lottie实际SVG帧、7项原生单选/保存恢复、五种声纹真实动态帧、两个设置值消费、演示录音与实际媒体playing/pause、完成窗口循环、暂停/关闭/离页清理、reduced-motion、双主题及真实125%/150%/200%页面缩放。资源/CSP/控制台和业务/权限请求保持严格断言；PC1440×900/100%人工查看，平板/H5只做几何检查并留待用户视觉真机验收。实际执行结果在练习开发文档记录，脚本与CI接线不代表已经运行通过。
 
 课程封面动效专项入口为`scripts/tilted-cover-runtime-smoke.cjs`，复用隔离生产Web/Electron宿主，验证全部封面入口、可信鼠标移动、稳定槽位、方向/光泽、离开与失焦复位、动态reduced-motion、触控事件不启动动效，以及原链接/播放/收藏编辑/PK课程单选。Node相邻单测覆盖几何与帧取消/卸载；生产结果写入`dist/tilted-cover-runtime-validation.json`。基准1440×900及1920×1080/100%检查dark/light，并另查PC宽度和真实页面缩放；平板/H5视觉和真机仍待用户验收。运行方式沿用上述独立生产专项，仅替换脚本名并使用独立profile。
+
+
+## 句子沉浸听力公共前置专项
+
+scripts/practice-sentence-listening-runtime-smoke.cjs由主窗口维护，使用已构建的真实Electron主机／preload／englishlearning协议与严格生产Web预览，独立profile，命令沿既有独立专项方式替换脚本名。检查1920×1080/100%六行标注／图／中文／笔记／口语几何、两份原素材尺寸、固定配色与亮度分层、独立偏好、原生笔记和口语按钮／V、相关默认消费者以及双主题PC宽度／真实页面缩放。长词为明确的临时DOM布局夹具，390/768为自动几何，均不冒称真机输入验收；不为本专项修改句子owner配置或恢复暂停。当前听力split历史行由句子窗口删除，旧缓存过滤在该交付集成时基于真实rows重验。结果和边界见练习总文档“句子沉浸听力公共前置”，平板/H5视觉及真机待用户验收。

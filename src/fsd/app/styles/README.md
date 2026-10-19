@@ -71,3 +71,6 @@ dialog-title-soft为紧凑俱乐部标题的语义色，dark#D9D9D9/light primar
 - 2026-10-19声纹配色：audio-wave-start/end仅服务学习声纹的32列、SVG渐变和SiriWave原版曲线，均引用当前主题的brand绿色；设置录音/朗读预览与练习声纹同步使用。组件只消费语义utility，Canvas构造器经getComputedStyle读取同一token，不按主题名分支。原Lottie自身矢量配色作为业务资源原样保留，不注入全站主题。
 
 - 统一课程封面：`cover-glare`与`shadow-tilted-cover`由本入口提供完整dark/light值，供`shared/ui/tld-tilted-cover`的光泽与活动阴影使用；原有封面尺寸、颜色和各页面字号不变。倾斜、缩放、指针位置只通过局部CSS几何变量更新，组件无主题分支。
+
+
+- 沉浸听力显式变体：practice-pos-label是两主题共同的固定教学标签黑字，仅供彩色词性底色上的文字；既有practice-pos-*与practice-syntax-*数值保持。--app-shadow-sentence-listening-oral在dark使用546:33658的0 4px 18.1px rgba(73,255,104,1)，light引用既有panel阴影，只由新的听力口语按钮显式消费。划线、成分文字和词性层不消费填充亮度。

@@ -999,6 +999,14 @@ function PracticeSession({
                                 setNoteTarget(id)
                                 open('note')
                             }}
+                            oralEnabled={canShowQuickOral(
+                                demo.family,
+                                mode,
+                                session.phase,
+                                Boolean(question.english.trim()),
+                                values.showEvaluation,
+                            )}
+                            onOral={(): void => executeCommand('practice.oral')}
                             onKnown={startRemember}
                             remembering={rememberAction !== null}
                             onRememberFeedbackComplete={completeRememberFeedback}
@@ -1028,6 +1036,7 @@ function PracticeSession({
                                 />
                             )}
                         {!(demo.family === 'word' && mode === 'spell') &&
+                            !(demo.family === 'sentence' && mode === 'listen') &&
                             canShowQuickOral(
                                 demo.family,
                                 mode,

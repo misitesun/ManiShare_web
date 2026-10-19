@@ -44,6 +44,7 @@ import { WordPronunciationDeck } from './WordPronunciationDeck'
 import type { WordCardNavigation, WordPronunciationDeckController } from '../model/word-card-deck'
 import { WordAnswerCard } from './WordAnswerCard'
 import { SentenceExercise } from './SentenceExercise'
+import { SentenceListeningExercise } from './SentenceListeningExercise'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import { PhoneticsDemo } from './PhoneticsDemo'
 import wordAsset from '../assets/word-woman-e23d5f.png'
@@ -72,6 +73,8 @@ export interface PracticeContentProps {
     readonly onWordSpellingSubmit?: ((value: string) => void) | undefined
     readonly onBlock: (id: string) => void
     readonly onNote: (questionId: string) => void
+    readonly oralEnabled: boolean
+    readonly onOral: () => void
     readonly onKnown: () => void
     readonly onRetry: () => void
     readonly onNotice: (message: string) => void
@@ -114,6 +117,8 @@ export function PracticeContent({
     onWordSpellingSubmit,
     onBlock,
     onNote,
+    oralEnabled,
+    onOral,
     onKnown,
     onRetry,
     onNotice,
@@ -188,6 +193,20 @@ export function PracticeContent({
                   ? greetingAsset.src
                   : sentenceAsset.src
     const style: ContentStyle = { '--practice-reference-top': `${reference.top}px` }
+    if (demo.family === 'sentence' && mode === 'listen')
+        return (
+            <SentenceListeningExercise
+                question={question}
+                values={values}
+                imageVisible={imageVisible}
+                translationVisible={showTranslation}
+                blocked={blocked}
+                reading={reading}
+                onNote={(): void => onNote(question.id)}
+                oralEnabled={oralEnabled}
+                onOral={onOral}
+            />
+        )
     if (demo.family === 'phonetics' && mode !== 'oral')
         return (
             <PhoneticsDemo

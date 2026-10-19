@@ -3,6 +3,78 @@ import { isPracticeAnswerVisible } from './practice-visibility'
 
 export type SentenceExerciseMode = 'translate' | 'check' | 'blocks'
 
+export interface SentenceListeningReference {
+    readonly node: string
+    readonly viewport: { readonly width: number; readonly height: number }
+    readonly media: {
+        readonly x: number
+        readonly y: number
+        readonly width: number
+        readonly height: number
+    }
+    readonly annotation: {
+        readonly phoneticTop: number
+        readonly phoneticFontSize: number
+        readonly partOfSpeechTop: number
+        readonly partOfSpeechWidth: number
+        readonly partOfSpeechHeight: number
+        readonly englishTop: number
+        readonly englishFontSize: number
+        readonly englishFontWeight: number
+        readonly underlineTop: number
+        readonly underlineHeight: number
+        readonly meaningTop: number
+        readonly meaningFontSize: number
+        readonly syntaxTop: number
+        readonly syntaxFontSize: number
+    }
+    readonly translation: {
+        readonly y: number
+        readonly fontSize: number
+        readonly fontWeight: number
+    }
+    readonly note: {
+        readonly x: number
+        readonly y: number
+        readonly width: number
+        readonly height: number
+    }
+    readonly oral: {
+        readonly x: number
+        readonly y: number
+        readonly width: number
+        readonly height: number
+    }
+}
+
+/** 546:33602 的全局 CSS px；文字节点框高不作为 CSS 行高。 */
+export function getSentenceListeningReference(): SentenceListeningReference {
+    return {
+        node: '546:33602',
+        viewport: { width: 1920, height: 1080 },
+        media: { x: 745, y: 183, width: 430, height: 242 },
+        annotation: {
+            phoneticTop: 484,
+            phoneticFontSize: 14,
+            partOfSpeechTop: 510,
+            partOfSpeechWidth: 38,
+            partOfSpeechHeight: 22,
+            englishTop: 534,
+            englishFontSize: 40,
+            englishFontWeight: 500,
+            underlineTop: 600,
+            underlineHeight: 3,
+            meaningTop: 617,
+            meaningFontSize: 18,
+            syntaxTop: 652,
+            syntaxFontSize: 16,
+        },
+        translation: { y: 727, fontSize: 30, fontWeight: 500 },
+        note: { x: 922, y: 797, width: 76, height: 30 },
+        oral: { x: 843, y: 886, width: 234, height: 46 },
+    }
+}
+
 export interface SentenceExerciseReference {
     readonly node: string
     readonly mediaTop: number | null

@@ -10,7 +10,7 @@
 - **单词拼读 `word:pronounce`**：10个本地词例、四张可见3D卡堆、hover与原手势、记住移出待练队列、再来放回业务队尾及可见末槽已实现。记住进度仅本轮内存，不写服务端。
 - **单词拼写 `word:spell`**：12题本地样例比对、固定词槽、Enter／末词末尾普通空格提交、答错重试、本轮提交统计、正确态口语入口与统计已实现。只按已确认的trim／ignoreCase规则本地比对；正式题库和服务端判题未接。
 - **其他单词模式**：默写、句中练义、指法、口语已有基础组合与工具栏，仍需按各小模式最新设计逐项核对；口语是明确的状态演示，不是真实录音或评分。
-- **句子七模式**：工具栏已接入；中译英、理解自查、拼块使用专用`SentenceExercise`，沉浸听力、阅读、指法、口语仍由通用`PracticeContent`组合。完整／拆分、抄写运行策略仍待接，不宣称七模式精修完成。
+- **句子七模式**：工具栏已接入；中译英、理解自查、拼块使用专用`SentenceExercise`，沉浸听力已由主窗口提取`SentenceListeningExercise`并接线，阅读、指法、口语仍走通用`PracticeContent`。听力不消费完整／拆分；句子窗口负责删除历史局部行及专项预期，合入前主分支历史行仍在。完整／拆分、抄写运行策略仍待接，不宣称七模式精修完成。
 - **共用输入与媒体**：整词词槽及原生编辑覆盖8个消费者，彩色键帽／双手和实输高亮已接。28种支持切读的模式已接统一调度，但正式演示数据缺少课程音源，显示静态声纹和“音源待接入”；技术WAV／MP4只验证播放器。`PRACTICE-SOUND-MIGRATION`正式声音资源迁入仍待开发。
 - **当前暂停规则**：`model/practice-pause.ts`中的`PRACTICE_PAUSE_ENABLED = false`；顶部和更多菜单无暂停，窗口失焦／隐藏不触发游戏暂停。设置、退出、完成等有效浮层仍按原规则阻断。重新启用必须由主窗口统一修改并重验。
 - **PC及缩放**：已有各专项的1920×1080或1440×900基准、深浅主题、较窄PC及真实125%／150%／200%缩放记录；以各节实际范围为准，不把历史专项拼成一次当前全站验收。
@@ -59,7 +59,8 @@
 - `ui/SentenceExercise.tsx`及对应新增行为测试：目前只覆盖`sentence:translate/check/blocks`。
 - `ui/SentencePracticeToolbar.tsx`、`model/sentence-toolbar-options.ts`及同名测试，`scripts/sentence-toolbar-runtime-smoke.cjs`。
 - 新增独占文件使用可识别的`Sentence*`／`sentence-*`概念；专用资源跟随practice owner。
-- `sentence:listen/read/typing/oral`当前仍在通用内容中；开始这些模式前，先由主窗口提取页面内部的句子入口／插槽并完成接线，再交句子窗口维护。不能承诺当前任意句子任务都只改独占文件。
+- `ui/SentenceListeningExercise.tsx`、同名`.test.ts`及`assets/sentence-listening-note.svg`、`assets/sentence-listening-oral.svg`由主窗口首次提取、接线及验证后交句子窗口维护；只服务`sentence:listen`。公共标注、几何、接线和公共专项继续归主窗口。
+- `sentence:read/typing/oral`当前仍在通用内容中；开始这些模式前，先由主窗口提取页面内部的句子入口／插槽并完成接线，再交句子窗口维护。不能承诺当前任意句子任务都只改独占文件。
 
 分支隔离不等于零冲突。上述单写归属可以减少冲突；Props契约、共享数据、总文档或公共脚本改变时仍需协调。同一个文件只能由一个窗口负责当前变更，不让游戏分支自行修公共文件后等待合并时解决冲突。
 
@@ -2219,3 +2220,40 @@ PC1440×900/100%人工查看深浅主题底栏，平板/H5只做自动几何/显
 - [专项汇总及14个实现/检查文件源码对照](../dist/practice-refinement/validation.json)、[核心报告](../dist/practice-refinement/core-runtime-validation.json)、[特效报告](../dist/practice-refinement/effects-runtime-validation.json)、[深色PC截图](../dist/practice-refinement/settings-effects-electron-refinement-pc.png)与[浅色PC截图](../dist/practice-refinement/settings-effects-electron-refinement-light-pc.png)已归档。原生前台整站运行因失焦自动暂停中断；较广的练习页面旧基准仍因卡片英语行高实测normal而期望38px失败，该卡片样式不在本次范围，未改动或放宽断言。相关尝试单独保留，不将本次专项通过扩大为整站全部通过。
 
 源码对照中12个独占文件与验收副本逐字节一致。共享`PracticePage.tsx`和`PracticeContent.test.ts`包含并行切读更新，本任务的next处理、快捷口语门控区域、演示工具移除及3项题态测试保持一致；并行切读新增逻辑和夹具不包含在本轮冻结生产产物中，已保留并单独列明差异，不覆盖他人修改。
+
+
+## 句子沉浸听力公共前置（2026-10-19）
+
+用户确认546:33602方案后，从主分支f6caa18实施。只修改主目录；已有句子独占文件及两个游戏worktree未修改。设计中的暂停和完整／拆分不作为本轮恢复依据。
+
+### 入口与稳定Props
+
+PracticeContent只为sentence:listen分派ui/SentenceListeningExercise.tsx。新组件、同名测试和两份专用SVG在主窗口首次交付后归句子窗口维护；仍在practice页面slice内，不新增路由、公共slice或Provider。其内部Props为：
+
+- question: PracticeQuestion；values: LearningPreferences。
+- imageVisible、translationVisible、blocked、oralEnabled：boolean。
+- reading?: PracticeReadingView | undefined。
+- onNote、onOral：() => void。
+
+PracticePage继续持有按题ID的笔记及原弹窗，公共分派将当前题ID绑定到onNote。口语门控由canShowQuickOral计算，按钮和V共用executeCommand('practice.oral')，原外置快捷口语仅排除本组合，防止重复。口语仍是明确演示，不申请麦克风或评分。reading展示原切读状态；缺正式课程音源时保持“音源待接入”，不创建假音频或增加请求。
+
+### 公共标注、几何和配色
+
+AnnotatedText的显式sentence-listening变体提供音标→彩色背景词性标签→英文→3px划线→词义→成分名，默认／阅读消费者保持。沿用showAnswerPhonetics、showPartOfSpeech、showGrammarText及showGrammarFill；成分文字与填充独立，划线不随两者关闭，只有填充层消费grammarBrightness / 10。词性与成分色沿配色文档；新增practice-pos-label提供固定教学标签黑字；正文、中文和自定义选色沿原能力。口语专用--app-shadow-sentence-listening-oral在dark使用原稿0 4px 18.1px rgba(73,255,104,1)，light回退panel阴影，不改其他消费者。
+
+getSentenceListeningReference()记录1920×1080／100%的全局CSS坐标：题图430×242@(745,183)；音标14px/y484、词性38×22/y510、英文40px/500/y534、划线3px/y600、词义18px/y617、成分16px/y652；中文30px/500/y727、笔记76×30@(922,797)、口语234×46@(843,886)。文字框高不作为CSS行高；实际计算样式与盒高另记。隐藏图／标注、非默认字号及长句采用自然流和按词换行；窄屏各角色保持可读下限，不缩放整页。
+
+原稿将together标为谓语，现有显式题库为unknown，仍显示中性“成分待核对”；原稿音标额外分号不写入题库，不为还原颜色改写语法数据。
+
+### 待确认动作与句子窗口接续
+
+- 中文尾部546:33709（20px）及右上组546:33667的五个24px图标，目前设计节点和仓库没有可靠动作映射；列为待确认，本轮不生成空按钮、不猜绑媒体或切题动作。
+- 句子窗口负责在sentence-toolbar-options.ts删除听力split行，更新自身测试和专项预期。本轮不改该owner文件。公共PracticeModeToolbar经practice-toolbar-description按真实rows派生辅助说明；纯图片／切读配置不残留完整／拆分、默写／抄写，阅读无行时不宣称这些能力。
+- 缓存白名单继续读取真实sentenceToolbarRows，不新增键或迁移版本。当前main历史听力split行仍在，不能提前宣称旧split已过滤。集成时必须验证：旧sentence:listen.split被解析／序列化白名单排除、图片／切读恢复、其他句子模式split保留；默认值对象的兼容字段不代表该字段仍被存储或渲染。
+
+### 本轮验证
+
+公共专项scripts/practice-sentence-listening-runtime-smoke.cjs由主窗口维护，加载真实生产Electron协议／preload及严格静态Web，使用独立profile，检查基准、双主题、原生笔记／口语入口、相关默认消费者、PC真实缩放与严格资源／请求。本轮最终实际结果：format、644项源码／Electron测试＋24项脚本测试（共668项）、lint、生产build和desktop:build通过，275份业务HTML及完整RSC／资源校验通过；lint仅保留共享弹窗原有3条warning。生产Web与真实Electron专项均通过：1920×1080／100%双主题严格核对给定坐标、字号、字重与两份图标几何；每端另有14项双主题PC宽度／真实125%／150%／200%缩放及390／768自动几何。笔记原生点击／录入／关闭重开保留，口语按钮及V均打开原演示窗且无重复入口，相关五个默认消费者分派回归通过。生产隔离偏好夹具验证亮度1／4／10仅改变填充透明度、标签／成分／划线颜色及其他层opacity保持；独立关闭音标／词性／成分文字／中文／口语均按原偏好生效。160个W的临时DOM布局夹具证明局部滚动两端可见且不撑宽页面，不作为真实题库或输入法验收。资源／CSP／控制台异常、业务及权限请求均为0。报告为dist/practice-sentence-listening-runtime-validation.json及双端子报告，PC图在dist/sentence-listening/。本轮未重新运行全站runtime:smoke或所有历史练习专项。平板／H5视觉、触摸、软键盘、输入法与真机声音兼容仍待用户验收。
+
+
+基准实测文字采用normal行高：音标实际盒高20px、英文56px、词义25px、成分22.5px，分别记录计算样式normal与实际几何，不把设计文字框高冒称CSS行高。中文前52.5px间距依据实测成分行盒校准，使中文y727和后续按钮位置准确，基准无额外纵向滚动条；其他状态继续自然流。真实缩放下clientWidth为整数、DOMRect保留小数，专项保留严格scrollWidth溢出断言并单独容忍小于等于1CSS px的整数舍入。PC已人工查看Electron深色、Web浅色基准及200%缩放图。

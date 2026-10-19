@@ -69,6 +69,8 @@ function ContentFixture({
         onInput: ignoreAction,
         onBlock: ignoreAction,
         onNote: ignoreAction,
+        oralEnabled: false,
+        onOral: ignoreAction,
         onKnown: ignoreAction,
         onRetry: ignoreAction,
         onNotice: ignoreAction,
@@ -88,6 +90,27 @@ function renderContent(props: ContentFixtureProps): string {
         createElement(LearningSettingsProvider, null, createElement(ContentFixture, props)),
     )
 }
+
+test('只有句子沉浸听力分派到专用入口，其他模式保留既有组合', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+        const html = renderContent({ family: 'sentence', mode: 'listen', phase })
+        assert.match(html, /data-sentence-listening/)
+        assert.match(html, /data-sentence-listening-note/)
+        assert.doesNotMatch(html, /data-practice-quick-oral/)
+    }
+    for (const [family, mode] of [
+        ['sentence', 'translate'],
+        ['sentence', 'read'],
+        ['sentence', 'typing'],
+        ['sentence', 'oral'],
+        ['audio', 'listen'],
+        ['video', 'listen'],
+    ] as const)
+        assert.doesNotMatch(
+            renderContent({ family, mode, phase: 'answering' }),
+            /data-sentence-listening/,
+        )
+})
 
 test('显式题态夹具验证中译英输入与揭晓，生产页不再依赖演示工具切换题态', (): void => {
     for (const phase of ['answering', 'incorrect'] as const) {
