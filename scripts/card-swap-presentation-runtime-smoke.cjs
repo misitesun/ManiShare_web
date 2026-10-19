@@ -29,7 +29,20 @@ async function snapshot(window) {
         const cards = Array.from(document.querySelectorAll('[data-swap-index]')).map((card) => {
             const css = getComputedStyle(card)
             const m = new DOMMatrixReadOnly(css.transform)
+            const border = card.querySelector('[data-word-card-border]')
+            const surface = card.querySelector('[data-word-card-surface]')
+            const surfaceStyle = surface && getComputedStyle(surface)
             return {
+                border: {
+                    source: border?.currentSrc ?? '',
+                    loaded: Boolean(border?.complete && border.naturalWidth > 0),
+                    radii: surfaceStyle && [
+                        surfaceStyle.borderTopLeftRadius,
+                        surfaceStyle.borderTopRightRadius,
+                        surfaceStyle.borderBottomRightRadius,
+                        surfaceStyle.borderBottomLeftRadius,
+                    ],
+                },
                 word: card.querySelector('[data-practice-english]').textContent.trim(),
                 front: card.hasAttribute('data-word-deck-front'),
                 fourth: card.hasAttribute('data-word-deck-fourth'),
@@ -56,6 +69,20 @@ async function snapshot(window) {
             total: Number(progress?.getAttribute('aria-valuemax')),
         }
     })
+}
+function assertUniformCardBorders(borders, expectedSource) {
+    assert.ok(borders.length > 0, 'word card borders are present')
+    const source = expectedSource ?? borders[0].source
+    assert.match(source, /\/word-card-gradient-border(?:\.[^/]+)?\.svg(?:\?.*)?$/)
+    for (const border of borders) {
+        assert.equal(border.source, source, 'every card retains the front gradient resource')
+        assert.equal(border.loaded, true, 'every card border resource is loaded')
+        assert.deepEqual(
+            border.radii,
+            ['4%', '4%', '4%', '4%'],
+            'every card uses the front contour',
+        )
+    }
 }
 async function click(window, selector) {
     await evaluate(
@@ -123,6 +150,8 @@ async function runChecks(window, origin, label) {
         )
         await idle(window, 'woman')
         const initial = (result.initial = await snapshot(window))
+        assertUniformCardBorders(initial.cards.map((card) => card.border))
+        const borderSource = initial.front.border.source
         assert.equal(initial.perspective, '900px')
         assert.equal(initial.visible.length, 4)
         assert.equal(initial.total, 10)
@@ -144,6 +173,14 @@ async function runChecks(window, origin, label) {
         await mouse(window, initial.front.x + 420, initial.front.y + 420)
         await delay(1200)
         result.hoverRight = await snapshot(window)
+        assertUniformCardBorders(
+            result.hoverLeft.cards.map((card) => card.border),
+            borderSource,
+        )
+        assertUniformCardBorders(
+            result.hoverRight.cards.map((card) => card.border),
+            borderSource,
+        )
         assert.notEqual(result.hoverLeft.origin, result.hoverRight.origin)
         assert.ok(Math.abs(result.hoverLeft.visible[1].x - result.hoverRight.visible[1].x) > 1)
         assert.ok(
@@ -164,6 +201,13 @@ async function runChecks(window, origin, label) {
                     if (!trace.active) return
                     const css = getComputedStyle(node),
                         m = new DOMMatrixReadOnly(css.transform)
+                    const visibleCards = Array.from(
+                        document.querySelectorAll('[data-swap-index]'),
+                    ).filter(
+                        (card) =>
+                            getComputedStyle(card).visibility !== 'hidden' &&
+                            Number(getComputedStyle(card).opacity) > 0.001,
+                    )
                     trace.frames.push({
                         time: performance.now(),
                         y: m.m42,
@@ -172,11 +216,25 @@ async function runChecks(window, origin, label) {
                         opacity: Number(css.opacity),
                         connected: node.isConnected,
                         height: document.documentElement.scrollHeight,
-                        count: Array.from(document.querySelectorAll('[data-swap-index]')).filter(
-                            (card) =>
-                                getComputedStyle(card).visibility !== 'hidden' &&
-                                Number(getComputedStyle(card).opacity) > 0.001,
-                        ).length,
+                        count: visibleCards.length,
+                        borders: visibleCards.map((card) => {
+                            const border = card.querySelector('[data-word-card-border]')
+                            const surface = card.querySelector('[data-word-card-surface]')
+                            const style = surface && getComputedStyle(surface)
+                            return {
+                                word: card
+                                    .querySelector('[data-practice-english]')
+                                    ?.textContent.trim(),
+                                source: border?.currentSrc ?? '',
+                                loaded: Boolean(border?.complete && border.naturalWidth > 0),
+                                radii: style && [
+                                    style.borderTopLeftRadius,
+                                    style.borderTopRightRadius,
+                                    style.borderBottomRightRadius,
+                                    style.borderBottomLeftRadius,
+                                ],
+                            }
+                        }),
                     })
                     requestAnimationFrame(frame)
                 }
@@ -201,6 +259,7 @@ async function runChecks(window, origin, label) {
                 }
             })
             assert.ok(trace.frames.some((frame) => frame.y > 500))
+            for (const frame of trace.frames) assertUniformCardBorders(frame.borders, borderSource)
             assert.ok(
                 trace.frames.every(
                     (frame) => frame.count <= 4 && frame.height === 1080 && frame.connected,
@@ -211,6 +270,10 @@ async function runChecks(window, origin, label) {
             assert.equal(trace.final.fourth, true)
             assert.equal(trace.final.nodeRetained, true)
             const after = await snapshot(window)
+            assertUniformCardBorders(
+                after.cards.map((card) => card.border),
+                borderSource,
+            )
             assert.equal(after.remembered, 0)
             assert.equal(after.cards.length, 10)
             assert.equal(after.words.at(-1), before.front.word)
@@ -223,16 +286,29 @@ async function runChecks(window, origin, label) {
         await click(window, '[data-practice-footer-action="question.previous"]')
         await idle(window, 'girl')
         result.businessNavigation = await snapshot(window)
+        assertUniformCardBorders(
+            result.businessNavigation.cards.map((card) => card.border),
+            borderSource,
+        )
         const front = result.businessNavigation.front
         await mouse(window, front.x + 250, front.y + 100)
         await mouse(window, front.x + 250, front.y + 100, 'mousePressed', true)
         for (const offset of [150, 350, 600]) {
             await mouse(window, front.x + 250, front.y + 100 + offset, 'mouseMoved', true)
             await delay(20)
+            const dragging = await snapshot(window)
+            assertUniformCardBorders(
+                dragging.cards.map((card) => card.border),
+                borderSource,
+            )
         }
         await mouse(window, front.x + 250, front.y + 700, 'mouseReleased')
         await idle(window, 'boy')
         result.manual = await snapshot(window)
+        assertUniformCardBorders(
+            result.manual.cards.map((card) => card.border),
+            borderSource,
+        )
         assert.equal(result.manual.documentHeight, 1080)
         assert.equal(result.manual.remembered, 0)
         assert.ok(
@@ -245,6 +321,10 @@ async function runChecks(window, origin, label) {
         await click(window, 'button[aria-label="记住当前单词"]')
         await idle(window, 'boy')
         result.remembered = await snapshot(window)
+        assertUniformCardBorders(
+            result.remembered.cards.map((card) => card.border),
+            borderSource,
+        )
         assert.equal(result.remembered.remembered, 1)
         assert.equal(result.remembered.cards.length, 9)
         assert.equal(result.remembered.words.includes('girl'), false)
@@ -256,6 +336,10 @@ async function runChecks(window, origin, label) {
         await mouse(window, reduced.front.x + 420, reduced.front.y + 420)
         await delay(300)
         result.reduced = await snapshot(window)
+        assertUniformCardBorders(
+            result.reduced.cards.map((card) => card.border),
+            borderSource,
+        )
         assert.equal(result.reduced.origin, '250px 250px')
         assert.equal(result.reduced.visible[1].transform[0], 32)
         assert.equal(result.reduced.documentHeight, 1080)

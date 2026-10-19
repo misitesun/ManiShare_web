@@ -134,6 +134,23 @@ async function state(window) {
                 ?.textContent.trim(),
             previous: geometry(document.querySelector('[data-word-deck-previous]')),
             exiting: Array.from(document.querySelectorAll('[data-card-swap-exiting]'), geometry),
+            cardBorders: Array.from(document.querySelectorAll('[data-swap-index]'), (card) => {
+                const border = card.querySelector('[data-word-card-border]')
+                const surface = card.querySelector('[data-word-card-surface]')
+                const style = surface && getComputedStyle(surface)
+                return {
+                    word: card.querySelector('[data-practice-english]')?.textContent.trim(),
+                    source: border?.currentSrc ?? '',
+                    loaded: Boolean(border?.complete && border.naturalWidth > 0),
+                    // 读取未投影surface的计算圆角，避免把3D/页面缩放误当轮廓差异。
+                    radii: style && [
+                        style.borderTopLeftRadius,
+                        style.borderTopRightRadius,
+                        style.borderBottomRightRadius,
+                        style.borderBottomLeftRadius,
+                    ],
+                }
+            }),
             word: geometry(front?.querySelector('[data-practice-english]')),
             // 朗读声纹也具有role=img；基准量取必须命中woman的音素行。
             phonemes: geometry(front?.querySelector('[role="img"][aria-label="/ˈwʊmən/"]')),
@@ -170,6 +187,20 @@ async function state(window) {
             finish: Boolean(document.querySelector('[data-practice-completion]')),
         }
     })
+}
+function assertUniformCardBorders(borders, expectedSource) {
+    assert.ok(borders.length > 0, 'word card borders are present')
+    const source = expectedSource ?? borders[0].source
+    assert.match(source, /\/word-card-gradient-border(?:\.[^/]+)?\.svg(?:\?.*)?$/)
+    for (const border of borders) {
+        assert.equal(border.source, source, 'every card retains the front gradient resource')
+        assert.equal(border.loaded, true, 'every card border resource is loaded')
+        assert.deepEqual(
+            border.radii,
+            ['4%', '4%', '4%', '4%'],
+            'every card uses the front contour',
+        )
+    }
 }
 async function idle(window, index) {
     await waitFor(
@@ -435,6 +466,8 @@ async function runChecks(window, origin, label) {
             JSON.stringify(report.reference, null, 4),
         )
         const reference = report.reference
+        assertUniformCardBorders(reference.cardBorders)
+        const borderSource = reference.cardBorders[0].source
         assert.equal(reference.total, 10, 'ten local word pronunciation questions')
         assert.equal(reference.progress.transitionProperty, 'width')
         assert.equal(reference.progress.remembered, 0, 'initial remembered count')
@@ -522,6 +555,7 @@ async function runChecks(window, origin, label) {
         await click(window, '[data-word-card-actions] button[aria-label^="再来"]')
         await idle(window, 0)
         const retried = await state(window)
+        assertUniformCardBorders(retried.cardBorders, borderSource)
         assert.equal(retried.english, 'man', 'retry displays the next remaining card')
         assert.equal(retried.nextWord, 'girl', 'retry advances the existing remaining queue')
         assert.equal(retried.progress.remembered, 0, 'retry does not count as remembered')
@@ -582,6 +616,7 @@ async function runChecks(window, origin, label) {
         })
         const short = await startDrag(window, 70)
         const shortDragging = await state(window)
+        assertUniformCardBorders(shortDragging.cardBorders, borderSource)
         assert.equal(shortDragging.state, 'dragging')
         near(
             shortDragging.progress.fill.width,
@@ -590,6 +625,7 @@ async function runChecks(window, origin, label) {
         )
         await release(window, short)
         const returning = await state(window)
+        assertUniformCardBorders(returning.cardBorders, borderSource)
         assert.equal(returning.state, 'returning')
         assert.equal(returning.next.opacity, 1, 'next image never fades during rebound')
         assert.equal(returning.third.opacity, 1)
@@ -610,6 +646,7 @@ async function runChecks(window, origin, label) {
         })
         await delay(900)
         const restored = await state(window)
+        assertUniformCardBorders(restored.cardBorders, borderSource)
         near(restored.front.matrix.x, 0, 'short drag resets')
         near(restored.next.x, reference.next.x, 'next returns to native 3D resting position')
         near(restored.next.y, reference.next.y, 'next native 3D stack y')
@@ -664,6 +701,7 @@ async function runChecks(window, origin, label) {
         ]) {
             const point = await startDrag(window, dx, dy)
             const dragging = await state(window)
+            assertUniformCardBorders(dragging.cardBorders, borderSource)
             assert.equal(dragging.state, 'dragging', 'all angles enter the drag phase')
             near(dragging.front.matrix.x, dx, 'all angle follows x')
             near(dragging.front.matrix.y, dy, 'all angle follows y')
@@ -989,6 +1027,7 @@ async function runChecks(window, origin, label) {
             await click(window, '[data-practice-footer-action="question.next"]')
             await idle(window, index)
             const current = await state(window)
+            assertUniformCardBorders(current.cardBorders, borderSource)
             assert.equal(current.finish, false)
             // 原版积分在0.001层级误差内停帧，序列更长时透明度可能停在0.999。
             near(
@@ -1053,6 +1092,8 @@ async function runChecks(window, origin, label) {
         )
         await click(window, 'button[aria-label="关闭对话框"]')
         await waitFor(window, () => !document.querySelector('[role="dialog"]'), 'settings closes')
+        report.lightBorders = (await state(window)).cardBorders
+        assertUniformCardBorders(report.lightBorders, borderSource)
         report.lightScreenshot = await capture(window, label, 'light-1920')
         for (const [width, height, zoom] of [
             [1440, 900, 1],
@@ -1068,6 +1109,7 @@ async function runChecks(window, origin, label) {
             await delay(150)
             await frames(window)
             const measured = await state(window)
+            assertUniformCardBorders(measured.cardBorders, borderSource)
             assert.equal(measured.overflow, false)
             assert.ok(
                 measured.stage.x >= 0 &&
@@ -1085,7 +1127,9 @@ async function runChecks(window, origin, label) {
         await click(window, '[data-practice-footer-action="question.next"]')
         await idle(window, 1)
         await settledProgress(window, 1)
-        report.reducedProgress = (await state(window)).progress
+        const reduced = await state(window)
+        assertUniformCardBorders(reduced.cardBorders, borderSource)
+        report.reducedProgress = reduced.progress
         assert.equal(report.reducedProgress.transitionProperty, 'none')
         await click(window, '[data-practice-footer-action="question.previous"]')
         await idle(window, 0)

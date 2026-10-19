@@ -69,18 +69,13 @@ export function WordPronunciationDeck({
                 onChange={(nextIndex): void => onNavigate(nextIndex > index ? 'next' : 'previous')}
                 onFinish={(): void => onNavigate('next')}
             >
+                {/* 每张真实卡保持同一描边与轮廓，层次由3D位姿表达，题序变化不切换卡面外观。 */}
                 {questions.map((question, questionIndex) => (
                     <WordPronunciationCard
                         key={question.id}
                         {...face}
                         question={question}
-                        borderDepth={
-                            questionIndex === index + 1
-                                ? 'near'
-                                : questionIndex >= index + 2
-                                  ? 'far'
-                                  : 'front'
-                        }
+                        borderDepth="front"
                         disabled={blocked || remembering || questionIndex !== index}
                         reading={questionIndex === index ? reading : undefined}
                     />
