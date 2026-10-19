@@ -3,7 +3,7 @@
 团队 Skill 将可重复任务流程版本化在 `.agents/skills/`。Markdown 定义长期规则，Skill 编排读取与实施步骤，lint/测试/CI 提供可执行证据。
 
 ```text
-需求 → 实现 Skill → test/lint/build → 只读 Review Skill → 修复 → 交接
+需求 → 实现 Skill → 按影响验证（开发定向／交付完整门禁）→ 只读 Review Skill → 修复 → 交接
 ```
 
 ## 规范来源
@@ -36,7 +36,7 @@ React Skill 参考 Vercel Labs 的 React best practices，并按 Next 静态导�
 
 交互光标也是页面交付契约：功能交付和 React 实现 Skill 要求所有真实可操作内容显式使用 `cursor-pointer`，跨切面 Skill 在公共 UI 中保持同一规则，只读审查 Skill 负责检出遗漏或误导性的禁用态。
 
-代码缩进是可执行契约：四个实现与审查 Skill 统一要求源代码、脚本和配置使用 4 个空格，禁止 Tab。实现流程在修改后运行 `pnpm run format`，审查以 `pnpm run format:check` 的结果为证据，不重复评论格式化器已决定的排版。
+代码缩进是可执行契约：四个实现与审查Skill统一要求源代码、脚本和配置使用4个空格，禁止Tab。开发中只对本次受支持文件执行`pnpm exec prettier --write <文件列表>`；审查复用有效的定向格式检查输出，完整交付的build仍包含全仓format:check，不重复评论格式化器已决定的排版。文档、局部展示、独占逻辑、公共契约和集成节点按[测试规范第0节](testing-standards.md#0-开发期间按影响验证2026-10-19)分级验证，CI保持不变。
 
 设计稿确认是页面交付的实施门禁：功能交付和跨切面变更 Skill 必须先读取设计与仓库现状，输出包含真实模块/组件和有序开发步骤的五项方案，明确请求用户确认。确认前仅做只读调查；同一已确认范围不重复请求确认，新设计节点或实质范围变化必须更新方案后再确认。
 

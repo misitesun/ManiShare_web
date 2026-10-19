@@ -88,7 +88,7 @@ export function isCourseDto(value: unknown): value is CourseDto {
 4. 具名函数和组件是否有返回类型？
 5. 是否新增 `any`、非空断言或宽泛断言？
 6. 领域数值和时间语义是否明确？
-7. 是否补充了必要测试并运行 test/lint/build？
+7. 是否补充了必要测试，并按[验证分级](testing-standards.md#0-开发期间按影响验证2026-10-19)执行了本轮定向检查或交付门禁？
 8. 是否已运行 Prettier，且没有 Tab 或非 4 空格缩进？
 
 ## Next 与 FSD 运行时契约
