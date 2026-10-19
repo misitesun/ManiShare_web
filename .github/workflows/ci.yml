@@ -55,3 +55,6 @@ jobs:
 
             - name: Production Web and Electron runtime smoke
               run: xvfb-run -a pnpm run runtime:smoke
+
+            - name: Production animation and sound-wave runtime smoke
+              run: xvfb-run -a pnpm run settings-effects:smoke

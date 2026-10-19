@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { CourseCollectionSelectionOverlay } from '../../../features/edit-course-collection'
 import type { WorkItem } from '../model/work-items'
 
@@ -22,12 +23,7 @@ export function WorkCard({
     return (
         <article className="relative min-w-0 overflow-hidden rounded-xl bg-surface-raised">
             <div className="relative aspect-[3/2] w-full overflow-hidden rounded-t-xl">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-full object-cover"
-                    src={workItem.imageSource}
-                />
+                <TldTiltedCover alt="" src={workItem.imageSource} disabled={isEditing} />
                 <span
                     className={
                         workItem.sharingStatus === 'shared'

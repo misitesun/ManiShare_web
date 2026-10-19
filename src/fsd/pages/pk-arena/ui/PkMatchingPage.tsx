@@ -4,6 +4,7 @@ import { useState, type ReactElement } from 'react'
 import { TldDialog } from '../../../shared/ui/tld-dialog'
 import { TldGradientText } from '../../../shared/ui/tld-gradient-text'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { PkSessionBackdrop } from './PkSessionBackdrop'
 import course from '../assets/matching-course.png'
 import mode from '../assets/matching-mode.svg'
@@ -50,11 +51,9 @@ export function PkMatchingPage({ onCancel, onStart }: PkMatchingPageProps): Reac
                 aria-label="对战课程"
                 className="relative mt-7 flex min-w-0 flex-col gap-5 rounded-[24px] bg-match-panel/80 p-5 shadow-match-panel backdrop-blur-[6px] md:flex-row md:flex-wrap md:items-center xl:min-[1920px]:mt-[49px] xl:min-[1920px]:h-[228px] xl:min-[1920px]:flex-nowrap xl:min-[1920px]:py-5 xl:min-[1920px]:pr-[29px]"
             >
-                <img
-                    alt="发音基础练·小学英语音标入门"
-                    src={course.src}
-                    className="aspect-[348/188] w-full rounded-2xl object-cover md:w-[300px] xl:min-[1920px]:w-[348px] shrink-0"
-                />
+                <div className="aspect-[348/188] w-full shrink-0 rounded-2xl md:w-[300px] xl:min-[1920px]:w-[348px]">
+                    <TldTiltedCover alt="发音基础练·小学英语音标入门" src={course.src} />
+                </div>
                 <div className="min-w-0 md:w-[320px]">
                     <h2 className="text-card-title font-medium xl:min-[1920px]:text-[20px] xl:min-[1920px]:leading-[28px]">
                         520句轻松搞定三年级下册英语词组

@@ -109,7 +109,7 @@ App Shell 内新建常规列表/管理页，默认遵循[mainPage 版心与列�
 
 ### 5.3 主题
 
-- 设置页的三类练习颜色是用户数据：只接受六位十六进制值或默认主题色状态，局部注入 `--app-color-practice-answer/text/background` 并由语义 utility 消费；色块展示同一校验结果，默认色从主题 token 读取。不允许硬编码业务静态色、任意 CSS 输入或整站主题覆写。
+- 设置页自定义答题/文字颜色是用户数据：只接受六位十六进制值、默认主题色以及答题色的具名深浅默认选色，局部注入 `--app-color-practice-answer/text`；背景由白名单配色token或已校验的本机栅格图片决定，`--app-color-practice-background`不接收任意CSS。色块和预览消费同一校验结果。不允许硬编码业务静态色、任意 CSS 输入或整站主题覆写。
 
 - `dark`、`light` 是当前完整主题，默认 `dark`。
 - 原始色值只定义在 `src/fsd/app/styles/index.css` 的主题 token 中，并由 Tailwind `@theme inline` 映射为语义 utility。
@@ -152,6 +152,8 @@ GSAP 与 `@gsap/react` 只能由 `shared/lib/animation` 装配和导出。React 
 当前产品统一只进行中文开发：界面固定zh-CN，移除语言切换入口，不读取或恢复旧英文偏好，不加载英文词典，不进行多语言处理。新文案直接使用中文，不新增i18n key、占位翻译或中英文同步要求。shared/i18n只为已有t()消费者加载中文兼容词典；历史英文资源不参与运行、维护或翻译验收。
 
 业务代码禁止直接调用 LocalStorage、SessionStorage、原生 Clipboard API、`alert`、`confirm` 或 `prompt`。不要创建 `shared/utils`。
+
+`execCommand`默认仍禁止。练习整词输入的指针定位需要保留原生Undo，仅`pages/practice/ui/PracticeWordSlotsInput.tsx`可直接调用`execCommand('insertText', false, padding)`补定位空格；其余命令、属性提取及其他renderer文件由源码AST门禁拒绝，Clipboard与时间API限制仍保留。该窄入口的事件范围、失败保留原文与生产撤销/重做验证见[文本输入兼容契约](compatibility/text-input.md)，不构成直接访问剪贴板或任意命令的例外。
 
 业务与页面代码也禁止直接调用 `fetch`；所有 HTTP 请求必须经 `shared/api`。renderer 源码禁止导入 Node.js 或 Electron 模块。
 

@@ -10,3 +10,5 @@
 - 课程详情：`courseDetailPath` 由应用路由注入，冰雪口语训练营整卡 Link 进入 `/foreign-language-guide/courses/winter-speaking/`，包含分页追加的同课程条目。其他课程尚无详情设计，保留展示；详情由独立 `pages/foreign-language-course` 提供，两页不互相导入。
 - 扩展：分类筛选、其他课程详情、开通流程和真实接口确认后分别补充 URL 状态、业务 feature 与 loading/empty/error 状态；不要在静态页面中虚构支付行为。
 - 验证：`model/pagination.test.ts` 覆盖分页边界；运行 `pnpm run format:check && pnpm run test && pnpm run lint && pnpm run build`。PC 以 1920×1080 对照 Figma，平板/H5 视觉与真机兼容由用户验收。
+
+- 统一封面动效（2026-10-19）：课程封面复用 [TldTiltedCover](../../shared/ui/tld-tilted-cover/README.md)，沿用本页既有槽位、比例和圆角，只让内部图片随鼠标倾斜/轻微放大并显示光泽。原链接、播放入口、选择和角标保持；收藏/作品编辑态停用动效。触屏与减少动态效果保持静态，离开/失焦/滚动/卸载清理；PC交互专项与平板/H5待用户验收边界见公共组件说明。

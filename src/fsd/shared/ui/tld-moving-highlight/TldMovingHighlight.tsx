@@ -24,7 +24,7 @@ export interface TldMovingHighlightProps {
 }
 
 export type TldMovingHighlightTone =
-    'accent-green' | 'brand' | 'brand-start' | 'outline' | 'soft' | 'surface'
+    'accent-green' | 'brand' | 'brand-start' | 'outline' | 'practice-outline' | 'soft' | 'surface'
 
 interface HighlightMeasurement {
     readonly key: string | null
@@ -292,15 +292,17 @@ export function TldMovingHighlight({
             data-shape={shape}
             data-tone={tone}
             className={
-                tone === 'surface'
-                    ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-lg bg-surface-hover transition-[transform,width,height,border-radius] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none data-[motion=rubber]:transition-none data-[shape=card]:rounded-xl data-[shape=pill-start]:rounded-l-full data-[shape=pill-start]:rounded-r-none data-[shape=pill-end]:rounded-l-none data-[shape=pill-end]:rounded-r-full'
-                    : tone === 'brand'
-                      ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-brand transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
-                      : tone === 'brand-start'
-                        ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-brand-start transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
-                        : tone === 'accent-green'
-                          ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-accent-green transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
-                          : 'pointer-events-none absolute left-0 top-0 z-10 rounded-lg bg-linear-to-b from-brand-start to-brand-end p-px transition-[transform,width,height,border-radius] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none data-[shape=card]:rounded-xl data-[shape=pill-start]:rounded-l-full data-[shape=pill-start]:rounded-r-none data-[shape=pill-end]:rounded-l-none data-[shape=pill-end]:rounded-r-full'
+                tone === 'practice-outline'
+                    ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-[4px] border border-practice-control-accent transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
+                    : tone === 'surface'
+                      ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-lg bg-surface-hover transition-[transform,width,height,border-radius] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none data-[motion=rubber]:transition-none data-[shape=card]:rounded-xl data-[shape=pill-start]:rounded-l-full data-[shape=pill-start]:rounded-r-none data-[shape=pill-end]:rounded-l-none data-[shape=pill-end]:rounded-r-full'
+                      : tone === 'brand'
+                        ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-brand transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
+                        : tone === 'brand-start'
+                          ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-brand-start transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
+                          : tone === 'accent-green'
+                            ? 'pointer-events-none absolute left-0 top-0 z-10 rounded-full bg-accent-green transition-[transform,width,height] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none'
+                            : 'pointer-events-none absolute left-0 top-0 z-10 rounded-lg bg-linear-to-b from-brand-start to-brand-end p-px transition-[transform,width,height,border-radius] duration-200 ease-out motion-reduce:transition-none data-[motion=rubber]:transition-none data-[shape=card]:rounded-xl data-[shape=pill-start]:rounded-l-full data-[shape=pill-start]:rounded-r-none data-[shape=pill-end]:rounded-l-none data-[shape=pill-end]:rounded-r-full'
             }
             style={{
                 transform: `translate(${renderedRect.left}px, ${renderedRect.top}px)`,
@@ -311,7 +313,8 @@ export function TldMovingHighlight({
             {tone === 'surface' ||
             tone === 'brand' ||
             tone === 'brand-start' ||
-            tone === 'accent-green' ? null : (
+            tone === 'accent-green' ||
+            tone === 'practice-outline' ? null : (
                 <span
                     data-shape={shape}
                     className="block size-full rounded-[7px] bg-canvas data-[shape=card]:rounded-[11px] data-[shape=pill-start]:rounded-l-full data-[shape=pill-start]:rounded-r-none data-[shape=pill-end]:rounded-l-none data-[shape=pill-end]:rounded-r-full"

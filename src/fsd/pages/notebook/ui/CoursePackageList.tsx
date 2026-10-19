@@ -6,6 +6,7 @@ import { coursePackageCatalog } from '../../../entities/course-package'
 import { notebookCoursePackagePages } from '../../../entities/notebook'
 import type { NotebookCoursePackage } from '../../../entities/notebook'
 import { TldPaginationStatus } from '../../../shared/ui/tld-pagination-status'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { useStaticPagination } from '../model/useStaticPagination'
 
 interface CoursePackageCardProps {
@@ -25,12 +26,9 @@ function CoursePackageCard({
             href={coursePath(coursePackage.id)}
             className="block min-w-0 cursor-pointer overflow-hidden rounded-xl bg-surface-raised"
         >
-            <img
-                alt=""
-                aria-hidden="true"
-                className="aspect-[3/2] w-full object-cover"
-                src={summary.imageSource}
-            />
+            <div className="aspect-[3/2] w-full rounded-t-xl">
+                <TldTiltedCover alt="" src={summary.imageSource} />
+            </div>
             <div className="flex min-h-[77px] flex-col justify-center px-3 py-2 xl:min-h-[74px]">
                 <h2 className="truncate text-card-title font-medium text-primary">
                     {summary.title}

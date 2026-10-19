@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import type { AwakeningCourse } from '../model/course-items'
 import authorIconAsset from '../assets/author.svg'
 import heatIconAsset from '../assets/heat.svg'
@@ -26,7 +27,7 @@ export function AwakeningCourseCard({
     return (
         <article className="min-w-0 rounded-xl bg-surface-raised">
             <div className="aspect-[3/2] overflow-hidden rounded-t-xl">
-                <img alt="" className="size-full object-cover" src={course.image} loading="lazy" />
+                <TldTiltedCover alt="" src={course.image} loading="lazy" />
             </div>
             <div className="relative flex min-h-[106px] min-w-0 flex-col gap-2 px-2.5 py-2.5">
                 <div className="flex min-w-0 gap-2.5 pr-16">

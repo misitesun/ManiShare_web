@@ -13,7 +13,7 @@ export interface TldProgressBarProps {
     readonly valueFormat?: 'fraction' | 'percentage'
 }
 
-export type TldProgressBarSize = 'medium' | 'large' | 'challenge'
+export type TldProgressBarSize = 'medium' | 'large' | 'challenge' | 'loading'
 
 export function TldProgressBar({
     ariaLabel,
@@ -26,20 +26,36 @@ export function TldProgressBar({
 }: TldProgressBarProps): React.ReactElement {
     const progress = normalizeProgress(value, max)
     const trackClassName =
-        size === 'challenge'
-            ? 'h-[26px] min-w-0 flex-1 overflow-hidden rounded-full bg-challenge-track'
-            : size === 'large'
-              ? 'h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-progress-track'
-              : 'h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-progress-track'
+        size === 'loading'
+            ? 'h-7 min-w-0 flex-1 rounded-full bg-linear-to-r/srgb from-progress-loading-start to-progress-loading-end p-px md:h-8 design:h-9'
+            : size === 'challenge'
+              ? 'h-[26px] min-w-0 flex-1 overflow-hidden rounded-full bg-challenge-track'
+              : size === 'large'
+                ? 'h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-progress-track'
+                : 'h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-progress-track'
+    const fill = (
+        <div
+            className={
+                size === 'loading'
+                    ? 'h-full rounded-full bg-linear-to-r/srgb from-progress-loading-start to-progress-loading-end'
+                    : size === 'challenge'
+                      ? 'h-full rounded-full bg-linear-to-r/srgb from-challenge-start to-challenge-end'
+                      : 'h-full rounded-full bg-linear-to-r from-brand-start to-brand-end'
+            }
+            style={{ width: `${progress.percentage}%` }}
+        />
+    )
 
     return (
         <div
             className={
-                size === 'challenge'
-                    ? 'flex h-[26px] min-w-0 items-center gap-[14px] text-[18px] leading-[25px] text-foreground'
-                    : spacing === 'wide'
-                      ? 'flex h-5 min-w-0 items-center gap-[13px] text-label text-primary'
-                      : 'flex h-5 min-w-0 items-center gap-2.5 text-label text-primary'
+                size === 'loading'
+                    ? 'flex min-w-0 items-center gap-2.5 text-body-notice font-normal text-foreground md:leading-[23px] design:leading-[25px]'
+                    : size === 'challenge'
+                      ? 'flex h-[26px] min-w-0 items-center gap-[14px] text-[18px] leading-[25px] text-foreground'
+                      : spacing === 'wide'
+                        ? 'flex h-5 min-w-0 items-center gap-[13px] text-label text-primary'
+                        : 'flex h-5 min-w-0 items-center gap-2.5 text-label text-primary'
             }
         >
             {showValue && valueFormat === 'fraction' ? (
@@ -56,17 +72,24 @@ export function TldProgressBar({
                 className={trackClassName}
                 role="progressbar"
             >
-                <div
-                    className={
-                        size === 'challenge'
-                            ? 'h-full rounded-full bg-linear-to-r/srgb from-challenge-start to-challenge-end'
-                            : 'h-full rounded-full bg-linear-to-r from-brand-start to-brand-end'
-                    }
-                    style={{ width: `${progress.percentage}%` }}
-                />
+                {size === 'loading' ? (
+                    <div className="h-full rounded-full bg-progress-loading-track p-[3px]">
+                        <div className="h-full overflow-hidden rounded-full shadow-progress-loading-inset">
+                            {fill}
+                        </div>
+                    </div>
+                ) : (
+                    fill
+                )}
             </div>
             {showValue && valueFormat === 'percentage' ? (
-                <span className="w-[40px] shrink-0 tabular-nums">
+                <span
+                    className={
+                        size === 'loading'
+                            ? 'w-[50px] shrink-0 tabular-nums'
+                            : 'w-[40px] shrink-0 tabular-nums'
+                    }
+                >
                     {Math.round(progress.percentage)}%
                 </span>
             ) : null}

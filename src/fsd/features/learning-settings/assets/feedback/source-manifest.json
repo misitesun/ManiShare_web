@@ -1,0 +1,53 @@
+{
+    "sourceRoot": "/Users/sly/Downloads/waxueshe-client-web-optimize/src/assets",
+    "files": [
+        {
+            "source": "lottie/success/0.json",
+            "file": "correct-0.json",
+            "bytes": 95724,
+            "sha256": "c8a8a1cd0e5b0da7fd14c5844b275ff0a5ec6536490674655310a9e9a79e2fc7"
+        },
+        {
+            "source": "lottie/success/1.json",
+            "file": "correct-1.json",
+            "bytes": 57060,
+            "sha256": "f39ef63c792fa9808a26f652e94ecd0e86aaf31cd5f9612060942219dcc1a893"
+        },
+        {
+            "source": "lottie/success/2.json",
+            "file": "correct-2.json",
+            "bytes": 125909,
+            "sha256": "e18b09d40f0431419ace6066b9a6237057319c4a5da8d5ce523c5d126434cf52"
+        },
+        {
+            "source": "lottie/success/4.json",
+            "file": "correct-4.json",
+            "bytes": 33361,
+            "sha256": "a71a94405417bca52b4fe720da34c2059b7bdf99a8123b4c0d8c0922c9bfab82"
+        },
+        {
+            "source": "lottie/success/5.json",
+            "file": "correct-5.json",
+            "bytes": 28346,
+            "sha256": "6614ef69bfc4abf3867486dce44a5a1c7caaa939297c118af6a4ffec38747a58"
+        },
+        {
+            "source": "lottie/success/6.json",
+            "file": "correct-6.json",
+            "bytes": 40565,
+            "sha256": "b7015b8bc08911f354b4eaf87494a85de91c35586a2590108aff5ebc006f4fbf"
+        },
+        {
+            "source": "lottie/success/7.json",
+            "file": "correct-7.json",
+            "bytes": 17839,
+            "sha256": "20b4ad73a8bf55bda17554b70ad083fd89c1eb7108b8b66919eb4d27d982d5b0"
+        },
+        {
+            "source": "soloPractice/finish/practice-finish-fireworks.json",
+            "file": "chapter-complete.json",
+            "bytes": 45934,
+            "sha256": "9f1f8e8fd65a4410e38ad1ac99446855e1cbf6288b6ba1289a419ae10eefb4ee"
+        }
+    ]
+}

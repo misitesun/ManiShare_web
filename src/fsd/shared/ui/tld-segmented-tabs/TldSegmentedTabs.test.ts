@@ -9,6 +9,25 @@ const items = [
     { id: 'second', label: '第二项', panelId: 'second-panel' },
 ]
 
+test('玻璃分段显式保留受控筛选、分隔边界和常规文字，其他消费者保持默认', (): void => {
+    const html = renderToStaticMarkup(
+        createElement(TldSegmentedTabs, {
+            ariaLabel: '内容显示方式',
+            appearance: 'glass',
+            semantics: 'filter',
+            items,
+            value: 'second',
+            onValueChange: (): void => undefined,
+        }),
+    )
+    assert.match(html, /role="group"/)
+    assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1)
+    assert.match(html, /border-segment-outline/)
+    assert.match(html, /bg-foreground\/10/)
+    assert.match(html, /var\(--app-leading-tab-label-regular\)/)
+    assert.doesNotMatch(html, /role="tab"|aria-controls|bg-surface data-/)
+})
+
 test('舒展文字页签保持受控选择与独立面板关联', (): void => {
     for (const value of ['first', 'second']) {
         const html = renderToStaticMarkup(

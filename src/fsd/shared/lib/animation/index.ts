@@ -1,1 +1,7 @@
 export { gsap, useGSAP } from './animation'
+export { createLottiePlayback } from './lottie-playback'
+export type { LottieData, LottiePlayback } from './lottie-playback'
+export { LottiePreview } from './LottiePreview'
+export { useAnimationActivity } from './useAnimationActivity'
+export { loadSiriWave } from './siri-wave'
+export type { default as SiriWaveInstance } from 'siriwave'

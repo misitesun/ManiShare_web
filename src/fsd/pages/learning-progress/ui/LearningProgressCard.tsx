@@ -2,6 +2,7 @@
 
 import type { ReactElement } from 'react'
 import { TldProgressBar } from '../../../shared/ui/tld-progress-bar'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import deleteIconSourceAsset from '../assets/delete.svg'
 import type { LearningProgressItem } from '../model/learning-progress-items'
 
@@ -20,12 +21,9 @@ export function LearningProgressCard({
 
     return (
         <article className="flex min-w-0 flex-col gap-4 rounded-xl border border-primary/30 p-3 md:h-[250px] md:flex-row md:px-[14px] md:py-[15px]">
-            <img
-                alt=""
-                aria-hidden="true"
-                className="aspect-[3/2] w-full rounded-lg object-cover md:w-[308px] md:shrink-0 md:self-start"
-                src={item.imageSource}
-            />
+            <div className="aspect-[3/2] w-full rounded-lg md:w-[308px] md:shrink-0 md:self-start">
+                <TldTiltedCover alt="" src={item.imageSource} />
+            </div>
 
             <div className="flex min-w-0 flex-1 flex-col md:pt-2.5">
                 <header className="flex min-w-0 items-start justify-between gap-4">

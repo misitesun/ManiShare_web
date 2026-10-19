@@ -6,8 +6,15 @@ import Link from 'next/link'
 import { TldProgressBar } from '../../../shared/ui/tld-progress-bar'
 import { TldSwitch } from '../../../shared/ui/tld-switch'
 import { TldButton } from '../../../shared/ui/tld-button'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { notification } from '../../../shared/notification'
-import { awakeningChapters, hasAwakeningCourseDetail } from '../model/course-detail'
+import { PracticeModeDialog } from '../../../features/practice-mode-selection'
+import {
+    awakeningChapters,
+    hasAwakeningCourseDetail,
+    getAwakeningPracticeEntry,
+} from '../model/course-detail'
+import type { AwakeningPracticeEntry } from '../model/course-detail'
 import { AwakeningChapterCard } from './AwakeningChapterCard'
 import coverAsset from '../assets/phonetics.webp'
 import heatAsset from '../assets/heat.svg'
@@ -23,15 +30,24 @@ const chevron: string = chevronAsset.src
 const plus: string = plusAsset.src
 const reset: string = resetAsset.src
 
+interface SelectedPracticeChapter extends AwakeningPracticeEntry {
+    readonly chapterId: string
+}
+
 export function AwakeningCoursePage({
     backPath,
     courseId,
+    practicePath,
+    onStartPractice,
 }: {
     readonly backPath: string
     readonly courseId: string
+    readonly practicePath: string
+    readonly onStartPractice: (demoId: string, mode: string, chapterId: string) => void
 }): ReactElement {
     const [collected, setCollected] = useState(false)
     const [memoryEnabled, setMemoryEnabled] = useState(false)
+    const [selectedEntry, setSelectedEntry] = useState<SelectedPracticeChapter | null>(null)
     if (!hasAwakeningCourseDetail(courseId))
         return (
             <section className="p-4">
@@ -93,11 +109,9 @@ export function AwakeningCoursePage({
                 className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain pb-4 pr-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
                 <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-strong p-4 md:flex-row md:items-start xl:gap-5">
-                    <img
-                        alt="发音基础练，小学英语音标入门"
-                        src={cover}
-                        className="aspect-[3/2] w-full shrink-0 rounded-lg object-cover md:w-[30%] xl:max-w-[315px]"
-                    />
+                    <div className="aspect-[3/2] w-full shrink-0 rounded-lg md:w-[30%] xl:max-w-[315px]">
+                        <TldTiltedCover alt="发音基础练，小学英语音标入门" src={cover} />
+                    </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <h1 className="text-section-title font-medium text-primary">
@@ -148,12 +162,12 @@ export function AwakeningCoursePage({
                                     />
                                     {collected ? '已收藏' : '收藏'}
                                 </TldButton>
-                                <TldButton
-                                    fullWidth
-                                    onClick={(): void => notification.info('学习内容暂未开放')}
+                                <Link
+                                    href={practicePath}
+                                    className="flex h-[50px] w-full cursor-pointer items-center justify-center rounded-lg bg-linear-to-r from-brand-start to-brand-end px-4 text-card-title text-inverse focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                                 >
                                     开始学习
-                                </TldButton>
+                                </Link>
                             </div>
                         </div>
                     </div>
@@ -180,11 +194,37 @@ export function AwakeningCoursePage({
                     </button>
                 </div>
                 <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[repeat(auto-fill,minmax(270px,1fr))] xl:min-[1920px]:grid-cols-[repeat(auto-fill,minmax(290px,1fr))]">
-                    {awakeningChapters.map((chapter) => (
-                        <AwakeningChapterCard key={chapter.id} chapter={chapter} />
-                    ))}
+                    {awakeningChapters.map((chapter) => {
+                        const entry = getAwakeningPracticeEntry(chapter)
+                        return (
+                            <AwakeningChapterCard
+                                key={chapter.id}
+                                chapter={chapter}
+                                onOpen={(): void => {
+                                    if (entry.selectorFamily === null) {
+                                        onStartPractice(entry.demoId, entry.defaultMode, chapter.id)
+                                        return
+                                    }
+                                    setSelectedEntry({ ...entry, chapterId: chapter.id })
+                                }}
+                            />
+                        )
+                    })}
                 </div>
             </div>
+            {selectedEntry?.selectorFamily && (
+                <PracticeModeDialog
+                    family={selectedEntry.selectorFamily}
+                    open
+                    initialMode={selectedEntry.defaultMode}
+                    onOpenChange={(open): void => {
+                        if (!open) setSelectedEntry(null)
+                    }}
+                    onStart={(mode): void =>
+                        onStartPractice(selectedEntry.demoId, mode, selectedEntry.chapterId)
+                    }
+                />
+            )}
         </section>
     )
 }

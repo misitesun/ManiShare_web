@@ -9,3 +9,5 @@
 - 验证：`progress.test.ts` 覆盖正常、越界和非法数值；运行 `pnpm run test && pnpm run lint && pnpm run build`。
 
 - challenge轨道26px、百分比文字18/25、间距14px；valueFormat=percentage显示归一化百分比并保持ARIA/填充一致，默认fraction及原尺寸不变。PK加载72%演示经用户确认，不发请求或自动推进。
+
+- `size="loading"`提供带1px紫绿渐变边框、3px内留白及轨道内阴影的显式加载视觉。外轨高28→md32→≥1920px36，内部进度高20→24→28，百分比间距10px/预留宽50px，文案14/20→16/23→18/25。搭配`valueFormat="percentage"`仍共用归一化数值、填充和ARIA；组件只展示调用方进度，不持有计时器或请求。原medium/large/challenge默认值不变。两种百分比变体的越界/非法输入由同目录测试覆盖，布局实测在练习加载专项。

@@ -6,6 +6,7 @@ import { getClaimNoticeScrollTop } from '../model/claim-visibility'
 import type { ReactElement } from 'react'
 import { TldBackButton } from '../../../shared/ui/tld-back-button'
 import { TldButton } from '../../../shared/ui/tld-button'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { TldSegmentedTabs } from '../../../shared/ui/tld-segmented-tabs'
 import { notification } from '../../../shared/notification'
 import bannerSourceAsset from '../assets/winter-speaking-banner.png'
@@ -86,11 +87,7 @@ export function ForeignLanguageCoursePage({
                     —冰雪口语训练营·情景对话·勇敢表达—
                 </h1>
                 <div className="relative aspect-[1212/350] min-w-0 overflow-hidden rounded-xl md:rounded-[20px]">
-                    <img
-                        alt="冰雪口语训练营，情景对话·勇敢表达"
-                        className="size-full object-cover"
-                        src={bannerSource}
-                    />
+                    <TldTiltedCover alt="冰雪口语训练营，情景对话·勇敢表达" src={bannerSource} />
                     <button
                         type="button"
                         aria-label="播放课程介绍"

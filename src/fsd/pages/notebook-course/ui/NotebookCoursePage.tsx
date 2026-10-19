@@ -8,6 +8,7 @@ import { createCourseNoteGroups, findNotebookCourse } from '../../../entities/no
 import type { NotebookCoursePackage } from '../../../entities/notebook'
 import { NotebookNotes } from '../../../widgets/notebook-notes'
 import { TldBackButton } from '../../../shared/ui/tld-back-button'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { TldSegmentedTabs } from '../../../shared/ui/tld-segmented-tabs'
 import type { TldSegmentedTabItem } from '../../../shared/ui/tld-segmented-tabs'
 import { NotebookChapterList } from './NotebookChapterList'
@@ -57,11 +58,9 @@ function NotebookCourseContent({
                 <TldBackButton to={backPath} />
             </div>
             <header className="grid min-w-0 gap-4 rounded-xl border border-primary/30 p-[15px] md:grid-cols-[minmax(0,240px)_minmax(0,1fr)] xl:grid-cols-[321px_minmax(0,1fr)_minmax(0,345px)]">
-                <img
-                    alt=""
-                    className="aspect-[3/2] w-full rounded-lg object-cover"
-                    src={summary.imageSource}
-                />
+                <div className="aspect-[3/2] w-full self-start rounded-lg">
+                    <TldTiltedCover alt="" src={summary.imageSource} />
+                </div>
                 <div className="flex min-w-0 flex-col justify-between gap-4 py-3">
                     <h1 className="break-words text-section-title font-medium text-primary">
                         {summary.title}

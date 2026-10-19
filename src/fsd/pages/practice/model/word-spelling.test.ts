@@ -1,0 +1,79 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { judgeWordSpelling, getWordSpellingAccuracy } from './word-spelling'
+import { getDemoQuestions, initialPracticeSession, reducePracticeSession } from './practice-demo'
+
+test('拼写模拟题保留原两条并新增十个不同单词，不扩展默写或其他模式', (): void => {
+    const original = getDemoQuestions('word', 'dictate')
+    const questions = getDemoQuestions('word', 'spell')
+    assert.equal(questions.length, 12)
+    assert.deepEqual(questions.slice(0, 2), original)
+    assert.equal(new Set(questions.map((question) => question.id)).size, 12)
+    assert.equal(new Set(questions.slice(2).map((question) => question.english)).size, 10)
+    assert.ok(
+        questions
+            .slice(2)
+            .every(
+                (question) =>
+                    question.english !== 'woman' && question.phonetic && question.translation,
+            ),
+    )
+    assert.equal(getDemoQuestions('word', 'pronounce').length, 10)
+    assert.equal(original.length, 2)
+})
+
+test('本地拼写仅忽略首尾空白并遵守大小写设置，空提交不判错', (): void => {
+    assert.equal(judgeWordSpelling('', 'woman', true), 'empty')
+    assert.equal(judgeWordSpelling('   ', 'woman', true), 'empty')
+    assert.equal(judgeWordSpelling('woman', '', true), 'empty')
+    assert.equal(judgeWordSpelling(' WOMAN  ', 'woman', true), 'correct')
+    assert.equal(judgeWordSpelling('WOMAN', 'woman', false), 'incorrect')
+    assert.equal(judgeWordSpelling('woman ', 'woman', false), 'correct')
+    for (const answer of ['wom', 'womann', 'wo man', 'woman!', 'women', 'ｗｏｍａｎ'])
+        assert.equal(judgeWordSpelling(answer, 'woman', true), 'incorrect')
+})
+
+test('错题可原文修改重试，非空提交计次，成功后重复提交不重复统计', (): void => {
+    const submit = { type: 'submit-spelling', target: 'woman', ignoreCase: true } as const
+    assert.equal(
+        reducePracticeSession(initialPracticeSession, { ...submit, value: ' ' }),
+        initialPracticeSession,
+    )
+    const wrong = reducePracticeSession(initialPracticeSession, { ...submit, value: 'wom' })
+    assert.equal(wrong.phase, 'incorrect')
+    assert.equal(wrong.input, 'wom')
+    assert.deepEqual(wrong.spellingStatistics, { submissions: 1, correct: 0 })
+    const edited = reducePracticeSession(wrong, { type: 'input', value: 'WOMAN ' })
+    const correct = reducePracticeSession(edited, { ...submit, value: edited.input })
+    assert.equal(correct.phase, 'correct')
+    assert.equal(correct.input, 'WOMAN ')
+    assert.deepEqual(correct.spellingStatistics, { submissions: 2, correct: 1 })
+    assert.equal(getWordSpellingAccuracy(correct.spellingStatistics), 50)
+    assert.equal(reducePracticeSession(correct, { ...submit, value: 'wrong' }), correct)
+    const next = reducePracticeSession(correct, { type: 'move', delta: 1, total: 12 })
+    assert.equal(next.phase, 'answering')
+    assert.equal(next.input, '')
+    assert.deepEqual(next.spellingStatistics, correct.spellingStatistics)
+    assert.deepEqual(reducePracticeSession(next, { type: 'reset' }).spellingStatistics, {
+        submissions: 0,
+        correct: 0,
+    })
+})
+
+test('揭晓和结束不推导正确结果，准确率由本轮提交量计算并四舍五入', (): void => {
+    for (const state of [
+        { ...initialPracticeSession, phase: 'revealed' as const },
+        { ...initialPracticeSession, finished: true },
+    ])
+        assert.equal(
+            reducePracticeSession(state, {
+                type: 'submit-spelling',
+                value: 'woman',
+                target: 'woman',
+                ignoreCase: true,
+            }),
+            state,
+        )
+    assert.equal(getWordSpellingAccuracy({ submissions: 0, correct: 0 }), 0)
+    assert.equal(getWordSpellingAccuracy({ submissions: 3, correct: 2 }), 67)
+})

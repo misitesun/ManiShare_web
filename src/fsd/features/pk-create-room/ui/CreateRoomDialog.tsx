@@ -6,6 +6,7 @@ import { TldDialog } from '../../../shared/ui/tld-dialog'
 import { TldButton } from '../../../shared/ui/tld-button'
 import { TldSelection } from '../../../shared/ui/tld-selection'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import {
     availableChapters,
     initialRoomDraft,
@@ -262,13 +263,9 @@ export function CreateRoomDialog({
                                     }}
                                 >
                                     <span className="block min-w-0 pb-2">
-                                        <img
-                                            src={course.imageSource}
-                                            alt=""
-                                            width={180}
-                                            height={90}
-                                            className="aspect-[3/2] h-auto w-full object-cover"
-                                        />
+                                        <span className="block aspect-[3/2] w-full">
+                                            <TldTiltedCover src={course.imageSource} alt="" />
+                                        </span>
                                         <span className="block space-y-1 px-1.5 pt-1">
                                             <span className="flex items-center justify-between gap-1">
                                                 <span className="flex gap-1 text-[9px] text-muted">

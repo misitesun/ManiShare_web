@@ -12,6 +12,7 @@ import {
     getSegmentBox,
     getSegmentClipPath,
     getSegmentDirection,
+    getSegmentLayoutEdges,
     type SegmentEdges,
 } from './rubber-geometry'
 
@@ -25,7 +26,7 @@ export interface TldSegmentedTabItem extends TldSegmentedChoiceItem {
 }
 
 export type TldSegmentedTabsActiveTextTone = 'accent-green' | 'brand' | 'gradient' | 'primary'
-export type TldSegmentedTabsAppearance = 'brand' | 'neutral' | 'outlined'
+export type TldSegmentedTabsAppearance = 'brand' | 'glass' | 'neutral' | 'outlined'
 export type TldSegmentedTabsBaselineTone = 'strong' | 'subtle'
 export type TldSegmentedTabsGap =
     'compact' | 'generous' | 'spacious' | 'spread' | 'standard' | 'wide'
@@ -164,37 +165,39 @@ export function TldSegmentedTabs({
             ? Math.max(1, indicatorWidth)
             : indicatorWidth
     const tabListClassName =
-        variant === 'segmented' && appearance === 'outlined'
-            ? 'relative isolate flex h-8 w-full overflow-hidden rounded-full bg-canvas [--app-text-tab-label:1rem] [--app-leading-tab-label:1.375rem]'
-            : variant === 'underline' && layout === 'content' && gap === 'generous'
-              ? 'relative isolate flex h-[45px] w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[70px]'
-              : variant === 'segmented' && appearance === 'neutral'
-                ? 'relative isolate flex h-8 w-full overflow-hidden rounded-lg bg-transparent ring-1 ring-inset ring-plan-divider [--app-text-tab-label:var(--app-text-tab-label-compact)] [--app-leading-tab-label:var(--app-leading-tab-label-compact)]'
-                : variant === 'segmented'
-                  ? 'relative isolate flex h-[46px] w-full overflow-hidden rounded-lg border border-strong bg-surface data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                  : typography === 'regular' && layout === 'content'
-                    ? gap === 'spread'
-                        ? 'relative isolate flex h-10 w-max min-w-0 gap-6 md:gap-16 xl:min-[1920px]:gap-[130px] [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
-                        : 'relative isolate flex h-10 w-max min-w-0 gap-6 md:gap-10 xl:gap-12 [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
-                    : layout === 'equal'
-                      ? size === 'compact'
-                          ? 'relative isolate flex h-11 w-full min-w-max data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                          : 'relative isolate flex h-[62px] w-full min-w-max data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                      : gap === 'spacious'
+        variant === 'segmented' && appearance === 'glass'
+            ? 'relative isolate flex h-[46px] w-full overflow-hidden rounded-lg bg-foreground/10 ring-1 ring-inset ring-segment-outline [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
+            : variant === 'segmented' && appearance === 'outlined'
+              ? 'relative isolate flex h-8 w-full overflow-hidden rounded-full bg-canvas [--app-text-tab-label:1rem] [--app-leading-tab-label:1.375rem]'
+              : variant === 'underline' && layout === 'content' && gap === 'generous'
+                ? 'relative isolate flex h-[45px] w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[70px]'
+                : variant === 'segmented' && appearance === 'neutral'
+                  ? 'relative isolate flex h-8 w-full overflow-hidden rounded-lg bg-transparent ring-1 ring-inset ring-plan-divider [--app-text-tab-label:var(--app-text-tab-label-compact)] [--app-leading-tab-label:var(--app-leading-tab-label-compact)]'
+                  : variant === 'segmented'
+                    ? 'relative isolate flex h-[46px] w-full overflow-hidden rounded-lg border border-strong bg-surface data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                    : typography === 'regular' && layout === 'content'
+                      ? gap === 'spread'
+                          ? 'relative isolate flex h-10 w-max min-w-0 gap-6 md:gap-16 xl:min-[1920px]:gap-[130px] [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
+                          : 'relative isolate flex h-10 w-max min-w-0 gap-6 md:gap-10 xl:gap-12 [--app-text-tab-label:var(--app-text-tab-label-regular)] [--app-leading-tab-label:var(--app-leading-tab-label-regular)]'
+                      : layout === 'equal'
                         ? size === 'compact'
-                            ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[60px] data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                            : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[60px] data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                        : gap === 'compact'
+                            ? 'relative isolate flex h-11 w-full min-w-max data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                            : 'relative isolate flex h-[62px] w-full min-w-max data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                        : gap === 'spacious'
                           ? size === 'compact'
-                              ? 'relative isolate flex h-11 w-max min-w-full gap-4 md:gap-5 xl:gap-9 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                              : 'relative isolate flex h-[62px] w-max min-w-full gap-4 md:gap-5 xl:gap-9 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                          : gap === 'wide'
+                              ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[60px] data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                              : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:min-[1920px]:gap-[60px] data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                          : gap === 'compact'
                             ? size === 'compact'
-                                ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-12 xl:gap-14 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                                : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-12 xl:gap-14 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                            : size === 'compact'
-                              ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:gap-12 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
-                              : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:gap-12 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                                ? 'relative isolate flex h-11 w-max min-w-full gap-4 md:gap-5 xl:gap-9 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                                : 'relative isolate flex h-[62px] w-max min-w-full gap-4 md:gap-5 xl:gap-9 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                            : gap === 'wide'
+                              ? size === 'compact'
+                                  ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-12 xl:gap-14 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                                  : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-12 xl:gap-14 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                              : size === 'compact'
+                                ? 'relative isolate flex h-11 w-max min-w-full gap-6 md:gap-10 xl:gap-12 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
+                                : 'relative isolate flex h-[62px] w-max min-w-full gap-6 md:gap-10 xl:gap-12 data-[typography=compact]:[--app-text-tab-label:var(--app-text-tab-label-compact)] data-[typography=compact]:[--app-leading-tab-label:var(--app-leading-tab-label-compact)] data-[typography=compact]:tracking-[0.01em] data-[typography=display]:[--app-text-tab-label:var(--app-text-tab-label-display)] data-[typography=display]:[--app-leading-tab-label:var(--app-leading-tab-label-display)] data-[typography=display]:tracking-[0.01em] data-[typography=display]:min-w-0 md:data-[typography=display]:h-12 xl:min-[1920px]:data-[typography=display]:h-[54px]'
     function applyIndicatorVisual(): void {
         const highlight = highlightRef.current
         const labelOverlay = labelOverlayRef.current
@@ -230,16 +233,24 @@ export function TldSegmentedTabs({
         function measure(): void {
             if (!isActive) return
             const bounds = measuredTabList.getBoundingClientRect()
+            const cssWidth =
+                appearance === 'glass'
+                    ? Number.parseFloat(window.getComputedStyle(measuredTabList).width)
+                    : bounds.width
+            const layoutWidth = Number.isFinite(cssWidth) && cssWidth > 0 ? cssWidth : bounds.width
             const nextSlots = Array.from({ length: itemCount }, (_, index) => {
                 const itemBounds = itemRefs.current[index]?.getBoundingClientRect()
                 if (itemBounds === undefined) return { left: 0, right: 0 }
-                return {
+                const edges = {
                     left: itemBounds.left - bounds.left,
                     right: itemBounds.right - bounds.left,
                 }
+                return appearance === 'glass'
+                    ? getSegmentLayoutEdges(edges, bounds.width, layoutWidth)
+                    : edges
             })
             const didGeometryChange =
-                bounds.width !== previousWidth ||
+                layoutWidth !== previousWidth ||
                 nextSlots.length !== previousSlots.length ||
                 nextSlots.some(
                     (slot, index) =>
@@ -247,11 +258,11 @@ export function TldSegmentedTabs({
                         !haveSameEdges(slot, previousSlots[index]),
                 )
             slotsRef.current = nextSlots
-            trackWidthRef.current = bounds.width
+            trackWidthRef.current = layoutWidth
 
             if (didGeometryChange) {
                 previousSlots = nextSlots
-                previousWidth = bounds.width
+                previousWidth = layoutWidth
                 snapToActiveSegment()
             }
         }
@@ -270,7 +281,7 @@ export function TldSegmentedTabs({
             isActive = false
             observer.disconnect()
         }
-    }, [itemCount, itemKey, variant])
+    }, [appearance, itemCount, itemKey, variant])
 
     useGSAP(
         () => {
@@ -415,7 +426,7 @@ export function TldSegmentedTabs({
                         ref={highlightRef}
                         aria-hidden="true"
                         className={
-                            appearance === 'outlined'
+                            appearance === 'outlined' || appearance === 'glass'
                                 ? 'pointer-events-none absolute inset-y-0 z-20 bg-linear-to-r/srgb from-brand-start to-brand-end'
                                 : appearance === 'neutral'
                                   ? 'pointer-events-none absolute inset-y-0 z-20 bg-plan-selected'
@@ -469,15 +480,17 @@ export function TldSegmentedTabs({
                         aria-pressed={semantics === 'filter' ? isActive : undefined}
                         aria-selected={semantics === 'tabs' ? isActive : undefined}
                         className={
-                            variant === 'segmented' && appearance === 'outlined'
-                                ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-hint before:absolute before:inset-y-0 before:left-0 before:w-px before:bg-linear-to-b/srgb before:from-brand-start before:to-brand-end first:before:hidden outline-none first:border-l-0 hover:text-foreground focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
-                                : variant === 'segmented' && appearance === 'neutral'
-                                  ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center border-l border-plan-divider px-2 text-tab-label text-hint outline-none first:border-l-0 hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
-                                  : variant === 'segmented'
-                                    ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-primary/60 outline-none hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
-                                    : layout === 'equal'
-                                      ? 'relative z-20 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-5 text-tab-label outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
-                                      : 'relative z-20 flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-1 text-tab-label data-[typography=comfortable]:items-start data-[typography=comfortable]:px-0 data-[typography=comfortable]:text-tab-label-comfortable data-[typography=comfortable]:tracking-[0.01em] data-[typography=compact]:px-0 data-[typography=display]:px-0 data-[typography=regular]:px-0 data-[typography=regular]:items-start data-[typography=display]:tracking-[0.01em] outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
+                            variant === 'segmented' && appearance === 'glass'
+                                ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center border-l border-segment-outline px-2 text-tab-label font-normal text-primary/60 outline-none first:border-l-0 hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                : variant === 'segmented' && appearance === 'outlined'
+                                  ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-hint before:absolute before:inset-y-0 before:left-0 before:w-px before:bg-linear-to-b/srgb before:from-brand-start before:to-brand-end first:before:hidden outline-none first:border-l-0 hover:text-foreground focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                  : variant === 'segmented' && appearance === 'neutral'
+                                    ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center border-l border-plan-divider px-2 text-tab-label text-hint outline-none first:border-l-0 hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                    : variant === 'segmented'
+                                      ? 'relative z-10 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-3 text-tab-label text-primary/60 outline-none hover:bg-surface-hover hover:text-primary focus-visible:z-40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus'
+                                      : layout === 'equal'
+                                        ? 'relative z-20 flex min-w-0 flex-1 cursor-pointer items-center justify-center px-5 text-tab-label outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
+                                        : 'relative z-20 flex shrink-0 cursor-pointer items-center justify-center whitespace-nowrap px-1 text-tab-label data-[typography=comfortable]:items-start data-[typography=comfortable]:px-0 data-[typography=comfortable]:text-tab-label-comfortable data-[typography=comfortable]:tracking-[0.01em] data-[typography=compact]:px-0 data-[typography=display]:px-0 data-[typography=regular]:px-0 data-[typography=regular]:items-start data-[typography=display]:tracking-[0.01em] outline-none transition-colors hover:text-primary focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus motion-reduce:transition-none'
                         }
                         role={semantics === 'tabs' ? 'tab' : undefined}
                         onClick={(): void => onValueChange(item.id)}

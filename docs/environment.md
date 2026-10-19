@@ -29,4 +29,12 @@ Runner 合并 .env、.env.<target>，开发再合并 .env.local 与 .env.develop
 
 完整导出、缓存、失败保留、网关/API、旧资源与桌面发布见 [静态部署](static-deployment.md) 与 [Electron](../electron/README.md)。
 
+## 多worktree并行开发
+
+练习三窗口的分支／所有权流程见[开发入口](practice-page-development.md#当前进度与三窗口协作入口2026-10-19)。每个窗口使用独立worktree和依赖目录，可共享pnpm store，不能软链整个`node_modules`，否则runner锁也会共享。`.next`、`out`、`dist`和被忽略的个人环境文件均按工作目录隔离，个人环境文件需分别初始化。
+
+主、单词、句子目录分别运行`pnpm run dev --port 3000`、`pnpm run dev --port 3001`、`pnpm run dev --port 3002`；runner会将端口参数传给Next，`PORT=3001 pnpm run dev`也可使用。两个模式同时预览至少需要两个服务，主窗口预览再开第三个；不要重复启动已存在的服务。同一目录的dev／build／typecheck不能并行，构建前正常停止本目录dev或使用独立验收副本，不删除活锁。
+
+浏览器存储按来源隔离，各端口的主题及练习偏好需独立设置，访问时统一使用`localhost`。普通`desktop:dev`会自行选端口并启动Next，未提供多实例userData隔离；日常使用Web并行预览，Electron按需单实例验证。smoke脚本的独立profile变量不能代替普通桌面的隔离能力。
+
 构建期 scripts/register-static-assets.mjs 为 Node 枚举读取提供资源对象形状，先确认资源存在，不执行图片渲染；finalize-export 从各 owner 根 index 计算期望路由集合并与 Next prerender/HTML 集合比较。该 loader 不进入 renderer 或发布产物；实际图片加载仍由运行时冒烟验证。

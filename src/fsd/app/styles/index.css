@@ -1,6 +1,75 @@
 @import "tailwindcss" source("../../..");
 
 @theme inline {
+    --color-cover-glare: var(--app-color-cover-glare);
+    --shadow-tilted-cover: var(--app-shadow-tilted-cover);
+    --color-audio-wave-start: var(--app-color-audio-wave-start);
+    --color-audio-wave-end: var(--app-color-audio-wave-end);
+    --color-practice-key-rose: var(--app-color-practice-key-rose);
+    --color-practice-key-orange: var(--app-color-practice-key-orange);
+    --color-practice-key-amber: var(--app-color-practice-key-amber);
+    --color-practice-key-green: var(--app-color-practice-key-green);
+    --color-practice-key-cyan: var(--app-color-practice-key-cyan);
+    --color-practice-key-blue: var(--app-color-practice-key-blue);
+    --color-practice-key-violet: var(--app-color-practice-key-violet);
+    --color-practice-key-pink: var(--app-color-practice-key-pink);
+    --color-practice-key-neutral: var(--app-color-practice-key-neutral);
+    --color-practice-keyboard-frame: var(--app-color-practice-keyboard-frame);
+    --color-practice-keyboard-rim: var(--app-color-practice-keyboard-rim);
+    --color-practice-keyboard-sheen: var(--app-color-practice-keyboard-sheen);
+    --color-practice-keyboard-ink: var(--app-color-practice-keyboard-ink);
+    --color-practice-keyboard-label: var(--app-color-practice-keyboard-label);
+    --color-practice-keyboard-target: var(--app-color-practice-keyboard-target);
+    --color-practice-keyboard-pressed: var(--app-color-practice-keyboard-pressed);
+    --color-practice-keyboard-error: var(--app-color-practice-keyboard-error);
+    --color-practice-hand-surface: var(--app-color-practice-hand-surface);
+    --color-practice-hand-outline: var(--app-color-practice-hand-outline);
+    --color-practice-hand-guide: var(--app-color-practice-hand-guide);
+    --background-image-mode-selection-selected-fill: var(
+        --app-background-mode-selection-selected-fill
+    );
+    --background-image-mode-selection-selected-border: var(
+        --app-background-mode-selection-selected-border
+    );
+    --background-image-mode-selection-preview-caption: var(
+        --app-background-mode-selection-preview-caption
+    );
+    --shadow-mode-selection-option: var(--app-shadow-mode-selection-option);
+    --color-mode-selection-thumbnail-overlay: var(--app-color-mode-selection-thumbnail-overlay);
+    --text-action-label-flat: var(--app-text-action-label-flat);
+    --text-action-label-flat--line-height: var(--app-text-action-label-flat);
+    --color-phonetics-highlight: var(--app-color-phonetics-highlight);
+    --color-phonetics-error: var(--app-color-phonetics-error);
+    --color-phonetics-success: var(--app-color-phonetics-success);
+    --color-phonetics-placeholder: var(--app-color-phonetics-placeholder);
+    --color-phonetics-card: var(--app-color-phonetics-card);
+    --color-practice-card: var(--app-color-practice-card);
+    --color-practice-deck: var(--app-color-practice-deck);
+    --color-practice-phoneme: var(--app-color-practice-phoneme);
+    --color-practice-control-surface: var(--app-color-practice-control-surface);
+    --color-practice-control-text: var(--app-color-practice-control-text);
+    --color-practice-control-accent: var(--app-color-practice-control-accent);
+    --color-practice-exit-home: var(--app-color-practice-exit-home);
+    --color-practice-exit-home-border: var(--app-color-practice-exit-home-border);
+    --color-practice-exit-course: var(--app-color-practice-exit-course);
+    --color-practice-exit-course-border: var(--app-color-practice-exit-course-border);
+    --color-practice-muted: var(--app-color-practice-muted);
+    --color-sentence-answer-line: var(--app-color-sentence-answer-line);
+    --color-sentence-reveal: var(--app-color-sentence-reveal);
+    --color-sentence-block-selected: var(--app-color-sentence-block-selected);
+    --color-sentence-block-selected-border: var(--app-color-sentence-block-selected-border);
+    --color-sentence-block: var(--app-color-sentence-block);
+    --color-sentence-block-border: var(--app-color-sentence-block-border);
+    --color-sentence-block-disabled: var(--app-color-sentence-block-disabled);
+    --color-sentence-block-disabled-border: var(--app-color-sentence-block-disabled-border);
+    --color-practice-pos-pronoun: var(--app-color-practice-pos-pronoun);
+    --color-practice-pos-verb: var(--app-color-practice-pos-verb);
+    --color-practice-pos-noun: var(--app-color-practice-pos-noun);
+    --color-practice-pos-adverb: var(--app-color-practice-pos-adverb);
+    --color-practice-syntax-subject: var(--app-color-practice-syntax-subject);
+    --color-practice-syntax-predicate: var(--app-color-practice-syntax-predicate);
+    --color-practice-syntax-object: var(--app-color-practice-syntax-object);
+    --color-practice-syntax-complement: var(--app-color-practice-syntax-complement);
     --text-action-label-small: 0.875rem;
     --text-action-label-small--line-height: 1.25rem;
     --text-tab-label-comfortable: var(--app-text-tab-label-comfortable);
@@ -70,6 +139,8 @@
     --text-form-title--line-height: var(--app-leading-form-title);
 
     --breakpoint-3xl: 112.5rem;
+    --breakpoint-design: 120rem;
+    --breakpoint-dialog: 56.25rem;
 
     --color-canvas: var(--app-color-canvas);
     --color-sidebar: var(--app-color-sidebar);
@@ -81,6 +152,11 @@
     --color-challenge-start: var(--app-color-challenge-start);
     --color-challenge-end: var(--app-color-challenge-end);
     --color-challenge-track: var(--app-color-challenge-track);
+    --color-progress-loading-start: var(--app-color-progress-loading-start);
+    --color-progress-loading-end: var(--app-color-progress-loading-end);
+    --color-progress-loading-track: var(--app-color-progress-loading-track);
+    --color-progress-loading-caption: var(--app-color-progress-loading-caption);
+    --shadow-progress-loading-inset: var(--app-shadow-progress-loading-inset);
     --color-match-panel: var(--app-color-match-panel);
     --color-match-border: var(--app-color-match-border);
     --color-match-warning: var(--app-color-match-warning);
@@ -114,11 +190,13 @@
     --color-practice-answer: var(--app-color-practice-answer);
     --color-practice-text: var(--app-color-practice-text);
     --color-practice-background: var(--app-color-practice-background);
+    --color-practice-image-mask: var(--app-color-practice-image-mask);
     --color-brand-start: var(--app-color-brand-start);
     --color-brand-end: var(--app-color-brand-end);
     --color-plan-surface: var(--app-color-plan-surface);
     --color-plan-border: var(--app-color-plan-border);
     --color-plan-divider: var(--app-color-plan-divider);
+    --color-segment-outline: var(--app-color-segment-outline);
     --color-plan-selected: var(--app-color-plan-selected);
     --color-plan-note: var(--app-color-plan-note);
     --color-plan-link: var(--app-color-plan-link);
@@ -135,6 +213,7 @@
     --color-trial-action-border: var(--app-color-trial-action-border);
     --color-trial-action-border-disabled: var(--app-color-trial-action-border-disabled);
     --color-trial-action-disabled: var(--app-color-trial-action-disabled);
+    --color-switch-off: var(--app-color-switch-off);
     --color-accent-green: var(--app-color-accent-green);
     --color-tab-inactive: var(--app-color-tab-inactive);
     --color-accent-cyan: var(--app-color-accent-cyan);
@@ -203,6 +282,35 @@
 }
 
 :root {
+    /* 固定指法插画配色，两主题共享；不随页面的用户答题选色改变。 */
+    --app-color-practice-key-rose: #e85b68;
+    --app-color-practice-key-orange: #ee874f;
+    --app-color-practice-key-amber: #f0b748;
+    --app-color-practice-key-green: #60b96a;
+    --app-color-practice-key-cyan: #3ca8bd;
+    --app-color-practice-key-blue: #468fd0;
+    --app-color-practice-key-violet: #8c71cc;
+    --app-color-practice-key-pink: #bd64b5;
+    --app-color-practice-key-neutral: #53637c;
+    --app-color-practice-keyboard-frame: #303a49;
+    --app-color-practice-keyboard-rim: #9ca6b2;
+    --app-color-practice-keyboard-sheen: #ffffff;
+    --app-color-practice-keyboard-ink: #142032;
+    --app-color-practice-keyboard-label: #ffffff;
+    --app-color-practice-keyboard-target: #fff3b5;
+    --app-color-practice-keyboard-pressed: #a0ffdb;
+    --app-color-practice-keyboard-error: #ff3e58;
+    --app-color-practice-hand-surface: #f2c09e;
+    --app-color-practice-hand-outline: #ac755a;
+    --app-color-practice-hand-guide: #fff3b5;
+    --app-color-practice-pos-pronoun: #ffd699;
+    --app-color-practice-pos-verb: #01f799;
+    --app-color-practice-pos-noun: #ff99d8;
+    --app-color-practice-pos-adverb: #ffeb99;
+    --app-color-practice-syntax-subject: #ff5050;
+    --app-color-practice-syntax-predicate: #b174e7;
+    --app-color-practice-syntax-object: #5ca3ff;
+    --app-color-practice-syntax-complement: #10bb82;
     --app-text-form-title: 1.25rem;
     --app-text-tab-label-comfortable: 1rem;
     --app-leading-tab-label-comfortable: 1.5rem;
@@ -240,6 +348,7 @@
     --app-text-tab-label-display: 1rem;
     --app-leading-tab-label-display: 1.5rem;
     --app-text-action-label: 1rem;
+    --app-text-action-label-flat: 1rem;
     --app-leading-action-label: 1.5rem;
     --app-text-action-label-compact: 1rem;
     --app-leading-action-label-compact: 1.375rem;
@@ -279,6 +388,7 @@
         --app-text-tab-label-display: 1.25rem;
         --app-leading-tab-label-display: 1.75rem;
         --app-text-action-label: 1.125rem;
+        --app-text-action-label-flat: 1.125rem;
         --app-leading-action-label: 1.625rem;
         --app-text-action-label-compact: 1.125rem;
         --app-leading-action-label-compact: 1.5625rem;
@@ -309,10 +419,82 @@
 
 :root,
 :root[data-theme="dark"] {
+    --app-color-mode-selection-caption-tint: rgba(114, 133, 255, 0.5);
+    --app-color-mode-selection-option-glow: rgba(255, 255, 255, 0.15);
+    --app-color-mode-selection-thumbnail-overlay: rgba(0, 0, 0, 0.2);
+    --app-shadow-mode-selection-option: 0 0 16px 0 var(--app-color-mode-selection-option-glow);
+    --app-background-mode-selection-selected-fill: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--app-color-brand-start) 10%, transparent) 0%,
+        color-mix(in srgb, var(--app-color-brand-end) 10%, transparent) 100%
+    );
+    --app-background-mode-selection-selected-border: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--app-color-brand-start) 90%, transparent) 0%,
+        color-mix(in srgb, var(--app-color-brand-end) 90%, transparent) 100%
+    );
+    --app-background-mode-selection-preview-caption: linear-gradient(
+        0deg,
+        var(--app-color-mode-selection-caption-tint) 39%,
+        transparent 100%
+    );
+    --app-color-phonetics-highlight: #87ffc5;
+    --app-color-phonetics-error: #ff4242;
+    --app-color-phonetics-success: #00bf63;
+    --app-color-phonetics-placeholder: #d9d9d9;
+    --app-color-phonetics-card: #1c1c1c;
+    --app-color-practice-design-answer: #00e088;
+    --app-color-practice-sentence-answer: #ffffff;
+    --app-color-practice-muted: rgba(255, 255, 255, 0.6);
+    --app-color-practice-card: #1b1c22;
+    --app-color-practice-deck: #3b3949;
+    --app-color-practice-phoneme: #424452;
+    --app-color-practice-control-surface: #22232a;
+    --app-color-practice-exit-home: #36374c;
+    --app-color-practice-exit-home-border: #474984;
+    --app-color-practice-exit-course: rgba(159, 181, 255, 0.2);
+    --app-color-practice-exit-course-border: #405796;
+    --app-color-practice-control-text: #ffffff;
+    --app-color-practice-control-accent: #00bf63;
+    --app-filter-practice-icon: none;
+    --app-color-sentence-answer-line: #848484;
+    --app-color-sentence-reveal: #22232a;
+    --app-color-sentence-block-selected: #081b14;
+    --app-color-sentence-block-selected-border: rgba(1, 247, 153, 0.5);
+    --app-color-sentence-block: rgba(34, 35, 42, 0.6);
+    --app-color-sentence-block-border: rgba(255, 255, 255, 0.3);
+    --app-color-sentence-block-disabled: rgba(34, 35, 42, 0.2);
+    --app-color-sentence-block-disabled-border: rgba(255, 255, 255, 0.15);
+    --app-shadow-sentence-block-selected: 0 4px 40px 0 rgba(24, 90, 29, 0.6);
+    --app-color-sentence-tray-start: #8c52ff;
+    --app-color-sentence-tray-middle: #ffffff;
+    --app-color-sentence-tray-end: #01f799;
+    --app-gradient-sentence-tray: linear-gradient(
+        157deg,
+        var(--app-color-sentence-tray-start) 0%,
+        var(--app-color-sentence-tray-middle) 53%,
+        var(--app-color-sentence-tray-end) 100%
+    );
+    --app-shadow-practice-card: 0px 0px 50px 0px rgba(92, 255, 198, 0.25);
+    --app-color-practice-preset-default: #000000;
+    --app-color-practice-preset-warm: #1c1914;
+    --app-color-practice-preset-green: #111b16;
+    --app-color-practice-preset-blue: #1d2024;
+    --app-color-practice-image-mask: #000000;
+    --app-color-answer-default-dark: #ffffff;
+    --app-color-answer-default-light: #000000;
     --app-blend-pk-art: screen;
     --app-color-challenge-start: #8c52ff;
     --app-color-challenge-end: #01f799;
     --app-color-challenge-track: #3a3a3a;
+    --app-color-progress-loading-start: var(--app-color-brand-start);
+    --app-color-progress-loading-end: var(--app-color-brand-end);
+    --app-color-progress-loading-track: var(--app-color-canvas);
+    --app-color-progress-loading-caption: var(--app-color-header-action);
+    --app-color-progress-loading-glow: rgba(54, 140, 53, 0.25);
+    --app-shadow-progress-loading-inset:
+        inset 6px 6px 10px var(--app-color-progress-loading-glow),
+        inset -6px -6px 10px var(--app-color-progress-loading-glow);
     --app-color-match-panel: #1a1a1a;
     --app-color-match-glow: rgba(242, 242, 242, 0.5);
     --app-color-match-border: #999999;
@@ -341,6 +523,7 @@
     --app-color-plan-surface: rgba(255, 255, 255, 0.05);
     --app-color-plan-border: rgba(255, 255, 255, 0.3);
     --app-color-plan-divider: #5c5c5c;
+    --app-color-segment-outline: #575757;
     --app-color-plan-selected: rgba(255, 255, 255, 0.2);
     --app-color-plan-note: #666666;
     --app-color-plan-link: #3dabff;
@@ -395,10 +578,13 @@
     --app-color-text-inverse: #ffffff;
     --app-color-border-subtle: #2a2e31;
     --app-color-border-strong: #454a4e;
+    --app-color-audio-wave-start: var(--app-color-brand);
+    --app-color-audio-wave-end: var(--app-color-brand);
     --app-color-brand: #01f799;
     --app-color-header-action: #00e088;
     --app-color-brand-start: #8c52ff;
     --app-color-brand-end: #01f799;
+    --app-color-switch-off: #808080;
     --app-color-accent-green: #00bf63;
     --app-color-tab-inactive: rgba(255, 255, 255, 0.6);
     --app-color-accent-cyan: #52fffc;
@@ -521,15 +707,105 @@
     );
     --app-filter-dialog-icon: none;
     --app-filter-shell-icon: none;
+    --app-color-cover-glare: rgb(255 255 255 / 24%);
+    --app-shadow-tilted-cover: 0 12px 24px rgb(0 0 0 / 30%);
     --app-shadow-panel: 0 18px 50px rgb(0 0 0 / 24%);
     --app-shadow-drawer: 18px 0 48px rgb(0 0 0 / 34%);
 }
 
 :root[data-theme="light"] {
+    --app-color-mode-selection-caption-tint: rgba(114, 133, 255, 0.5);
+    --app-color-mode-selection-option-glow: rgba(17, 24, 21, 0.12);
+    --app-color-mode-selection-thumbnail-overlay: rgba(0, 0, 0, 0.2);
+    --app-shadow-mode-selection-option: 0 0 16px 0 var(--app-color-mode-selection-option-glow);
+    --app-background-mode-selection-selected-fill: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--app-color-brand-start) 10%, transparent) 0%,
+        color-mix(in srgb, var(--app-color-brand-end) 10%, transparent) 100%
+    );
+    --app-background-mode-selection-selected-border: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--app-color-brand-start) 90%, transparent) 0%,
+        color-mix(in srgb, var(--app-color-brand-end) 90%, transparent) 100%
+    );
+    --app-background-mode-selection-preview-caption: linear-gradient(
+        0deg,
+        var(--app-color-mode-selection-caption-tint) 39%,
+        transparent 100%
+    );
+    --app-color-phonetics-highlight: var(--app-color-brand);
+    --app-color-phonetics-error: var(--app-color-danger);
+    --app-color-phonetics-success: var(--app-color-accent-green);
+    --app-color-phonetics-placeholder: var(--app-color-surface-raised);
+    --app-color-phonetics-card: var(--app-color-surface);
+    --app-color-practice-design-answer: #10bb82;
+    --app-color-practice-sentence-answer: var(--app-color-text-primary);
+    --app-color-practice-muted: var(--app-color-text-secondary);
+    --app-color-practice-card: var(--app-color-surface);
+    --app-color-practice-deck: var(--app-color-surface-raised);
+    --app-color-practice-phoneme: var(--app-color-surface-recessed);
+    --app-color-practice-control-surface: var(--app-color-surface-raised);
+    --app-color-practice-exit-home: color-mix(
+        in srgb,
+        var(--app-color-brand-start) 12%,
+        var(--app-color-surface)
+    );
+    --app-color-practice-exit-home-border: color-mix(
+        in srgb,
+        var(--app-color-brand-start) 36%,
+        var(--app-color-surface)
+    );
+    --app-color-practice-exit-course: color-mix(
+        in srgb,
+        var(--app-color-brand-end) 10%,
+        var(--app-color-surface)
+    );
+    --app-color-practice-exit-course-border: color-mix(
+        in srgb,
+        var(--app-color-brand-end) 36%,
+        var(--app-color-surface)
+    );
+    --app-color-practice-control-text: var(--app-color-text-primary);
+    --app-color-practice-control-accent: var(--app-color-accent-green);
+    --app-filter-practice-icon: invert(1);
+    --app-color-sentence-answer-line: var(--app-color-border-strong);
+    --app-color-sentence-reveal: var(--app-color-surface-raised);
+    --app-color-sentence-block-selected: var(--app-color-surface-hover);
+    --app-color-sentence-block-selected-border: var(--app-color-accent-green);
+    --app-color-sentence-block: var(--app-color-surface-raised);
+    --app-color-sentence-block-border: var(--app-color-border-strong);
+    --app-color-sentence-block-disabled: var(--app-color-surface-raised);
+    --app-color-sentence-block-disabled-border: var(--app-color-border-subtle);
+    --app-shadow-sentence-block-selected: var(--app-shadow-panel);
+    --app-color-sentence-tray-start: var(--app-color-brand-start);
+    --app-color-sentence-tray-middle: var(--app-color-border-strong);
+    --app-color-sentence-tray-end: var(--app-color-brand-end);
+    --app-gradient-sentence-tray: linear-gradient(
+        157deg,
+        var(--app-color-sentence-tray-start) 0%,
+        var(--app-color-sentence-tray-middle) 53%,
+        var(--app-color-sentence-tray-end) 100%
+    );
+    --app-shadow-practice-card: var(--app-shadow-panel);
+    --app-color-practice-preset-default: #ffffff;
+    --app-color-practice-preset-warm: #fff8e8;
+    --app-color-practice-preset-green: #d1e4d0;
+    --app-color-practice-preset-blue: #d5e8f2;
+    --app-color-practice-image-mask: #ffffff;
+    --app-color-answer-default-dark: #ffffff;
+    --app-color-answer-default-light: #000000;
     --app-blend-pk-art: normal;
     --app-color-challenge-start: #8c52ff;
     --app-color-challenge-end: #01f799;
     --app-color-challenge-track: #d1d8d5;
+    --app-color-progress-loading-start: var(--app-color-brand-start);
+    --app-color-progress-loading-end: var(--app-color-brand-end);
+    --app-color-progress-loading-track: var(--app-color-canvas);
+    --app-color-progress-loading-caption: var(--app-color-header-action);
+    --app-color-progress-loading-glow: rgba(54, 140, 53, 0.15);
+    --app-shadow-progress-loading-inset:
+        inset 6px 6px 10px var(--app-color-progress-loading-glow),
+        inset -6px -6px 10px var(--app-color-progress-loading-glow);
     --app-color-match-panel: #ffffff;
     --app-color-match-glow: rgba(120, 130, 125, 0.18);
     --app-color-match-border: #78827d;
@@ -557,6 +833,7 @@
     --app-color-plan-surface: #ffffff;
     --app-color-plan-border: #b9c6c0;
     --app-color-plan-divider: #b9c6c0;
+    --app-color-segment-outline: var(--app-color-border-strong);
     --app-color-plan-selected: rgba(23, 32, 29, 0.1);
     --app-color-plan-note: #6b7771;
     --app-color-plan-link: #246aa8;
@@ -611,10 +888,13 @@
     --app-color-text-inverse: #ffffff;
     --app-color-border-subtle: #dde4e1;
     --app-color-border-strong: #bdc9c4;
+    --app-color-audio-wave-start: var(--app-color-brand);
+    --app-color-audio-wave-end: var(--app-color-brand);
     --app-color-brand: #078f64;
     --app-color-header-action: var(--app-color-brand);
     --app-color-brand-start: #6e4de6;
     --app-color-brand-end: #009d6c;
+    --app-color-switch-off: #808080;
     --app-color-accent-green: #007a50;
     --app-color-tab-inactive: rgba(23, 32, 29, 0.6);
     --app-color-accent-cyan: #007d7a;
@@ -737,6 +1017,8 @@
     );
     --app-filter-dialog-icon: invert(1);
     --app-filter-shell-icon: invert(1);
+    --app-color-cover-glare: rgb(255 255 255 / 30%);
+    --app-shadow-tilted-cover: 0 12px 24px rgb(38 55 48 / 18%);
     --app-shadow-panel: 0 18px 50px rgb(38 55 48 / 10%);
     --app-shadow-drawer: 18px 0 48px rgb(38 55 48 / 16%);
 }

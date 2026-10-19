@@ -38,6 +38,8 @@ export const sharedConfig = {
         dailyCheckin: 'english-learning-daily-checkin-v1',
         homeClubPrompt: 'english-learning-home-club-prompt-v1',
         learningPreferences: 'english-learning-preferences-v1',
+        practiceBackgroundImage: 'english-learning-practice-background-image-v1',
+        practiceToolbarOptions: 'english-learning-practice-toolbar-options-v1',
         language: 'english-learning-language',
         theme: 'english-learning-theme',
         pwaInstalled: 'english-learning-pwa-installed',

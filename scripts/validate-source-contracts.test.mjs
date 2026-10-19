@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { resolve } from 'node:path'
 import test from 'node:test'
@@ -242,6 +242,115 @@ test('rejects old directories, Router imports, client barrels and dynamic public
                 errors.some((error) => error.includes(message)),
                 message,
             )
+    } finally {
+        rmSync(fixture.fixtureRoot, { recursive: true, force: true })
+    }
+})
+
+test('仅整词输入 owner 可直接调用固定 insertText 并保留原生撤销历史', () => {
+    const fixture = createFixture({
+        'fsd/app/styles/index.css': '@import "tailwindcss" source("../../..");',
+        'fsd/pages/practice/ui/PracticeWordSlotsInput.tsx': [
+            'export function insertPadding(document: Document, padding: string): void {',
+            '    try {',
+            "        document.execCommand('insertText', false, padding)",
+            '    } catch {',
+            '        return',
+            '    }',
+            '}',
+        ].join('\n'),
+    })
+
+    try {
+        assert.deepEqual(validateSourceContracts({ sourceRoot: fixture.sourceRoot }), [])
+    } finally {
+        rmSync(fixture.fixtureRoot, { recursive: true, force: true })
+    }
+})
+
+test('oxlint 仅对整词输入精确 owner 覆盖属性规则且继续限制日期与剪贴板', () => {
+    const config = JSON.parse(readFileSync(new URL('../.oxlintrc.json', import.meta.url), 'utf8'))
+    const ownerOverride = config.overrides.find((override) =>
+        override.files.includes('src/fsd/pages/practice/ui/PracticeWordSlotsInput.tsx'),
+    )
+    assert.deepEqual(ownerOverride?.files, ['src/fsd/pages/practice/ui/PracticeWordSlotsInput.tsx'])
+    const ownerRestrictions = ownerOverride.rules['no-restricted-properties']
+    assert.equal(ownerRestrictions[0], 'error')
+    assert.deepEqual(
+        ownerRestrictions.slice(1).map(({ object, property }) => ({ object, property })),
+        [
+            { object: 'Intl', property: 'DateTimeFormat' },
+            { object: undefined, property: 'clipboard' },
+        ],
+    )
+    assert.ok(
+        config.rules['no-restricted-properties'].some(
+            (restriction) => restriction.property === 'execCommand',
+        ),
+    )
+})
+
+test('整词输入 owner 仍拒绝剪贴板命令、动态命令、属性引用和非直接调用', () => {
+    const calls = [
+        "document.execCommand('copy', false, padding)",
+        "document.execCommand('cut', false, padding)",
+        "document.execCommand('paste', false, padding)",
+        "const command = 'insertText'; document.execCommand(command, false, padding)",
+        'const execute = document.execCommand',
+        "if (typeof document.execCommand === 'function') {}",
+        "document.execCommand.bind(document)('insertText', false, padding)",
+        "document['execCommand']('insertText', false, padding)",
+        "document[`execCommand`]('insertText', false, padding)",
+        'const { execCommand: execute } = document',
+        'const { execCommand } = document',
+        "const { ['execCommand']: execute } = document",
+        '({ execCommand: execute } = document)',
+        '({ execCommand } = document)',
+        "(document.execCommand)('insertText', false, padding)",
+        "document?.execCommand('insertText', false, padding)",
+        "document.execCommand?.('insertText', false, padding)",
+        "document.execCommand('insertText', true, padding)",
+        "document.execCommand('insertText', false)",
+        "document.execCommand('insertText', false, ...padding)",
+        "document.execCommand('insertText', false, padding, 'extra')",
+    ]
+    const fixture = createFixture({
+        'fsd/app/styles/index.css': '@import "tailwindcss" source("../../..");',
+        'fsd/pages/practice/ui/PracticeWordSlotsInput.tsx': '',
+    })
+
+    try {
+        for (const call of calls) {
+            writeFileSync(
+                resolve(fixture.sourceRoot, 'fsd/pages/practice/ui/PracticeWordSlotsInput.tsx'),
+                call,
+            )
+            const errors = validateSourceContracts({ sourceRoot: fixture.sourceRoot })
+            assert.ok(
+                errors.some((error) => error.includes('execCommand is restricted')),
+                call,
+            )
+        }
+    } finally {
+        rmSync(fixture.fixtureRoot, { recursive: true, force: true })
+    }
+})
+
+test('其他 renderer owner 不允许调用相同 insertText 或读取 execCommand 属性', () => {
+    const fixture = createFixture({
+        'fsd/app/styles/index.css': '@import "tailwindcss" source("../../..");',
+        'fsd/pages/practice/ui/OtherInput.tsx':
+            "document.execCommand('insertText', false, padding)",
+        'fsd/shared/lib/clipboard/command.ts': 'const execute = document.execCommand',
+        'app/example/page.tsx': "document['execCommand']('insertText', false, padding)",
+    })
+
+    try {
+        const errors = validateSourceContracts({ sourceRoot: fixture.sourceRoot })
+        assert.equal(
+            errors.filter((error) => error.includes('execCommand is restricted')).length,
+            3,
+        )
     } finally {
         rmSync(fixture.fixtureRoot, { recursive: true, force: true })
     }

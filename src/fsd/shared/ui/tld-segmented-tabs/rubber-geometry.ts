@@ -10,6 +10,23 @@ export interface SegmentBox {
 
 export type SegmentDirection = -1 | 0 | 1
 
+/** 将父层scale后的视口坐标还原为控件自身CSS坐标，不改变控件或用户页面缩放。 */
+export function getSegmentLayoutEdges(
+    edges: SegmentEdges,
+    renderedWidth: number,
+    layoutWidth: number,
+): SegmentEdges {
+    if (
+        !Number.isFinite(renderedWidth) ||
+        !Number.isFinite(layoutWidth) ||
+        renderedWidth <= 0 ||
+        layoutWidth <= 0
+    )
+        return edges
+    const ratio = layoutWidth / renderedWidth
+    return { left: edges.left * ratio, right: edges.right * ratio }
+}
+
 export function getEqualSegmentEdges(index: number, count: number): SegmentEdges | null {
     if (!Number.isInteger(index) || !Number.isInteger(count) || count <= 0) return null
     if (index < 0 || index >= count) return null

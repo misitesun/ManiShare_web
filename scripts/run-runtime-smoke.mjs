@@ -5,6 +5,10 @@ import { createServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
 import { join, resolve } from 'node:path'
 const smokeProfile = mkdtempSync(join(tmpdir(), 'english-learning-runtime-smoke-'))
+const smokeEntry = process.argv[2] ?? 'runtime-smoke.cjs'
+if (!['runtime-smoke.cjs', 'settings-effects-runtime-smoke.cjs'].includes(smokeEntry)) {
+    throw new Error('Unknown runtime smoke entry')
+}
 const port = await new Promise((resolvePort, reject) => {
     const probe = createServer()
     probe.once('error', reject)
@@ -51,7 +55,7 @@ try {
     const result = await new Promise((resolveRun, reject) => {
         electron = spawn(
             process.execPath,
-            [resolve('node_modules/electron/cli.js'), 'scripts/runtime-smoke.cjs'],
+            [resolve('node_modules/electron/cli.js'), `scripts/${smokeEntry}`],
             {
                 env: {
                     ...process.env,

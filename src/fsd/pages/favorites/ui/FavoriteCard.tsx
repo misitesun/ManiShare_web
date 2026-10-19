@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { CourseCollectionSelectionOverlay } from '../../../features/edit-course-collection'
 import type { FavoriteItem } from '../model/favorite-items'
 
@@ -20,12 +21,7 @@ export function FavoriteCard({
     return (
         <article className="relative min-w-0 overflow-hidden rounded-xl bg-surface-raised">
             <div className="aspect-[3/2] w-full overflow-hidden rounded-t-xl">
-                <img
-                    alt=""
-                    aria-hidden="true"
-                    className="size-full object-cover"
-                    src={favoriteItem.imageSource}
-                />
+                <TldTiltedCover alt="" src={favoriteItem.imageSource} disabled={isEditing} />
             </div>
 
             <div className="flex h-[82px] min-w-0 flex-col px-2.5 py-2.5">

@@ -72,3 +72,29 @@ test('inline radio renders visible option copy without changing its accessible n
     assert.match(html, /aria-label="增加功能"/)
     assert.match(html, />增加功能</)
 })
+
+test('紧凑圆圈两种视觉状态都保留可命名的原生多选控件', (): void => {
+    for (const checked of [false, true]) {
+        const html = renderToStaticMarkup(
+            createElement(
+                TldSelection,
+                {
+                    label: '拼写有误',
+                    checked,
+                    appearance: 'ring-compact',
+                    layout: 'inline',
+                    name: 'issue',
+                    value: 'spelling',
+                    onCheckedChange: (): void => undefined,
+                },
+                '拼写有误',
+            ),
+        )
+        assert.equal((html.match(/type="checkbox"/g) ?? []).length, 1)
+        assert.match(html, /aria-label="拼写有误"/)
+        assert.match(html, /name="issue"/)
+        assert.match(html, />拼写有误</)
+        assert.match(html, checked ? /ring-checked\.svg/ : /ring-unchecked\.svg/)
+        assert.equal(html.includes('checked=""'), checked)
+    }
+})

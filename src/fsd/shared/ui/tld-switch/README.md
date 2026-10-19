@@ -12,3 +12,7 @@
 - 扩展：新增外观需求先扩展语义 Props，不开放任意样式覆盖。
 - 外观：轨道 36×20px，白色圆点 16×16px，关闭在左、开启向右移动 16px，过渡 200ms；reduced-motion 下直接切换。圆点使用两套主题均为白色的 `inverse` 前景色，不使用深色主题为透明的 `icon-contrast`。
 - 验证：同目录渲染契约测试；页面浏览器核对键盘和受控状态，平板/H5由用户验收。运行 test/lint/build。
+
+`size="settings"` 为设置卡片显式密度：38×20px轨道、18px滑块（移动18px），accent-green开启色与switch-off关闭色；H5/平板最小点击高度40px，xl为20px。默认和compact不变。
+
+`size="practice"` 为练习工具栏显式密度：26×14px轨道、12px白色滑块（移动12px）、4px标签间距，标签12px/18px、400字重、常规字距；开启色为practice-control-accent，关闭色为switch-off，文字为practice-control-text。H5/平板保持最小40px点击高度，xl紧凑行高24px，轨道和文字不随断点缩放。默认、compact和settings消费者保持原有外观；checked、disabled、标签与descriptionId契约不变。练习模式首次初始化与会话隔离由页面owner负责，开关不访问偏好存储。

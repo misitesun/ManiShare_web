@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react'
 import { TldMembershipBadge } from '../../../shared/ui/tld-membership-badge'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import { hostAvatarSource, roomCoverSource } from '../model/demo-lobby'
 import type { ArenaRoom } from '../model/lobby-state'
 import listeningAsset from '../assets/listening.svg'
@@ -63,13 +64,9 @@ function RoomMode({ room, owned = false }: RoomModeProps): ReactElement {
 export function RoomCourse({ room, layout = 'card' }: RoomCourseProps): ReactElement {
     const source = room.imageSource ?? roomCoverSource
     const image = (
-        <img
-            alt={room.course}
-            src={source}
-            width={150}
-            height={100}
-            className="aspect-[3/2] h-[100px] w-[150px] shrink-0 rounded-lg object-cover"
-        />
+        <div className="aspect-[3/2] h-[100px] w-[150px] shrink-0 rounded-lg">
+            <TldTiltedCover alt={room.course} src={source} />
+        </div>
     )
     return layout === 'owned' ? (
         <div className="flex min-w-0 items-start gap-[11px]">

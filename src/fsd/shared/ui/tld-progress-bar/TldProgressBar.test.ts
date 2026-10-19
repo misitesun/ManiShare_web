@@ -16,22 +16,25 @@ test('wider value spacing preserves normalized progress and its accessible range
 })
 
 test('percentage display and accessible value share normalized progress, including invalid input', (): void => {
-    for (const [value, expected] of [
-        [72, 72],
-        [160, 100],
-        [-10, 0],
-        [Number.NaN, 0],
-    ]) {
-        const html = renderToStaticMarkup(
-            createElement(TldProgressBar, {
-                ariaLabel: 'PK演示加载进度',
-                max: 100,
-                value,
-                size: 'challenge',
-                valueFormat: 'percentage',
-            }),
-        )
-        assert.match(html, new RegExp(`aria-valuenow="${expected}"`))
-        assert.match(html, new RegExp(`>${expected}%</span>`))
+    for (const size of ['challenge', 'loading'] as const) {
+        for (const [value, expected] of [
+            [72, 72],
+            [160, 100],
+            [-10, 0],
+            [Number.NaN, 0],
+        ]) {
+            const html = renderToStaticMarkup(
+                createElement(TldProgressBar, {
+                    ariaLabel: 'PK演示加载进度',
+                    max: 100,
+                    value,
+                    size,
+                    valueFormat: 'percentage',
+                }),
+            )
+            assert.match(html, new RegExp(`aria-valuenow="${expected}"`))
+            assert.match(html, new RegExp(`>${expected}%</span>`))
+            assert.match(html, new RegExp(`width:${expected}%`))
+        }
     }
 })

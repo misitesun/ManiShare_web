@@ -1,4 +1,4 @@
 export { AwakeningPage } from './ui/AwakeningPage'
 export { AwakeningCoursePage } from './ui/AwakeningCoursePage'
 
-export { getAwakeningCourseParams } from './model/course-detail'
+export { getAwakeningCourseParams, isAwakeningPracticeSource } from './model/course-detail'

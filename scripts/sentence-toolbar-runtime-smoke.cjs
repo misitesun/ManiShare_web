@@ -1,0 +1,855 @@
+const assert = require('node:assert/strict')
+const { readFileSync, writeFileSync } = require('node:fs')
+const { resolve } = require('node:path')
+const { setTimeout: delay } = require('node:timers/promises')
+const { isExportedPageRequest } = require('./login-request-kind.cjs')
+const {
+    readToolbarCache,
+    resetToolbarCache,
+    restoreToolbarCache,
+    reloadToolbarPage,
+} = require('./additional-toolbar-runtime-smoke.cjs')
+
+let waitForToolbarResources
+
+const modes = [
+    {
+        mode: 'listen',
+        rows: [
+            ['句子显示方式', '完整'],
+            ['图片', true],
+            ['切读', true],
+        ],
+    },
+    { mode: 'read', rows: [] },
+    {
+        mode: 'translate',
+        rows: [
+            ['句子显示方式', '拆分'],
+            ['输入方式', '抄写'],
+            ['图片', true],
+            ['翻译', true],
+            ['切读', true],
+        ],
+    },
+    {
+        mode: 'check',
+        rows: [
+            ['句子显示方式', '拆分'],
+            ['图片', true],
+            ['切读', true],
+        ],
+    },
+    {
+        mode: 'typing',
+        rows: [
+            ['句子显示方式', '拆分'],
+            ['输入方式', '抄写'],
+            ['图片', true],
+            ['切读', true],
+        ],
+    },
+    ...['oral', 'blocks'].map((mode) => ({
+        mode,
+        rows: [
+            ['句子显示方式', '拆分'],
+            ['图片', true],
+            ['翻译', true],
+            ['切读', true],
+        ],
+    })),
+]
+
+async function evaluate(window, operation, ...args) {
+    return window.webContents.executeJavaScript(
+        '(' + operation.toString() + ')(...' + JSON.stringify(args) + ')',
+        true,
+    )
+}
+
+async function waitFor(window, operation, description, ...args) {
+    for (let attempt = 0; attempt < 80; attempt++) {
+        if (await evaluate(window, operation, ...args)) return
+        await delay(75)
+    }
+    throw new Error('Timed out: sentence toolbar ' + description)
+}
+
+async function waitForImages(window, scope, description) {
+    await waitFor(
+        window,
+        (selector) => {
+            const root = document.querySelector(selector)
+            return (
+                root !== null &&
+                Array.from(root.querySelectorAll('img')).every(
+                    (image) =>
+                        image.complete && image.naturalWidth > 0 && image.currentSrc === image.src,
+                )
+            )
+        },
+        description,
+        scope,
+    )
+}
+
+async function click(window, selector) {
+    await evaluate(
+        window,
+        (target) => {
+            const element = document.querySelector(target)
+            if (!element || element.matches(':disabled') || element.closest('[inert]'))
+                throw new Error('Missing enabled sentence toolbar action: ' + target)
+            element.focus()
+            element.click()
+        },
+        selector,
+    )
+}
+
+async function clickText(window, text, scope = 'body') {
+    await evaluate(
+        window,
+        (label, selector) => {
+            const root = document.querySelector(selector)
+            const button = Array.from(root?.querySelectorAll('button') ?? []).find((element) => {
+                const readable = element.cloneNode(true)
+                readable
+                    .querySelectorAll('[aria-hidden="true"], kbd')
+                    .forEach((node) => node.remove())
+                return (
+                    (element.getAttribute('aria-label')?.replace(/\s+/g, '') ===
+                        label.replace(/\s+/g, '') ||
+                        readable.textContent.replace(/\s+/g, '') === label.replace(/\s+/g, '')) &&
+                    !element.disabled &&
+                    !element.closest('[inert]') &&
+                    element.getClientRects().length > 0
+                )
+            })
+            if (!button) throw new Error('Missing sentence toolbar action text: ' + label)
+            button.focus()
+            button.click()
+        },
+        text,
+        scope,
+    )
+}
+
+async function openOptions(window) {
+    await waitFor(
+        window,
+        () => {
+            if (document.querySelector('[data-sentence-options]')) return true
+            document
+                .querySelector('[data-sentence-toolbar] button[aria-label="本模式设置"]')
+                ?.click()
+            return false
+        },
+        'local options open and hydrated',
+    )
+}
+
+async function closeOptions(window) {
+    await click(window, '[data-sentence-toolbar] button[aria-label="本模式设置"]')
+    await waitFor(
+        window,
+        () => !document.querySelector('[data-sentence-options]'),
+        'local options close',
+    )
+}
+
+async function visitMode(window, origin, mode) {
+    await resetToolbarCache(window, origin, waitForToolbarResources)
+    await window.loadURL(
+        origin + '/practice/?demo=sentence-basic&mode=' + mode + '&keep=sentence-toolbar-smoke',
+    )
+    await waitFor(
+        window,
+        (expected) =>
+            new URLSearchParams(location.search).get('mode') === expected &&
+            Boolean(document.querySelector('[data-sentence-toolbar]')),
+        'route ' + mode,
+        mode,
+    )
+    assert.equal(
+        await evaluate(window, () => Boolean(document.querySelector('[data-sentence-options]'))),
+        false,
+        'options start closed',
+    )
+    assert.equal(
+        await evaluate(window, () =>
+            document.querySelector('[data-sentence-toolbar]')?.getAttribute('aria-label'),
+        ),
+        '句子练习局部设置',
+    )
+    await waitForImages(window, 'body', mode + ' images complete')
+}
+
+async function readRows(window) {
+    return evaluate(window, () =>
+        Array.from(document.querySelector('[data-sentence-options]')?.children ?? [])
+            .filter((element) => element.tagName === 'DIV')
+            .map((element) => {
+                const toggle = element.querySelector('[role="switch"]')
+                if (toggle)
+                    return [
+                        toggle.getAttribute('aria-label'),
+                        toggle.getAttribute('aria-checked') === 'true',
+                    ]
+                return [
+                    element.getAttribute('aria-label'),
+                    element.querySelector('button[aria-pressed="true"]')?.textContent.trim(),
+                ]
+            }),
+    )
+}
+
+async function measure(window) {
+    return evaluate(window, () => {
+        const box = (element) => {
+            if (!element) return null
+            const rect = element.getBoundingClientRect()
+            const style = getComputedStyle(element)
+            return {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+                fontSize: style.fontSize,
+                lineHeight: style.lineHeight,
+                fontWeight: style.fontWeight,
+                color: style.color,
+                background: style.backgroundColor,
+                cursor: style.cursor,
+            }
+        }
+        const toolbar = document.querySelector('[data-sentence-toolbar]')
+        const options = document.querySelector('[data-sentence-options]')
+        const toggle = options?.querySelector('[role="switch"]')
+        const track = toggle?.querySelector('[aria-hidden="true"]')
+        return {
+            viewport: [innerWidth, innerHeight],
+            theme: document.documentElement.dataset.theme,
+            timer: box(toolbar?.querySelector('[data-sentence-timer]')),
+            timerText: box(toolbar?.querySelector('[data-sentence-timer] > span')),
+            settings: box(toolbar?.querySelector('button[aria-label="本模式设置"]')),
+            popover: box(options),
+            popoverArrow: box(options?.querySelector(':scope > [aria-hidden="true"]')),
+            rows: Array.from(options?.children ?? [])
+                .filter((element) => element.tagName === 'DIV')
+                .map(box),
+            switchLabel: box(toggle?.querySelector('span')),
+            switchTrack: box(track),
+            switchThumb: box(track?.firstElementChild),
+            choices: Array.from(
+                options?.querySelectorAll(':scope > [role="group"] button') ?? [],
+            ).map((button) => ({
+                label: button.textContent.trim(),
+                box: box(button),
+                selected: button.getAttribute('aria-pressed') === 'true',
+            })),
+            interactiveCursors: Array.from(toolbar?.querySelectorAll('button') ?? []).map(
+                (button) => ({
+                    label: button.getAttribute('aria-label'),
+                    cursor: getComputedStyle(button).cursor,
+                }),
+            ),
+            toolbarButtonCount: toolbar?.querySelectorAll('button').length ?? 0,
+            horizontalOverflow: document.documentElement.scrollWidth > innerWidth,
+            toolbarOverflow: toolbar
+                ? toolbar.getBoundingClientRect().right > innerWidth + 1
+                : true,
+            brokenImages: Array.from(document.images)
+                .filter((image) => image.complete && image.naturalWidth === 0)
+                .map((image) => image.src),
+        }
+    })
+}
+
+function assertNear(actual, expected, label) {
+    assert.ok(
+        Math.abs(actual - expected) <= 0.1,
+        label + ': expected ' + expected + ', got ' + actual,
+    )
+}
+
+function assertReference(measured, definition) {
+    assert.deepEqual(measured.viewport, [1920, 1080])
+    assertNear(measured.timer.x, 16, 'timer x')
+    assertNear(measured.timer.y, 95, 'timer y')
+    assertNear(measured.timer.width, 84, 'timer width')
+    assertNear(measured.timer.height, 26, 'timer height')
+    assert.equal(measured.timerText.fontSize, '14px')
+    assert.equal(measured.timerText.lineHeight, '20px')
+    assert.equal(measured.timerText.fontWeight, '400')
+    if (definition.rows.length === 0) {
+        assert.equal(measured.toolbarButtonCount, 0, 'reading toolbar contains the timer only')
+        assert.equal(measured.settings, null)
+        assert.equal(measured.popover, null)
+    } else {
+        assertNear(measured.settings.x, 112, 'settings x')
+        assertNear(measured.settings.y, 95, 'settings y')
+        assertNear(measured.settings.width, 26, 'settings width')
+        assertNear(measured.settings.height, 26, 'settings height')
+        assertNear(measured.popover.x, 93, 'popover x')
+        assertNear(measured.popover.y, 131, 'popover y')
+        assertNear(measured.popover.width, 64, 'popover width')
+        assertNear(measured.popover.height, definition.rows.length * 24, 'popover height')
+        assertNear(measured.popoverArrow.width, 11, 'popover arrow width')
+        assertNear(measured.popoverArrow.height, 6, 'popover arrow height')
+        assert.equal(measured.rows.length, definition.rows.length)
+        for (const row of measured.rows) assertNear(row.height, 24, 'option row height')
+        assert.equal(measured.switchLabel.fontSize, '12px')
+        assert.equal(measured.switchLabel.lineHeight, '18px')
+        assert.equal(measured.switchLabel.fontWeight, '400')
+        assertNear(measured.switchTrack.width, 26, 'switch track width')
+        assertNear(measured.switchTrack.height, 14, 'switch track height')
+        assertNear(measured.switchThumb.width, 12, 'switch thumb width')
+        assertNear(measured.switchThumb.height, 12, 'switch thumb height')
+        for (const choice of measured.choices) {
+            assertNear(choice.box.width, 27, choice.label + ' choice width')
+            assertNear(choice.box.height, 16, choice.label + ' choice height')
+            assert.equal(choice.box.fontSize, '10px')
+            assert.equal(choice.box.lineHeight, '14px')
+            assert.equal(choice.box.fontWeight, '400')
+        }
+    }
+    assert.equal(measured.horizontalOverflow, false)
+    assert.equal(measured.toolbarOverflow, false)
+    assert.deepEqual(measured.brokenImages, [])
+    assert.ok(measured.interactiveCursors.every(({ cursor }) => cursor === 'pointer'))
+}
+
+async function answerState(window) {
+    return evaluate(window, () => {
+        const main = document.querySelector('main[aria-label="练习内容"]')
+        return {
+            search: location.search,
+            progress: document
+                .querySelector('[data-practice-progress]')
+                ?.getAttribute('aria-valuenow'),
+            input: main?.querySelector('input[aria-label="练习答案"]')?.value ?? null,
+            english: Array.from(main?.querySelectorAll('[data-practice-english]') ?? []).map(
+                (element) => element.textContent,
+            ),
+            blocks: Array.from(main?.querySelectorAll('[data-sentence-block]') ?? []).map(
+                (element) => ({
+                    id: element.dataset.sentenceBlock,
+                    label: element.getAttribute('aria-label'),
+                    disabled: element.disabled,
+                }),
+            ),
+            statuses: Array.from(main?.querySelectorAll('[role="status"]') ?? []).map(
+                (element) => element.textContent,
+            ),
+        }
+    })
+}
+
+async function switchMode(window, mode) {
+    await clickText(window, '模式', '[data-practice-header]')
+    await waitFor(
+        window,
+        () => Boolean(document.querySelector('[data-practice-mode-selector="sentence"]')),
+        'sentence mode selector',
+    )
+    await waitForImages(window, '[role="dialog"]', 'initial sentence selector images')
+    await click(window, '[data-practice-mode-option="' + mode + '"]')
+    await waitFor(
+        window,
+        (expected) => {
+            const selector = document.querySelector('[data-practice-mode-selector="sentence"]')
+            const preview = selector?.querySelector('[data-practice-mode-preview]')
+            return (
+                selector?.getAttribute('data-practice-mode-selected') === expected &&
+                preview?.complete &&
+                preview.naturalWidth > 0 &&
+                preview.currentSrc === preview.src
+            )
+        },
+        'sentence preview ' + mode,
+        mode,
+    )
+    await waitForImages(window, '[role="dialog"]', 'selected sentence selector images')
+    await click(window, '[data-practice-mode-start]')
+    await waitFor(
+        window,
+        (expected) =>
+            new URLSearchParams(location.search).get('mode') === expected &&
+            !document.querySelector('[role="dialog"]') &&
+            Boolean(document.querySelector('[data-sentence-toolbar]')),
+        'changed sentence mode ' + mode,
+        mode,
+    )
+    await waitForImages(window, 'body', 'changed sentence page images ' + mode)
+}
+
+async function checkStateLifetime(window, definition) {
+    const hasInput = await evaluate(window, () =>
+        Boolean(document.querySelector('input[aria-label="练习答案"]')),
+    )
+    if (hasInput) {
+        await evaluate(window, () => {
+            const input = document.querySelector('input[aria-label="练习答案"]')
+            Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(
+                input,
+                'sentence draft',
+            )
+            input.dispatchEvent(new Event('input', { bubbles: true }))
+        })
+        await waitFor(
+            window,
+            () =>
+                document.querySelector('input[aria-label="练习答案"]')?.value === 'sentence draft',
+            'input draft',
+        )
+    }
+    const before = await answerState(window)
+    const expected = []
+    for (const [name, value] of definition.rows) {
+        const next =
+            typeof value === 'boolean'
+                ? !value
+                : value === '完整'
+                  ? '拆分'
+                  : value === '拆分'
+                    ? '完整'
+                    : value === '默写'
+                      ? '抄写'
+                      : '默写'
+        expected.push([name, next])
+        if (typeof value === 'boolean')
+            await click(
+                window,
+                '[data-sentence-options] [role="switch"][aria-label="' + name + '"]',
+            )
+        else await clickText(window, next, '[data-sentence-options] [aria-label="' + name + '"]')
+        await waitFor(
+            window,
+            (label, selected) => {
+                const panel = document.querySelector('[data-sentence-options]')
+                return typeof selected === 'boolean'
+                    ? panel
+                          ?.querySelector('[role="switch"][aria-label="' + label + '"]')
+                          ?.getAttribute('aria-checked') === String(selected)
+                    : panel
+                          ?.querySelector(
+                              '[aria-label="' + label + '"] button[aria-pressed="true"]',
+                          )
+                          ?.textContent.trim() === selected
+            },
+            name + ' selected',
+            name,
+            next,
+        )
+        assert.deepEqual(
+            await answerState(window),
+            before,
+            name + ' preserves input, stage, blocks and shown English',
+        )
+    }
+    assert.deepEqual(await readRows(window), expected)
+    for (const [name, selector] of [
+        ['图片', '[data-practice-media]'],
+        ['翻译', '[data-practice-translation]'],
+    ]) {
+        if (!definition.rows.some(([row]) => row === name)) continue
+        assert.equal(
+            await evaluate(
+                window,
+                (target) =>
+                    Boolean(document.querySelector('main[aria-label="练习内容"] ' + target)),
+                selector,
+            ),
+            false,
+            definition.mode + ' hides real ' + name,
+        )
+        await click(window, '[data-sentence-options] [role="switch"][aria-label="' + name + '"]')
+        await waitFor(
+            window,
+            (target) => Boolean(document.querySelector('main[aria-label="练习内容"] ' + target)),
+            definition.mode + ' restores real ' + name,
+            selector,
+        )
+        await click(window, '[data-sentence-options] [role="switch"][aria-label="' + name + '"]')
+    }
+    await closeOptions(window)
+    const settingsBefore = await answerState(window)
+    await clickText(window, '设置', '[data-practice-header]')
+    await waitFor(
+        window,
+        () => Boolean(document.querySelector('[role="dialog"] [aria-label="设置分类"]')),
+        'full settings opens',
+    )
+    await waitForImages(window, '[role="dialog"]', 'full settings images')
+    await click(window, '[role="dialog"] button[aria-label="关闭对话框"]')
+    await waitFor(window, () => !document.querySelector('[role="dialog"]'), 'full settings closes')
+    assert.deepEqual(
+        await answerState(window),
+        settingsBefore,
+        'full settings preserves answer state',
+    )
+    await openOptions(window)
+    assert.deepEqual(await readRows(window), expected, 'full settings preserves local options')
+    await closeOptions(window)
+    await clickText(window, '下一题', '[data-practice-footer]')
+    await waitFor(
+        window,
+        () =>
+            document.querySelector('[data-practice-progress]')?.getAttribute('aria-valuenow') ===
+            '2',
+        'next sentence question',
+    )
+    await openOptions(window)
+    assert.deepEqual(await readRows(window), expected, 'question change preserves local options')
+    await closeOptions(window)
+    await switchMode(window, 'read')
+    await switchMode(window, definition.mode)
+    await openOptions(window)
+    assert.deepEqual(await readRows(window), expected, 'mode reentry restores cached options')
+    assert.equal((await answerState(window)).input ?? '', '', 'mode reentry clears draft')
+    await closeOptions(window)
+    await reloadToolbarPage(window, waitForToolbarResources)
+    await openOptions(window)
+    assert.deepEqual(await readRows(window), expected, 'refresh restores cached local options')
+    await closeOptions(window)
+    return {
+        localChoicesPreserveAnswerState: true,
+        noAnswerLeakedByCopySplitOrCut: true,
+        imageAndTranslationVisibility: true,
+        fullSettingsPreservesInputUrlQuestion: true,
+        questionChangePreservesOptions: true,
+        modeChangeRestoresCachedOptions: true,
+        refreshRestoresCachedOptions: true,
+        inputChecked: hasInput,
+    }
+}
+
+async function press(window, keyCode, modifiers = []) {
+    const electronKey = { Enter: 'Return' }[keyCode] ?? keyCode
+    window.webContents.focus()
+    window.webContents.sendInputEvent({ type: 'keyDown', keyCode: electronKey, modifiers })
+    if (keyCode === 'Enter')
+        window.webContents.sendInputEvent({ type: 'char', keyCode: '\r', modifiers })
+    window.webContents.sendInputEvent({ type: 'keyUp', keyCode: electronKey, modifiers })
+    await delay(75)
+}
+
+async function checkDismissal(window) {
+    await click(window, '[data-sentence-toolbar] button[aria-label="本模式设置"]')
+    await waitFor(
+        window,
+        () =>
+            Boolean(
+                document.querySelector('[data-sentence-options]')?.contains(document.activeElement),
+            ),
+        'initial option focus',
+    )
+    await press(window, 'Escape')
+    await waitFor(
+        window,
+        () =>
+            !document.querySelector('[data-sentence-options]') &&
+            document.activeElement?.getAttribute('aria-label') === '本模式设置',
+        'Escape focus return',
+    )
+    await openOptions(window)
+    await evaluate(window, () =>
+        document
+            .querySelector('[data-practice-progress]')
+            .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })),
+    )
+    await waitFor(
+        window,
+        () => !document.querySelector('[data-sentence-options]'),
+        'outside pointer closes options',
+    )
+    await openOptions(window)
+    await evaluate(window, () => {
+        const controls = document
+            .querySelector('[data-sentence-options]')
+            .querySelectorAll('button')
+        controls[controls.length - 1].focus()
+    })
+    await press(window, 'Tab')
+    await waitFor(
+        window,
+        () => !document.querySelector('[data-sentence-options]'),
+        'Tab leaves options',
+    )
+    return {
+        initialFocusInsideOptions: true,
+        escapeRestoresFocus: true,
+        outsidePointerCloses: true,
+        tabLeavesOptions: true,
+    }
+}
+
+async function capture(window, path, toolbarOnly = false) {
+    await evaluate(window, async () => {
+        await document.fonts.ready
+        await Promise.allSettled(Array.from(document.images, (image) => image.decode()))
+        const painted = () =>
+            new Promise((resolveFrame) =>
+                requestAnimationFrame(() => requestAnimationFrame(resolveFrame)),
+            )
+        await painted()
+        const transitions = document
+            .getAnimations()
+            .filter(
+                (animation) =>
+                    animation.effect?.pseudoElement?.startsWith('::view-transition') ||
+                    animation.animationName?.includes('view-transition'),
+            )
+        await Promise.allSettled(transitions.map((animation) => animation.finished))
+        await painted()
+    })
+    await delay(100)
+    const region = { x: 0, y: 80, width: 220, height: 210 }
+    writeFileSync(
+        resolve(path),
+        (await window.webContents.capturePage(toolbarOnly ? region : undefined)).toPNG(),
+    )
+    if (!toolbarOnly && path.endsWith('-pc.png'))
+        writeFileSync(
+            resolve(path.replace(/-pc\.png$/, '-toolbar.png')),
+            (await window.webContents.capturePage(region)).toPNG(),
+        )
+    return path
+}
+
+async function setTheme(window, origin, theme) {
+    if (
+        await evaluate(
+            window,
+            (expected) => document.documentElement.dataset.theme === expected,
+            theme,
+        )
+    ) {
+        await waitForImages(window, 'body', 'current theme images complete ' + theme)
+        return
+    }
+    if (typeof waitForToolbarResources === 'function') await waitForToolbarResources(window)
+    await window.loadURL(origin + '/settings/?tab=appearance')
+    const label = theme === 'light' ? '白天模式' : '夜间模式'
+    await waitFor(
+        window,
+        (name) => {
+            const input = document.querySelector('input[aria-label="' + name + '"]')
+            return input !== null && !input.matches(':disabled')
+        },
+        'theme editor',
+        label,
+    )
+    await click(window, 'input[aria-label="' + label + '"]')
+    await waitFor(
+        window,
+        (expected) => document.documentElement.dataset.theme === expected,
+        'theme ' + theme,
+        theme,
+    )
+    await waitForImages(window, 'body', 'changed theme images complete ' + theme)
+}
+
+async function runSentenceToolbarChecks(window, origin, label, waitForNetworkIdle) {
+    waitForToolbarResources = waitForNetworkIdle
+    const priorSize = window.getContentSize()
+    const priorZoom = window.webContents.getZoomFactor()
+    const session = window.webContents.session
+    const application = new URL(origin)
+    const manifest = JSON.parse(
+        readFileSync(resolve('dist/production/.export-manifest.json'), 'utf8'),
+    )
+    const exportedFiles = new Set(manifest.files.map((path) => '/' + path))
+    const exportedPages = new Set(manifest.routes)
+    const businessRequests = []
+    const permissionRequests = []
+    let originalTheme
+    let originalToolbarCache
+    const result = {
+        label,
+        status: 'running',
+        modes: [],
+        businessRequests,
+        permissionRequests,
+        limitations: [
+            '计时、完整/拆分、默写/抄写与切读保持本地演示，不新增拆分算法、输入判题、音源或麦克风能力',
+            '切题保持局部设置，切模式按会话边界恢复各模式默认值',
+            'PC计算样式、几何、重排及真实页面缩放由脚本检查，平板/H5视觉和真机兼容待用户验收',
+        ],
+    }
+    session.webRequest.onBeforeSendHeaders((details, callback) => {
+        if (
+            typeof details.webContentsId === 'number' &&
+            details.webContentsId > 0 &&
+            details.webContentsId !== window.webContents.id
+        ) {
+            callback({ requestHeaders: details.requestHeaders })
+            return
+        }
+        const url = new URL(details.url)
+        const sameApplication =
+            url.protocol === application.protocol && url.host === application.host
+        const exportedPage = isExportedPageRequest(details, origin, exportedPages)
+        const exportedAsset =
+            sameApplication &&
+            ['GET', 'HEAD'].includes(details.method) &&
+            exportedFiles.has(url.pathname)
+        if (
+            url.pathname.startsWith('/api/') ||
+            !['GET', 'HEAD'].includes(details.method) ||
+            (!sameApplication && ['http:', 'https:'].includes(url.protocol)) ||
+            (['xhr', 'fetch'].includes(details.resourceType) && !exportedPage && !exportedAsset)
+        )
+            businessRequests.push({
+                url: details.url,
+                method: details.method,
+                type: details.resourceType,
+            })
+        callback({ requestHeaders: details.requestHeaders })
+    })
+    session.setPermissionRequestHandler((_contents, permission, callback) => {
+        permissionRequests.push(permission)
+        callback(false)
+    })
+    try {
+        originalToolbarCache = await readToolbarCache(window, origin)
+        window.setContentSize(1920, 1080)
+        window.webContents.setZoomFactor(1)
+        originalTheme = await evaluate(window, () => document.documentElement.dataset.theme)
+        await setTheme(window, origin, 'dark')
+        for (const definition of modes) {
+            await visitMode(window, origin, definition.mode)
+            if (definition.rows.length > 0) await openOptions(window)
+            assert.deepEqual(
+                await readRows(window),
+                definition.rows,
+                definition.mode + ' row order and defaults',
+            )
+            const reference = await measure(window)
+            assertReference(reference, definition)
+            const screenshot = await capture(
+                window,
+                'dist/sentence-toolbar-' + label.toLowerCase() + '-' + definition.mode + '-pc.png',
+            )
+            const entry = {
+                mode: definition.mode,
+                reference,
+                screenshot,
+                toolbarScreenshot: screenshot.replace(/-pc\.png$/, '-toolbar.png'),
+            }
+            if (definition.rows.length > 0) {
+                entry.lifetime = await checkStateLifetime(window, definition)
+                entry.dismissal = await checkDismissal(window)
+            }
+            result.modes.push(entry)
+        }
+        await setTheme(window, origin, 'light')
+        result.lightTheme = []
+        for (const definition of modes) {
+            await visitMode(window, origin, definition.mode)
+            if (definition.rows.length > 0) await openOptions(window)
+            const reference = await measure(window)
+            assertReference(reference, definition)
+            assert.equal(reference.theme, 'light')
+            const toolbarScreenshot = await capture(
+                window,
+                'dist/sentence-toolbar-' +
+                    label.toLowerCase() +
+                    '-light-' +
+                    definition.mode +
+                    '-toolbar.png',
+                true,
+            )
+            result.lightTheme.push({ mode: definition.mode, reference, toolbarScreenshot })
+            if (definition.rows.length > 0) await closeOptions(window)
+        }
+        await setTheme(window, origin, 'dark')
+        result.pcReflow = []
+        result.pageZoom = []
+        for (const mode of ['listen', 'read', 'translate']) {
+            await visitMode(window, origin, mode)
+            if (mode !== 'read') await openOptions(window)
+            for (const width of [1280, 1440, 2560]) {
+                window.setContentSize(width, 900)
+                await delay(75)
+                const measured = await measure(window)
+                assert.equal(measured.horizontalOverflow, false, mode + ' PC overflow ' + width)
+                assert.equal(measured.toolbarOverflow, false, mode + ' toolbar overflow ' + width)
+                result.pcReflow.push({ mode, width, measured })
+            }
+            window.setContentSize(1920, 1080)
+            for (const factor of [1.25, 1.5, 2]) {
+                window.webContents.setZoomFactor(factor)
+                await delay(75)
+                const measured = await measure(window)
+                assert.equal(
+                    measured.horizontalOverflow,
+                    false,
+                    mode + ' real zoom overflow ' + factor,
+                )
+                assert.equal(
+                    measured.toolbarOverflow,
+                    false,
+                    mode + ' zoom toolbar overflow ' + factor,
+                )
+                assert.equal(
+                    await evaluate(
+                        window,
+                        () => getComputedStyle(document.documentElement).fontSize,
+                    ),
+                    '16px',
+                    'zoom keeps root font size',
+                )
+                result.pageZoom.push({ mode, factor, measured })
+            }
+            window.webContents.setZoomFactor(1)
+            if (mode !== 'read') await closeOptions(window)
+        }
+        assert.deepEqual(businessRequests, [], 'sentence toolbar sends no business requests')
+        assert.deepEqual(
+            permissionRequests,
+            [],
+            'sentence toolbar requests no microphone permission',
+        )
+        result.status = 'passed'
+        return result
+    } catch (error) {
+        result.status = 'failed'
+        result.error = error instanceof Error ? error.message : String(error)
+        try {
+            result.failure = await evaluate(window, () => ({
+                url: location.href,
+                activeElement: document.activeElement?.outerHTML ?? null,
+                options: document.querySelector('[data-sentence-options]')?.outerHTML ?? null,
+            }))
+            result.failureScreenshot = await capture(
+                window,
+                'dist/sentence-toolbar-' + label.toLowerCase() + '-failure.png',
+            )
+        } catch (diagnosticError) {
+            result.diagnosticError =
+                diagnosticError instanceof Error ? diagnosticError.message : String(diagnosticError)
+        }
+        throw error
+    } finally {
+        window.webContents.setZoomFactor(1)
+        window.setContentSize(1920, 1080)
+        try {
+            if (originalTheme === 'dark' || originalTheme === 'light')
+                await setTheme(window, origin, originalTheme)
+        } finally {
+            await restoreToolbarCache(window, originalToolbarCache)
+            session.webRequest.onBeforeSendHeaders(null)
+            session.setPermissionRequestHandler(null)
+            window.webContents.setZoomFactor(priorZoom)
+            window.setContentSize(...priorSize)
+            writeFileSync(
+                resolve('dist/sentence-toolbar-' + label.toLowerCase() + '-validation.json'),
+                JSON.stringify(result, null, 4),
+            )
+        }
+    }
+}
+
+module.exports = { runSentenceToolbarChecks }

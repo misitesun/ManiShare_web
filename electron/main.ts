@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, net, protocol } from 'electron'
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 
@@ -12,6 +12,11 @@ import {
     verifyHtmlIntegrity,
 } from './renderer-contract.js'
 import type { CspManifest } from './renderer-contract.js'
+import {
+    createMediaResponsePlan,
+    readMediaResponseBody,
+    supportsMediaByteRanges,
+} from './media-byte-range.js'
 
 const appProtocol = 'englishlearning'
 const developmentRendererUrl = process.env.DESKTOP_RENDERER_URL
@@ -65,6 +70,22 @@ async function registerRendererProtocol(): Promise<void> {
             if (integrity === undefined || digest(readFileSync(result.file)) !== integrity.digest)
                 return new Response('HTML integrity failure', { status: 500 })
             headers.set('Content-Security-Policy', contentSecurityPolicy(integrity))
+        }
+        if (
+            result.status === 200 &&
+            supportsMediaByteRanges(result.contentType) &&
+            (request.method === 'GET' || request.method === 'HEAD')
+        ) {
+            const plan = createMediaResponsePlan(
+                request.method,
+                request.headers.get('range'),
+                statSync(result.file).size,
+            )
+            for (const [key, value] of Object.entries(plan.headers)) headers.set(key, value)
+            return new Response(readMediaResponseBody(result.file, plan), {
+                headers,
+                status: plan.status,
+            })
         }
         const response = await net.fetch(pathToFileURL(result.file).toString())
         return new Response(response.body, { headers, status: result.status })

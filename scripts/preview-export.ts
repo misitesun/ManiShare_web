@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import {
     contentSecurityPolicy,
@@ -8,6 +8,11 @@ import {
     resolveRendererFile,
     verifyHtmlIntegrity,
 } from '../electron/renderer-contract'
+import {
+    createMediaResponsePlan,
+    readMediaResponseBody,
+    supportsMediaByteRanges,
+} from '../electron/media-byte-range'
 const target = process.argv[2] ?? 'production'
 if (!['production', 'staging'].includes(target)) throw new Error('Invalid preview environment')
 const root = resolve('dist', target)
@@ -36,12 +41,26 @@ createServer((request, response): void => {
         response.end('Not found')
         return
     }
-    const body = readFileSync(result.file)
     const headers: Record<string, string> = {
         'Content-Type': result.contentType,
         'Cache-Control': result.cacheControl,
         'X-Content-Type-Options': 'nosniff',
     }
+    if (
+        result.status === 200 &&
+        supportsMediaByteRanges(result.contentType) &&
+        (request.method === 'GET' || request.method === 'HEAD')
+    ) {
+        const plan = createMediaResponsePlan(
+            request.method,
+            request.headers.range,
+            statSync(result.file).size,
+        )
+        response.writeHead(plan.status, { ...headers, ...plan.headers })
+        response.end(readMediaResponseBody(result.file, plan) ?? undefined)
+        return
+    }
+    const body = readFileSync(result.file)
     if (result.contentType.startsWith('text/html')) {
         const entry = manifest[result.key]
         if (entry === undefined || digest(body) !== entry.digest) {

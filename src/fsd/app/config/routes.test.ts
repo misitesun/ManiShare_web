@@ -30,7 +30,7 @@ test('route builders keep canonical paths and reject unsafe dynamic segments', (
     assert.equal(routePaths.pkArena, '/pk/')
     assert.equal(routePaths.pkMatching, '/pk/matching/')
     assert.equal(routePaths.pkLoading, '/pk/loading/')
-    assert.equal(Object.keys(routePaths).length, 28)
+    assert.equal(Object.keys(routePaths).length, 29)
 })
 
 test('风采大赛通过独立路由进入暂未开放页，保留排行榜后的导航顺序', (): void => {

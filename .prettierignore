@@ -20,3 +20,7 @@ public/
 out/
 next-env.d.ts
 *.tsbuildinfo
+
+# Preserve the original exported animation data and its source digests.
+src/fsd/features/learning-settings/assets/feedback/*.json
+src/fsd/pages/practice/assets/word-card-remember.json

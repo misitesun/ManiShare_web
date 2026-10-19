@@ -49,3 +49,19 @@ test('compact switches keep accessible controlled state when disabled', (): void
     assert.match(html, /aria-checked="false"/)
     assert.match(html, /disabled=""/)
 })
+
+test('practice switches preserve controlled semantics in both states', (): void => {
+    for (const checked of [false, true]) {
+        const html = renderToStaticMarkup(
+            createElement(TldSwitch, {
+                label: '切读',
+                checked,
+                size: 'practice',
+                onCheckedChange: (): void => undefined,
+            }),
+        )
+        assert.match(html, /role="switch"/)
+        assert.match(html, /aria-label="切读"/)
+        assert.match(html, checked ? /aria-checked="true"/ : /aria-checked="false"/)
+    }
+})

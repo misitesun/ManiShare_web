@@ -460,6 +460,66 @@ function validateRendererSource(sourceFile, sourceRoot, errors) {
     const isTestFile = /\.test\.tsx?$/.test(sourceFile.fileName)
     const constInitializers = collectConstInitializers(sourceFile)
     const gradientTextRoot = resolve(sourceRoot, 'fsd', 'shared', 'ui', 'tld-gradient-text')
+    const wordSlotInputPath = resolve(
+        sourceRoot,
+        'fsd',
+        'pages',
+        'practice',
+        'ui',
+        'PracticeWordSlotsInput.tsx',
+    )
+
+    function isExecCommandName(node) {
+        if (node === undefined) return false
+        if (ts.isIdentifier(node) || ts.isStringLiteral(node)) return node.text === 'execCommand'
+        if (ts.isNoSubstitutionTemplateLiteral(node)) return node.text === 'execCommand'
+        return ts.isComputedPropertyName(node) && isExecCommandName(node.expression)
+    }
+
+    function isDestructuredCommandAssignment(node) {
+        if (!ts.isPropertyAssignment(node) && !ts.isShorthandPropertyAssignment(node)) return false
+        if (!isExecCommandName(node.name) || !ts.isObjectLiteralExpression(node.parent))
+            return false
+        let pattern = node.parent
+        while (ts.isParenthesizedExpression(pattern.parent)) pattern = pattern.parent
+        const assignment = pattern.parent
+        return (
+            ts.isBinaryExpression(assignment) &&
+            assignment.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+            assignment.left === pattern
+        )
+    }
+
+    function validateExecCommandAccess(node) {
+        const isMemberAccess =
+            ts.isPropertyAccessExpression(node) && node.name.text === 'execCommand'
+        const isBracketAccess =
+            ts.isElementAccessExpression(node) && isExecCommandName(node.argumentExpression)
+        const isDestructuredAccess =
+            (ts.isBindingElement(node) &&
+                ts.isObjectBindingPattern(node.parent) &&
+                isExecCommandName(node.propertyName ?? node.name)) ||
+            isDestructuredCommandAssignment(node)
+        if (!isMemberAccess && !isBracketAccess && !isDestructuredAccess) return
+
+        const call = node.parent
+        const isDirectTextInsertion =
+            sourceFile.fileName === wordSlotInputPath &&
+            isMemberAccess &&
+            node.questionDotToken === undefined &&
+            ts.isCallExpression(call) &&
+            call.expression === node &&
+            call.questionDotToken === undefined &&
+            call.arguments.length === 3 &&
+            ts.isStringLiteral(call.arguments[0]) &&
+            call.arguments[0].text === 'insertText' &&
+            call.arguments[1].kind === ts.SyntaxKind.FalseKeyword &&
+            !ts.isSpreadElement(call.arguments[2])
+        if (!isDirectTextInsertion)
+            errors.push(
+                `${getNodeLocation(sourceFile, node)} execCommand is restricted to a direct execCommand('insertText', false, text) call in pages/practice/ui/PracticeWordSlotsInput.tsx; aliases, bracket access and other commands are not allowed`,
+            )
+    }
 
     function isGradientTextOuterClassNameForwarding(node) {
         if (
@@ -476,6 +536,7 @@ function validateRendererSource(sourceFile, sourceRoot, errors) {
     }
 
     function visit(node) {
+        validateExecCommandAccess(node)
         if (!isApiImplementation && !isTestFile && ts.isCallExpression(node)) {
             const isGlobalFetch =
                 ts.isIdentifier(node.expression) && node.expression.text === 'fetch'

@@ -153,6 +153,8 @@ export function resolveRendererFile(root: string, requestUrl: string): RendererF
         '.jpg': 'image/jpeg',
         '.jpeg': 'image/jpeg',
         '.gif': 'image/gif',
+        '.wav': 'audio/wav',
+        '.mp4': 'video/mp4',
         '.woff': 'font/woff',
         '.woff2': 'font/woff2',
         '.json': 'application/json',

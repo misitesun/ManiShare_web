@@ -1,10 +1,20 @@
 const assert = require('node:assert/strict')
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, webContents } = require('electron')
 const { writeFileSync, mkdirSync } = require('node:fs')
 const { resolve, dirname } = require('node:path')
 const { pathToFileURL } = require('node:url')
 const { setTimeout: delay } = require('node:timers/promises')
 const { loginFlow } = require('./login-runtime-smoke.cjs')
+const { runPracticeChecks } = require('./practice-runtime-smoke.cjs')
+const { runWordModeChecks } = require('./word-mode-runtime-smoke.cjs')
+const { runWordToolbarChecks } = require('./word-toolbar-runtime-smoke.cjs')
+const { runSentenceToolbarChecks } = require('./sentence-toolbar-runtime-smoke.cjs')
+const { runAudioToolbarChecks } = require('./audio-toolbar-runtime-smoke.cjs')
+const { runAdditionalToolbarChecks } = require('./additional-toolbar-runtime-smoke.cjs')
+const { runPracticeNavigationChecks } = require('./practice-navigation-runtime-smoke.cjs')
+const { runPracticeModesChecks } = require('./practice-modes-runtime-smoke.cjs')
+const { runPracticeShortcutChecks } = require('./practice-shortcuts-runtime-smoke.cjs')
+const { runPracticeTimerChecks } = require('./practice-timer-runtime-smoke.cjs')
 
 const root = resolve(__dirname, '..')
 app.setAppPath(root)
@@ -21,16 +31,67 @@ const report = {
     interactions: [],
     rscResponses: [],
     login: [],
+    progress: [],
 }
 let currentLabel = 'Electron'
+let currentStage = 'startup'
 let requestFailures = []
 let consoleErrors = []
+const requestsInFlight = new Map()
 let timedOut = false
+
+function checkpoint(label, stage) {
+    currentLabel = label
+    currentStage = stage
+    const uptimeSeconds = Math.round(process.uptime() * 10) / 10
+    report.progress.push({ label, stage, uptimeSeconds })
+    console.log(`[runtime-smoke] ${uptimeSeconds}s ${label} ${stage}`)
+}
+
+function writeFailureDiagnostics(error) {
+    report.status = 'failed'
+    report.error = String(error)
+    report.label = currentLabel
+    report.stage = currentStage
+    report.networkFailures = requestFailures
+    report.consoleErrors = consoleErrors
+    report.pendingRequests = [...requestsInFlight.values()]
+    report.windows = BrowserWindow.getAllWindows().map((window) => {
+        try {
+            return {
+                id: window.id,
+                webContentsId: window.webContents.id,
+                url: window.webContents.getURL(),
+                loading: window.webContents.isLoading(),
+            }
+        } catch (windowError) {
+            return { id: window.id, error: String(windowError) }
+        }
+    })
+    const output = resolve(root, 'dist/runtime-smoke.json')
+    mkdirSync(dirname(output), { recursive: true })
+    writeFileSync(output, JSON.stringify(report, null, 4))
+}
+
+async function tracedFlow(label, name, operation) {
+    checkpoint(label, name + ':start')
+    const result = await operation()
+    checkpoint(label, name + ':complete')
+    return result
+}
+
+// 全部练习工具栏、40组合导航、缓存恢复、两主题与真实缩放检查；保持720秒总时限并保存超时进度。
 const timeout = setTimeout(() => {
     timedOut = true
     console.error('Runtime smoke timed out')
-    app.exit(1)
-}, 120000)
+    try {
+        writeFailureDiagnostics('Runtime smoke timed out after 720000ms')
+    } catch (diagnosticError) {
+        console.error('Cannot save runtime timeout diagnostics:', diagnosticError)
+    } finally {
+        app.exit(1)
+    }
+}, 720000)
 
 async function waitFor(window, expression, description) {
     for (let attempt = 0; attempt < 80; attempt++) {
@@ -40,6 +101,16 @@ async function waitFor(window, expression, description) {
     throw new Error(`Timed out: ${description}`)
 }
 function observe(window, label) {
+    const observedWindowId = window.webContents.id
+    window.webContents.session.webRequest.onBeforeRequest((details, callback) => {
+        if (!details.webContentsId || details.webContentsId === observedWindowId)
+            requestsInFlight.set(details.id, {
+                windowId: observedWindowId,
+                url: details.url,
+                startStage: currentStage,
+            })
+        callback({})
+    })
     window.webContents.on('console-message', (event) => {
         if (event.level === 'error' || event.level === 'warning')
             consoleErrors.push({ label, message: event.message })
@@ -58,10 +129,26 @@ function observe(window, label) {
         callback({})
     })
     window.webContents.session.webRequest.onErrorOccurred((details) => {
+        const startedRequest = requestsInFlight.get(details.id)
+        requestsInFlight.delete(details.id)
+        const requester =
+            typeof details.webContentsId === 'number' && details.webContentsId > 0
+                ? webContents.fromId(details.webContentsId)
+                : undefined
         if (details.error !== 'net::ERR_ABORTED')
-            requestFailures.push({ label, url: details.url, error: details.error })
+            requestFailures.push({
+                label,
+                url: details.url,
+                error: details.error,
+                webContentsId: details.webContentsId,
+                documentUrl: requester && !requester.isDestroyed() ? requester.getURL() : undefined,
+                referrer: details.referrer,
+                startStage: startedRequest?.startStage,
+                errorStage: currentStage,
+            })
     })
     window.webContents.session.webRequest.onCompleted((details) => {
+        requestsInFlight.delete(details.id)
         if (details.statusCode >= 400)
             requestFailures.push({
                 label,
@@ -70,6 +157,21 @@ function observe(window, label) {
                 resourceType: details.resourceType,
             })
     })
+}
+async function waitForResourcesBeforeRefresh(window) {
+    let quietPasses = 0
+    for (let attempt = 0; attempt < 100; attempt++) {
+        const pending = [...requestsInFlight.values()].filter(
+            (request) => request.windowId === window.webContents.id,
+        )
+        quietPasses = pending.length === 0 ? quietPasses + 1 : 0
+        if (quietPasses >= 5) return
+        await delay(100)
+    }
+    throw new Error(
+        'Settings refresh resources did not settle: ' +
+            JSON.stringify([...requestsInFlight.values()]),
+    )
 }
 async function snapshot(window) {
     return window.webContents.executeJavaScript(
@@ -93,6 +195,7 @@ async function click(window, expression, expectedPath) {
 }
 async function interactiveFlow(window, origin, label) {
     currentLabel = label
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/profile/notes/?view=course-packages&keep=1')
     await waitFor(
         window,
@@ -171,6 +274,7 @@ async function interactiveFlow(window, origin, label) {
         ),
         'course-packages',
     )
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/ai-tutor/?mentor=sarah-british&scene=daily')
     await waitFor(
         window,
@@ -253,6 +357,7 @@ async function interactiveFlow(window, origin, label) {
         '',
         'leaving chat destroys the temporary session',
     )
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/profile/notes/?view=course-packages&keep=1')
     await waitFor(
         window,
@@ -288,6 +393,7 @@ async function interactiveFlow(window, origin, label) {
         `document.querySelector('input[aria-label="白天模式"]').click()`,
     )
     await waitFor(window, `document.documentElement.dataset.theme === 'light'`, 'theme event')
+    await waitForResourcesBeforeRefresh(window)
     await new Promise((resolveReload) => {
         window.webContents.once('did-finish-load', resolveReload)
         window.reload()
@@ -329,14 +435,15 @@ const settingsControlsSnapshot = `(() => {
 
 async function settingsPersistenceFlow(window, origin, label) {
     const tabs = [
-        ['pronunciation', [1, 4, 3, 0]],
-        ['sound', [4, 4, 6, 0]],
-        ['answer', [1, 0, 9, 0]],
-        ['listening', [1, 0, 1, 0]],
-        ['appearance', [4, 2, 3, 4]],
+        ['pronunciation', [1, 4, 0, 0]],
+        ['specialized', [3, 0, 4, 0]],
+        ['answer', [1, 0, 4, 0]],
+        ['effects', [4, 4, 8, 1]],
+        ['appearance', [5, 2, 5, 2]],
     ]
     const expected = new Map()
     for (const [tab, counts] of tabs) {
+        await waitForResourcesBeforeRefresh(window)
         await window.loadURL(origin + '/settings/?tab=' + tab)
         await waitFor(window, `document.body.innerText.includes('本机设置已就绪')`, tab + ' ready')
         const before = await window.webContents.executeJavaScript(settingsControlsSnapshot)
@@ -403,8 +510,16 @@ async function settingsPersistenceFlow(window, origin, label) {
         )
         expected.set(tab, desired)
     }
+    // 答题/外观的音标入口共用同一字段，以最后一次修改的可见值验证两处恢复。
+    const appearancePhonetics = expected
+        .get('appearance')
+        .switches.find(([name]) => name === '答题音标显示')[1]
+    expected.get('answer').switches = expected
+        .get('answer')
+        .switches.map(([name, value]) => [name, name === '显示音标' ? appearancePhonetics : value])
     // 在其他 Tab 继续修改后再逐页刷新，确认不会覆盖前面保存的字段。
     for (const [tab] of tabs) {
+        await waitForResourcesBeforeRefresh(window)
         await window.loadURL(origin + '/settings/?tab=' + tab)
         await waitFor(
             window,
@@ -417,30 +532,68 @@ async function settingsPersistenceFlow(window, origin, label) {
             tab + ' full refresh restoration',
         )
     }
+    for (const [legacy, current] of [
+        ['sound', 'effects'],
+        ['listening', 'specialized'],
+    ]) {
+        await waitForResourcesBeforeRefresh(window)
+        await window.loadURL(origin + '/settings/?tab=' + legacy + '&keep=legacy-settings')
+        await waitFor(
+            window,
+            `document.querySelector('#settings-${current}') && document.body.innerText.includes('本机设置已就绪')`,
+            'legacy settings tab ' + legacy,
+        )
+        assert.ok(
+            await window.webContents.executeJavaScript(
+                `location.search.includes('keep=legacy-settings')`,
+            ),
+        )
+    }
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=shortcuts')
     await waitFor(window, `document.body.innerText.includes('本机设置已就绪')`, 'shortcuts ready')
-    for (const [name, key] of [
-        ['播放朗读', 'k'],
-        ['标记掌握', 'l'],
-        ['标记生词', 'j'],
-    ]) {
+    const shortcutSnapshot = `Array.from(document.querySelectorAll('[role="tabpanel"] kbd')).map(element => element.textContent)`
+    const expectedShortcuts = [
+        'Shift + L',
+        'Shift + J',
+        'Shift + K',
+        'Shift + ArrowLeft',
+        'Shift + ArrowRight',
+    ]
+    assert.deepEqual(
+        await window.webContents.executeJavaScript(shortcutSnapshot),
+        expectedShortcuts,
+        label + ' restores five defaults from legacy preferences without shortcut fields',
+    )
+    for (const [index, [name, key]] of [
+        ['朗读', 'p'],
+        ['掌握', 'o'],
+        ['不熟', 'i'],
+    ].entries()) {
         await window.webContents.executeJavaScript(
             `Array.from(document.querySelectorAll('button')).find(element => element.textContent === ${JSON.stringify('编辑' + name)}).click()`,
         )
         await waitFor(window, `document.querySelector('[role="dialog"]')`, name + ' editor')
         await window.webContents.executeJavaScript(
-            `window.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, ctrlKey: true, bubbles: true }))`,
+            `window.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, shiftKey: true, bubbles: true }))`,
         )
         await waitFor(
             window,
-            `document.querySelector('[role="textbox"]').textContent === ${JSON.stringify('Ctrl + ' + key.toUpperCase())}`,
+            `document.querySelector('[role="textbox"]').textContent === ${JSON.stringify('Shift + ' + key.toUpperCase())}`,
             name + ' captured',
         )
         await window.webContents.executeJavaScript(
             `Array.from(document.querySelectorAll('[role="dialog"] button')).find(element => element.textContent === '确认').click()`,
         )
         await waitFor(window, `!document.querySelector('[role="dialog"]')`, name + ' saved')
+        expectedShortcuts[index] = 'Shift + ' + key.toUpperCase()
+        assert.deepEqual(
+            await window.webContents.executeJavaScript(shortcutSnapshot),
+            expectedShortcuts,
+            label + ' saves ' + name + ' without resetting other bindings or cut defaults',
+        )
     }
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=shortcuts')
     await waitFor(
         window,
@@ -448,11 +601,11 @@ async function settingsPersistenceFlow(window, origin, label) {
         'shortcuts restored',
     )
     assert.deepEqual(
-        await window.webContents.executeJavaScript(
-            `Array.from(document.querySelectorAll('kbd')).map(element => element.textContent)`,
-        ),
-        ['Ctrl + K', 'Ctrl + L', 'Ctrl + J'],
+        await window.webContents.executeJavaScript(shortcutSnapshot),
+        expectedShortcuts,
+        label + ' refresh restores three custom bindings and both cut defaults',
     )
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=system')
     await waitFor(
         window,
@@ -462,22 +615,61 @@ async function settingsPersistenceFlow(window, origin, label) {
     report.interactions.push({
         label,
         action: 'settings-all-controls-save-refresh',
+        shortcutBindings: expectedShortcuts,
         result: 'passed',
     })
 }
 
 async function settingsFlow(window, origin, label) {
+    await waitForResourcesBeforeRefresh(window)
+    await window.loadURL(origin + '/settings/?tab=answer')
+    await waitFor(window, `document.body.innerText.includes('本机设置已就绪')`, 'answer ready')
+    const preferencesKey = 'english-learning-preferences-v1'
+    const legacyAnswer = {
+        showTranslation: false,
+        handwriting: true,
+        inputCompatibility: true,
+        autoShowAnswer: true,
+        autoReadOnChange: false,
+        chapterEnd: '循环播放',
+        autoNextOnRead: true,
+    }
+    await window.webContents.executeJavaScript(
+        `localStorage.setItem(${JSON.stringify(preferencesKey)}, JSON.stringify({version:1,values:${JSON.stringify({ ...legacyAnswer, answerAfterErrors: '错误3次后' })}}))`,
+    )
+    await waitForResourcesBeforeRefresh(window)
+    await window.loadURL(origin + '/settings/?tab=answer')
+    await waitFor(
+        window,
+        `document.querySelector('button[aria-label="错误几次时显示答案：错误3次后"]') && document.body.innerText.includes('本机设置已就绪')`,
+        'legacy answer choice restored',
+    )
     await settingsPersistenceFlow(window, origin, label)
+    const persistedAnswer = await window.webContents.executeJavaScript(
+        `JSON.parse(localStorage.getItem(${JSON.stringify(preferencesKey)})).values`,
+    )
+    for (const [key, value] of Object.entries(legacyAnswer))
+        assert.equal(persistedAnswer[key], value, label + ' retains hidden ' + key)
+    for (const [key, value] of Object.entries({
+        playShortcut: 'Shift + P',
+        masteredShortcut: 'Shift + O',
+        unfamiliarShortcut: 'Shift + I',
+        previousShortcut: 'Shift + ArrowLeft',
+        nextShortcut: 'Shift + ArrowRight',
+    }))
+        assert.equal(persistedAnswer[key], value, label + ' persists shortcut field ' + key)
+
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=pronunciation&keep=settings-smoke')
     await waitFor(window, `document.body.innerText.includes('本机设置已就绪')`, 'settings ready')
     await window.webContents.executeJavaScript(`(() => {
-        const input = document.querySelector('input[aria-label="发音人语速"]');
+        const input = document.querySelector('input[aria-label="倍速调节"]');
         Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, '1.4');
         input.dispatchEvent(new Event('input', { bubbles: true }));
     })()`)
     await waitFor(
         window,
-        `document.querySelector('input[aria-label="发音人语速"]').value === '1.4' && document.querySelector('output').textContent.includes('1.4')`,
+        `document.querySelector('input[aria-label="倍速调节"]').value === '1.4' && document.querySelector('output').textContent.includes('1.4')`,
         'settings range change',
     )
     await window.webContents.executeJavaScript(
@@ -489,17 +681,26 @@ async function settingsFlow(window, origin, label) {
         'settings tab keeps query',
     )
     await window.webContents.executeJavaScript(
-        `document.querySelector('input[aria-label="现代体"]').click()`,
+        `Array.from(document.querySelectorAll('[role="tabpanel"] button[aria-haspopup="menu"]')).find(element => element.getAttribute('aria-label').startsWith('答题字体：')).click()`,
     )
     await waitFor(
         window,
-        `document.querySelector('input[aria-label="现代体"]').checked`,
+        `document.querySelector('[role="menu"][aria-hidden="false"]')`,
+        'font menu',
+    )
+    await window.webContents.executeJavaScript(
+        `Array.from(document.querySelectorAll('[role="menu"][aria-hidden="false"] [role="menuitemradio"]')).find(element => element.textContent === '现代体').click()`,
+    )
+    await waitFor(
+        window,
+        `document.querySelector('button[aria-label="答题字体：现代体"]')`,
         'settings font choice',
     )
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=appearance&keep=settings-smoke')
     await waitFor(
         window,
-        `document.querySelector('input[aria-label="现代体"]')?.checked && document.body.innerText.includes('本机设置已就绪')`,
+        `document.querySelector('button[aria-label="答题字体：现代体"]') && document.body.innerText.includes('本机设置已就绪')`,
         'settings refresh restore',
     )
     assert.ok(
@@ -547,10 +748,7 @@ async function settingsFlow(window, origin, label) {
         ),
         'rgb(82, 163, 255)',
     )
-    for (const [name, color] of [
-        ['练习页面字体颜色', '#abcdef'],
-        ['练习页面背景颜色', '#123456'],
-    ]) {
+    for (const [name, color] of [['练习页面字体颜色', '#abcdef']]) {
         await window.webContents.executeJavaScript(
             `document.querySelector('button[aria-label=${JSON.stringify('编辑' + name)}]').click()`,
         )
@@ -565,34 +763,35 @@ async function settingsFlow(window, origin, label) {
         )
         await waitFor(window, `!document.querySelector('[role="dialog"]')`, name + ' saved')
     }
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=appearance')
     await waitFor(
         window,
         `document.body.innerText.includes('本机设置已就绪')`,
-        'three colors restored',
+        'two colors restored',
     )
-    const colorValues = `Array.from(document.querySelectorAll('[role="tabpanel"] button[aria-label^="编辑"]')).map(element => element.textContent)`
+    const colorValues = `Array.from(document.querySelectorAll('[role="tabpanel"] button[aria-label^="编辑"]')).map(element => element.getAttribute('aria-description'))`
     assert.deepEqual(await window.webContents.executeJavaScript(colorValues), [
         '#52a3ff',
         '#abcdef',
-        '#123456',
     ])
     assert.deepEqual(
         await window.webContents.executeJavaScript(`(() => {
         const preview = document.querySelector('.bg-practice-background');
-        return ['--app-color-practice-answer', '--app-color-practice-text', '--app-color-practice-background'].map(name => getComputedStyle(preview).getPropertyValue(name).trim());
+        return ['--app-color-practice-answer', '--app-color-practice-text'].map(name => getComputedStyle(preview).getPropertyValue(name).trim());
     })()`),
-        ['#52a3ff', '#abcdef', '#123456'],
+        ['#52a3ff', '#abcdef'],
     )
     const beforeColorReset = await window.webContents.executeJavaScript(settingsControlsSnapshot)
     await window.webContents.executeJavaScript(
-        `Array.from(document.querySelectorAll('button')).find(element => element.textContent === '重置为默认方案').click()`,
+        `(() => { for (const name of ['恢复答题默认主题色', '恢复文字默认主题色']) Array.from(document.querySelectorAll('button')).find(element => element.textContent === name).click() })()`,
     )
     await waitFor(
         window,
         `${colorValues}.every(value => value === '默认主题色')`,
-        'three colors reset',
+        'two colors reset',
     )
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=appearance')
     await waitFor(
         window,
@@ -602,14 +801,13 @@ async function settingsFlow(window, origin, label) {
     assert.deepEqual(await window.webContents.executeJavaScript(colorValues), [
         '默认主题色',
         '默认主题色',
-        '默认主题色',
     ])
     assert.deepEqual(
         await window.webContents.executeJavaScript(`(() => {
         const preview = document.querySelector('.bg-practice-background');
         const style = getComputedStyle(preview);
         const root = getComputedStyle(document.documentElement);
-        return [style.getPropertyValue('--app-color-practice-answer').trim() === root.getPropertyValue('--app-color-brand').trim(), style.getPropertyValue('--app-color-practice-text').trim() === root.getPropertyValue('--app-color-text-primary').trim(), style.backgroundColor === getComputedStyle(document.querySelector('[role="tabpanel"] section.bg-canvas')).backgroundColor];
+        return [style.getPropertyValue('--app-color-practice-answer').trim() === root.getPropertyValue('--app-color-brand').trim(), style.getPropertyValue('--app-color-practice-text').trim() === root.getPropertyValue('--app-color-text-primary').trim(), style.backgroundColor === getComputedStyle(document.querySelector('button[aria-label="默认练习背景"] span')).backgroundColor];
     })()`),
         [true, true, true],
     )
@@ -620,25 +818,24 @@ async function settingsFlow(window, origin, label) {
     )
     assert.equal(
         await window.webContents.executeJavaScript(
-            `document.querySelector('input[aria-label="现代体"]').checked`,
+            `!!document.querySelector('button[aria-label="答题字体：现代体"]')`,
         ),
         true,
     )
-    await window.webContents.executeJavaScript(
-        `document.querySelector('input[aria-label="默认字体"]').click()`,
-    )
+
     await window.webContents.executeJavaScript(
         `document.querySelector('[role="tab"][aria-controls="settings-pronunciation"]').click()`,
     )
     await waitFor(
         window,
-        `document.querySelector('input[aria-label="发音人语速"]')?.value === '1.4'`,
+        `document.querySelector('input[aria-label="倍速调节"]')?.value === '1.4'`,
         'settings range survives navigation',
     )
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/settings/?tab=pronunciation')
     await waitFor(
         window,
-        `document.querySelector('input[aria-label="发音人语速"]')?.value === '1.4'`,
+        `document.querySelector('input[aria-label="倍速调节"]')?.value === '1.4'`,
         'settings range survives refresh',
     )
     await window.webContents.executeJavaScript(
@@ -1050,6 +1247,7 @@ async function routeSweep(window, origin, label) {
         '/pk/',
         '/pk/matching/',
         '/pk/loading/',
+        '/practice/?demo=sentence-basic&mode=translate',
         '/login/',
         '/ai-tutor/',
         '/ai-tutor/mentors/jason/scenes/directions/',
@@ -1075,7 +1273,11 @@ async function routeSweep(window, origin, label) {
         '/courses/search/?q=hello%20world',
     ]
     for (const path of paths) {
+        checkpoint(label, 'routeSweep drain:start ' + path)
+        await waitForResourcesBeforeRefresh(window)
+        checkpoint(label, 'routeSweep load:start ' + path)
         await window.loadURL(origin + path)
+        checkpoint(label, 'routeSweep load:complete ' + path)
         await waitFor(
             window,
             `document.readyState === 'complete' && document.body.innerText.length > 0`,
@@ -1091,6 +1293,7 @@ async function routeSweep(window, origin, label) {
         assert.equal(value.horizontalOverflow, false, `${label} PC horizontal overflow ${path}`)
         assert.deepEqual(value.brokenImages, [], `${label} broken images ${path}`)
         report.routes.push({ label, path, brokenImages: 0, horizontalOverflow: false })
+        checkpoint(label, 'routeSweep verified ' + path)
     }
 }
 
@@ -1193,6 +1396,7 @@ async function chineseHeaderFlow(window, origin, label) {
 }
 
 async function verifyChineseHeader(window, origin, label) {
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/')
     await waitFor(
         window,
@@ -1207,6 +1411,7 @@ async function verifyChineseHeader(window, origin, label) {
         localStorage.setItem('english-learning-language', JSON.stringify('en-US'));
         return previous;
     })()`)
+    await waitForResourcesBeforeRefresh(window)
     await window.loadURL(origin + '/')
     await waitFor(
         window,
@@ -1279,6 +1484,7 @@ async function verifyChineseHeader(window, origin, label) {
         ['dark', '夜间模式'],
         ['light', '白天模式'],
     ]) {
+        await waitForResourcesBeforeRefresh(window)
         await window.loadURL(origin + '/settings/?tab=appearance')
         await waitFor(
             window,
@@ -1293,6 +1499,7 @@ async function verifyChineseHeader(window, origin, label) {
             `document.documentElement.dataset.theme === ${JSON.stringify(theme)}`,
             'header theme applied',
         )
+        await waitForResourcesBeforeRefresh(window)
         await window.loadURL(origin + '/')
         await waitFor(
             window,
@@ -1354,19 +1561,28 @@ async function verifyChineseHeader(window, origin, label) {
             )
         }
     }
+    checkpoint(label, 'verifyChineseHeader final-screenshots:complete')
+    checkpoint(label, 'verifyChineseHeader resize1440:start')
     window.setSize(1440, 900)
+    checkpoint(label, 'verifyChineseHeader resize1440:called')
     await waitFor(window, 'innerWidth === 1440', 'header narrow PC')
+    checkpoint(label, 'verifyChineseHeader resize1440:complete')
     await waitFor(
         window,
         `(() => { const r = ${panel('玩法介绍')}.getBoundingClientRect(); return r.left>=0 && r.right<=innerWidth && r.bottom<=innerHeight; })()`,
         'header QR repositions within narrow viewport',
     )
+    checkpoint(label, 'verifyChineseHeader QR-reposition:complete')
+    await waitForResourcesBeforeRefresh(window)
+    checkpoint(label, 'verifyChineseHeader restore-theme load:start')
     await window.loadURL(origin + '/settings/?tab=appearance')
+    checkpoint(label, 'verifyChineseHeader restore-theme load:complete')
     await waitFor(
         window,
         `!!document.querySelector('input[aria-label="夜间模式"]') && !document.querySelector('fieldset').disabled`,
         'restore header test theme',
     )
+    checkpoint(label, 'verifyChineseHeader restore-theme controls:ready')
     await window.webContents.executeJavaScript(
         `document.querySelector('input[aria-label=${JSON.stringify(originalTheme === 'dark' ? '夜间模式' : '白天模式')} ]').click()`,
     )
@@ -1375,9 +1591,12 @@ async function verifyChineseHeader(window, origin, label) {
         `document.documentElement.dataset.theme === ${JSON.stringify(originalTheme)}`,
         'header test theme restored',
     )
+    checkpoint(label, 'verifyChineseHeader restore-theme:complete')
     await window.webContents.executeJavaScript(
         `(() => { const previous = ${JSON.stringify(legacyLocale)}; if (previous === null) localStorage.removeItem('english-learning-language'); else localStorage.setItem('english-learning-language', previous); })()`,
     )
+    await waitForResourcesBeforeRefresh(window)
+    checkpoint(label, 'verifyChineseHeader cleanup:complete')
     report.interactions.push({
         label,
         chineseOnlyIgnoresLegacyLocale: true,
@@ -2001,36 +2220,177 @@ async function isolatedLoginFlow(referenceWindow, origin, label) {
         await production.webContents.executeJavaScript('window.learningDesktop.getAppVersion()'),
         app.getVersion(),
     )
-    await interactiveFlow(production, 'englishlearning://app', 'Electron')
-    await settingsFlow(production, 'englishlearning://app', 'Electron')
-    await pkArenaFlow(production, 'englishlearning://app', 'Electron')
-    await pkSessionFlow(production, 'englishlearning://app', 'Electron')
-    await homeEntryFlow(production, 'englishlearning://app', 'Electron')
-    await homeRedesignFlow(production, 'englishlearning://app', 'Electron')
-    await chineseHeaderFlow(production, 'englishlearning://app', 'Electron')
-    await routeSweep(production, 'englishlearning://app', 'Electron')
-    await unknownPageChecks(production, 'englishlearning://app', 'Electron')
-    await missingResourceChecks(production, 'englishlearning://app', 'Electron')
-    await localDesktopChecks(production)
+    report.practiceShortcuts ??= []
+    app.focus({ steal: true })
+    production.show()
+    production.focus()
+    production.webContents.focus()
+    await waitFor(production, 'document.hasFocus()', 'practice foreground host')
+    report.practiceShortcuts.push(
+        await runPracticeShortcutChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+        ),
+    )
+    report.practiceTimers = [
+        await runPracticeTimerChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+            { lifecycleOnly: true },
+        ),
+    ]
+    await runPracticeChecks(production, 'englishlearning://app', 'Electron', report)
+    report.wordToolbar ??= []
+    report.wordToolbar.push(
+        await runWordToolbarChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+        ),
+    )
+    report.sentenceToolbar ??= []
+    report.sentenceToolbar.push(
+        await runSentenceToolbarChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+        ),
+    )
+    report.audioToolbar ??= []
+    report.audioToolbar.push(
+        await runAudioToolbarChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+        ),
+    )
+    report.additionalToolbar ??= []
+    report.additionalToolbar.push(
+        await runAdditionalToolbarChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+        ),
+    )
+    report.practiceNavigation ??= []
+    report.practiceNavigation.push(
+        await runPracticeNavigationChecks(
+            production,
+            'englishlearning://app',
+            'Electron',
+            waitForResourcesBeforeRefresh,
+        ),
+    )
+    report.wordMode ??= []
+    report.wordMode.push(await runWordModeChecks(production, 'englishlearning://app', 'Electron'))
+    report.practiceModes ??= []
+    report.practiceModes.push(
+        await runPracticeModesChecks(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'interactiveFlow', () =>
+        interactiveFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'settingsFlow', () =>
+        settingsFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'pkArenaFlow', () =>
+        pkArenaFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'pkSessionFlow', () =>
+        pkSessionFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'homeEntryFlow', () =>
+        homeEntryFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'homeRedesignFlow', () =>
+        homeRedesignFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'chineseHeaderFlow', () =>
+        chineseHeaderFlow(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'routeSweep', () =>
+        routeSweep(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'unknownPageChecks', () =>
+        unknownPageChecks(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'missingResourceChecks', () =>
+        missingResourceChecks(production, 'englishlearning://app', 'Electron'),
+    )
+    await tracedFlow('Electron', 'localDesktopChecks', () => localDesktopChecks(production))
+    checkpoint('Web', 'window:create:start')
     const browser = new BrowserWindow({
         show: false,
         width: 1440,
         height: 900,
         webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false },
     })
+    checkpoint('Web', 'window:create:complete')
     observe(browser, 'Web')
     const origin = process.env.SMOKE_WEB_ORIGIN
     assert.ok(origin)
-    await interactiveFlow(browser, origin, 'Web')
-    await settingsFlow(browser, origin, 'Web')
-    await pkArenaFlow(browser, origin, 'Web')
-    await pkSessionFlow(browser, origin, 'Web')
-    await homeEntryFlow(browser, origin, 'Web')
-    await homeRedesignFlow(browser, origin, 'Web')
-    await chineseHeaderFlow(browser, origin, 'Web')
-    await routeSweep(browser, origin, 'Web')
-    await unknownPageChecks(browser, origin, 'Web')
-    await missingResourceChecks(browser, origin, 'Web')
+    // A new BrowserWindow has no document: executeJavaScript can wait indefinitely
+    // until its first navigation. Initialize the real catalog before helper setup.
+    checkpoint('Web', 'initial-page load:start /practice/')
+    await browser.loadURL(origin + '/practice/')
+    checkpoint('Web', 'initial-page load:complete /practice/')
+    await waitFor(
+        browser,
+        `document.readyState === 'complete' && document.querySelector('main h1')?.textContent === '练习页 · 第一版演示'`,
+        'Web initial practice catalog mounted',
+    )
+    checkpoint('Web', 'initial-page mounted /practice/')
+    app.focus({ steal: true })
+    browser.show()
+    browser.focus()
+    browser.webContents.focus()
+    await waitFor(browser, 'document.hasFocus()', 'Web practice foreground host')
+    report.practiceShortcuts.push(
+        await runPracticeShortcutChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh),
+    )
+    report.practiceTimers.push(
+        await runPracticeTimerChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh, {
+            lifecycleOnly: true,
+        }),
+    )
+    await runPracticeChecks(browser, origin, 'Web', report)
+    report.wordToolbar.push(
+        await runWordToolbarChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh),
+    )
+    report.sentenceToolbar.push(
+        await runSentenceToolbarChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh),
+    )
+    report.audioToolbar.push(
+        await runAudioToolbarChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh),
+    )
+    report.additionalToolbar.push(
+        await runAdditionalToolbarChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh),
+    )
+    report.practiceNavigation.push(
+        await runPracticeNavigationChecks(browser, origin, 'Web', waitForResourcesBeforeRefresh),
+    )
+    report.wordMode.push(await runWordModeChecks(browser, origin, 'Web'))
+    report.practiceModes.push(await runPracticeModesChecks(browser, origin, 'Web'))
+    await tracedFlow('Web', 'interactiveFlow', () => interactiveFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'settingsFlow', () => settingsFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'pkArenaFlow', () => pkArenaFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'pkSessionFlow', () => pkSessionFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'homeEntryFlow', () => homeEntryFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'homeRedesignFlow', () => homeRedesignFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'chineseHeaderFlow', () => chineseHeaderFlow(browser, origin, 'Web'))
+    await tracedFlow('Web', 'routeSweep', () => routeSweep(browser, origin, 'Web'))
+    await tracedFlow('Web', 'unknownPageChecks', () => unknownPageChecks(browser, origin, 'Web'))
+    await tracedFlow('Web', 'missingResourceChecks', () =>
+        missingResourceChecks(browser, origin, 'Web'),
+    )
     report.login.push(await isolatedLoginFlow(production, 'englishlearning://app', 'Electron'))
     report.login.push(await isolatedLoginFlow(browser, origin, 'Web'))
     const successfulRsc = report.rscResponses.filter((response) => response.status === 200)
@@ -2063,12 +2423,7 @@ async function isolatedLoginFlow(referenceWindow, origin, label) {
     clearTimeout(timeout)
     app.exit(0)
 })().catch((error) => {
-    report.status = 'failed'
-    report.error = String(error)
-    report.label = currentLabel
-    report.networkFailures = requestFailures
-    report.consoleErrors = consoleErrors
-    writeFileSync(resolve(root, 'dist/runtime-smoke.json'), JSON.stringify(report, null, 4))
+    writeFailureDiagnostics(error)
     console.error(error)
     clearTimeout(timeout)
     app.exit(1)

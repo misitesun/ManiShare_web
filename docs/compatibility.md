@@ -13,6 +13,7 @@
 | 领域 | 触发关键词 | 契约 |
 | --- | --- | --- |
 | Next 静态导出 | hydration、RSC、CSP、Electron protocol | [Next 静态运行时契约](compatibility/next-static-runtime.md) |
+| 练习文本输入 | 原生撤销、词槽、IME、选区 | [练习文本输入契约](compatibility/text-input.md) |
 | 主题切换 | theme、View Transition、`startViewTransition`、reduced motion | [主题切换兼容性契约](compatibility/theme-transition.md) |
 
 未来契约继续按领域新增为 `docs/compatibility/<capability>.md`，例如 `audio-playback.md`、`text-input.md` 或 `desktop-runtime.md`。只有出现实际能力和可复现证据时才创建对应文件，不预建空目录或模板文件。

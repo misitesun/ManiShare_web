@@ -42,11 +42,40 @@ test('表单及描边按钮保留原生提交、禁用和可访问名称', (): v
     assert.match(markup, />注册<\/span>/)
 })
 
-test('TldButton defaults to a non-submitting native button', (): void => {
-    const markup = renderToStaticMarkup(createElement(TldButton, null, '确认'))
+test('默认和弹窗操作尺寸都保留非提交按钮语义', (): void => {
+    for (const props of [
+        {},
+        { size: 'dialog-action' as const },
+        { size: 'dialog-compact' as const },
+        { size: 'dialog-emphasis' as const },
+        { size: 'dialog-slim' as const },
+        { size: 'panel-action' as const },
+    ]) {
+        const markup = renderToStaticMarkup(createElement(TldButton, props, '确认'))
+        assert.match(markup, /<button[^>]*type="button"/)
+        assert.match(markup, />确认<\/span>/)
+    }
+})
 
-    assert.match(markup, /<button[^>]*type="button"/)
-    assert.match(markup, />确认<\/span>/)
+test('紧凑弹窗主次操作保留原生禁用、访问描述及类型', (): void => {
+    for (const variant of ['primary', 'soft'] as const) {
+        const html = renderToStaticMarkup(
+            createElement(
+                TldButton,
+                {
+                    size: 'dialog-compact',
+                    variant,
+                    disabled: true,
+                    'aria-describedby': 'unavailable-reason',
+                    type: 'button',
+                },
+                '下一章',
+            ),
+        )
+        assert.match(html, /<button[^>]*disabled=""/)
+        assert.match(html, /<button[^>]*aria-describedby="unavailable-reason"/)
+        assert.match(html, /<button[^>]*type="button"/)
+    }
 })
 
 test('TldButton forwards native accessibility and disabled attributes', (): void => {
@@ -120,4 +149,28 @@ test('short soft action preserves native confirmation and disabled attributes', 
     assert.match(html, /disabled=""/)
     assert.match(html, /aria-label="取消房间"/)
     assert.match(html, />取消房间<\/span>/)
+})
+
+test('宽表单操作尺寸保持主次按钮的提交和禁用语义', (): void => {
+    for (const variant of ['primary', 'soft'] as const) {
+        const html = renderToStaticMarkup(
+            createElement(
+                TldButton,
+                {
+                    size: 'form-wide',
+                    variant,
+                    type: 'submit',
+                    name: 'action',
+                    value: 'confirm',
+                    disabled: true,
+                },
+                '确认',
+            ),
+        )
+        assert.match(html, /type="submit"/)
+        assert.match(html, /name="action"/)
+        assert.match(html, /value="confirm"/)
+        assert.match(html, /disabled=""/)
+        assert.match(html, />确认<\/span>/)
+    }
 })

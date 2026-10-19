@@ -1,15 +1,8 @@
-# 设置
+# 设置独立页
 
-- 职责：`/settings/` 的发音、音效、答题、听力、个性化、快捷键、系统七个面板，完整参数编辑、本机保存和外观预览。课程运行逻辑待真实课程 owner 接入。
-- 入口：根 `index.ts` 导出 `SettingsPage`，由 app 的 `SettingsPageRoute` 局部 Suspense 和 Next adapter 装配。
-- 约束：本期仅本机保存与外观预览，不接入课程、评测、音源、账号同步或额外请求；所有业务实现留在该 slice 并经根入口消费。
-- 依据：2026-10-13 哇学社设置页人工记录；Figma `NLXdsc7dSeTlfPLpCc0l3n` / `1096:30414` 仅参考配色、细边框、圆角和页签。保留七个 Tab，不增加稿中的背景上传或护眼方案。
-- 参数：`model/preferences.ts` 拥有所有选项、初始值及范围。初始值来自采集账号当前值，不认定为第三方出厂默认值；项目默认主题仍为 dark，单独经 shared/theme 保存。语速步进 0.1，其余滑块步进 1，步进为本项目首版明确选择，不声称已核实第三方行为。
-- 持久化：经 shared/lib/storage 的 learningPreferences 键读写 version=1 容器。挂载后恢复再启用控件；未知版本、损坏容器、未知选项、非法颜色及越界/非有限/不符合步进的数值回到初始值，合法字段保留。快捷键若非法或冲突，整组恢复以避免冲突。修改立即保存，失败保留当前页状态并经 shared/notification 告知，后续更改重试。仅当前站点/应用本机存储，不做账户或云同步。
-- 交互：`?tab=` replace 保留其他查询参数且 scroll:false，未知分类回发音。颜色和快捷键确认才保存，取消不改变原值；颜色清空使用主题色，重置只影响三类颜色。快捷键只在编辑窗口录入并校验，关闭后清理监听；不注册全局课程操作。禁止单字母、Shift + 单字符和重复映射。
-- 预览：字体、字号、边框、语法颜色/亮度、答案模糊、颜色和两类声纹即时变化。答题字号示例映射22～58px，语法字号12～26px；字体使用现有和系统字体栈，不下载新字体。声纹为静态示意；特效用局部可清理动画并尊重 reduced-motion。没有音源的试听明确禁用，不调用音频、录音或评测接口。
-- 配色边界：设置 UI 只用语义主题色。六位十六进制用户颜色只注入预览根的 `--app-color-practice-answer/text/background`，色块展示同一校验值；默认色从主题 token 读取，不修改整站主题或接受任意 CSS。
-- 系统：版本来自 shared/config 的 package.json 版本；挂载后读取 navigator/screen/window/visualViewport，resize 更新并清理监听。UA 只用于信息展示，不决定布局；不新增 Electron bridge、权限或遥测。
-- 响应式：H5/平板单列、页签局部横滚；PC 个性化配置和预览双列。页面版心填满可用宽度，1280～1919px左右各16px，≥1920px左右各250px；局部表单限制可读行长。PC 1920×1080和1440×900验收，平板/H5视觉和真机兼容待用户验收。
-- 扩展：真实课程消费者出现后再评估偏好模型提升，不预建实体、全局 store、音频封装或依赖；真实音源、答题、手写、评测和课程快捷操作独立接入。
-- 验证：`source-record.test.ts` 独立转录来源记录，逐项断言七 Tab、49 个字段、14 组选项、10 个滑块范围和3个快捷键，避免仅按实现自身配置生成预期值。其他就近测试覆盖版本化恢复、字段回退、选项/边界、颜色重置、快捷键限制/冲突、预览推导和系统展示。`runtime:smoke` 在隔离的 Web/Electron 配置中实际修改所有选择项、开关、滑块、单选和3个快捷键，再跨 Tab 刷新核对；三个颜色均确认保存、刷新恢复并重置，再刷新确认默认主题色及其他外观设置保持。另运行format、typecheck、test、lint、build，以及PC的主题、查询、取消/确认、焦点/键盘、预览、侧栏和溢出检查。
+- 职责：维护 `/settings/` 的独立页与 URL Tab 适配，不再拥有第二份偏好、背景图或设置表单。
+- 入口：根 `index.ts` 导出 `SettingsPage`；app 的 `SettingsPageRoute` 在局部 Suspense 内装配，完整编辑能力来自 `features/learning-settings` 根入口。
+- 约束：独立页读取 `?tab=` 并保留其它查询参数，切换使用 replace 与 `scroll:false`。未知值回到发音；旧 `sound` 映射特效、`listening` 映射专项。七 Tab 的表单、控件、预览、校验与保存只在共同 feature 维护，不允许练习页横向导入本 page。
+- 状态：app 在共同上层装配唯一 `LearningSettingsProvider`。本页仅渲染 `LearningSettingsEditor` 的 `presentation="page"`，保留现有独立版心和 sticky 偏移；练习弹窗由练习页使用同一 Editor 的 dialog 变体和受控局部 Tab，不改练习 query。
+- 扩展：新增分类及模型修改在 [完整设置能力](../../features/learning-settings/README.md) 同步；练习运行范围以 [开发文档第 7.6 节](../../../../docs/practice-page-development.md#76-完整设置弹窗持久化和共享所有者) 为准。显示完整配置不代表判题、朗读调度、真实录音评分或练习按键逻辑已经接通。
+- 验证：模型与预览测试随公共能力迁移；此页回归 query 直达、切换、刷新、合法旧值与独立页面布局，执行 test/lint/build。PC 按实际设计尺寸读取计算样式和几何；平板/H5 视觉及真机兼容待用户验收。

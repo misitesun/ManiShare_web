@@ -75,6 +75,23 @@
     },
     "overrides": [
         {
+            "files": ["src/fsd/pages/practice/ui/PracticeWordSlotsInput.tsx"],
+            "rules": {
+                "no-restricted-properties": [
+                    "error",
+                    {
+                        "object": "Intl",
+                        "property": "DateTimeFormat",
+                        "message": "Use the centralized time module from shared/lib/time instead of Intl.DateTimeFormat."
+                    },
+                    {
+                        "property": "clipboard",
+                        "message": "Use the centralized clipboard module from shared/lib/clipboard instead of the native Clipboard API."
+                    }
+                ]
+            }
+        },
+        {
             "files": ["src/fsd/shared/lib/storage/**/*.ts"],
             "rules": {
                 "no-restricted-globals": [

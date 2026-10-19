@@ -3,6 +3,7 @@ import test from 'node:test'
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { supportsMediaByteRanges } from './media-byte-range'
 import {
     contentSecurityPolicy,
     htmlIntegrity,
@@ -25,8 +26,18 @@ test('static resolver separates directory pages, query-bearing RSC and missing r
             'notes/__next._tree.txt',
             '_next/static/hash.js',
             'favicon.svg',
+            'technical-tone.wav',
+            'technical-video.mp4',
         ])
             writeFileSync(join(root, file), file)
+        assert.equal(
+            resolveRendererFile(root, 'englishlearning://app/technical-tone.wav').contentType,
+            'audio/wav',
+        )
+        assert.equal(
+            resolveRendererFile(root, 'englishlearning://app/technical-video.mp4').contentType,
+            'video/mp4',
+        )
         for (const route of ['/notes/', '/notes'])
             assert.equal(
                 resolveRendererFile(root, 'englishlearning://app' + route).key,
@@ -38,6 +49,19 @@ test('static resolver separates directory pages, query-bearing RSC and missing r
         )
         assert.equal(rsc.status, 200)
         assert.equal(rsc.contentType, 'text/x-component')
+        assert.equal(supportsMediaByteRanges(rsc.contentType), false)
+        assert.equal(
+            supportsMediaByteRanges(
+                resolveRendererFile(root, 'englishlearning://app/technical-tone.wav').contentType,
+            ),
+            true,
+        )
+        assert.equal(
+            supportsMediaByteRanges(
+                resolveRendererFile(root, 'englishlearning://app/technical-video.mp4').contentType,
+            ),
+            true,
+        )
         assert.ok(!rsc.cacheControl.includes('immutable'))
         const unknownPage = resolveRendererFile(root, 'englishlearning://app/unknown/')
         assert.equal(unknownPage.status, 404)

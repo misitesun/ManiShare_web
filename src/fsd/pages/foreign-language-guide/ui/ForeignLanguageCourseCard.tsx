@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactElement } from 'react'
+import { TldTiltedCover } from '../../../shared/ui/tld-tilted-cover'
 import type { ForeignLanguageCourseItem } from '../model/course-items'
 
 export interface ForeignLanguageCourseCardProps {
@@ -13,11 +14,7 @@ export function ForeignLanguageCourseCard({
     return (
         <article className="min-w-0 rounded-xl border border-strong bg-canvas p-3 md:p-4 xl:min-h-[370px] xl:px-[17px] xl:pb-[17px] xl:pt-[19px]">
             <div className="aspect-[562/250] min-w-0 overflow-hidden rounded-xl xl:rounded-[20px]">
-                <img
-                    alt={`${courseItem.title}课程封面`}
-                    className="size-full object-cover"
-                    src={courseItem.imageSource}
-                />
+                <TldTiltedCover alt={`${courseItem.title}课程封面`} src={courseItem.imageSource} />
             </div>
 
             <div className="mt-3 flex min-h-[70px] min-w-0 items-stretch justify-between gap-3">

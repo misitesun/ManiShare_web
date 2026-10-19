@@ -6,6 +6,8 @@ type StorageSchema = {
     [sharedConfig.storageKeys.homeClubPrompt]: unknown
     // Domain owners validate this versioned payload; shared storage does not import pages.
     [sharedConfig.storageKeys.learningPreferences]: unknown
+    [sharedConfig.storageKeys.practiceBackgroundImage]: unknown
+    [sharedConfig.storageKeys.practiceToolbarOptions]: unknown
     [sharedConfig.storageKeys.language]: string
     [sharedConfig.storageKeys.theme]: AppTheme
     [sharedConfig.storageKeys.pwaInstalled]: boolean

@@ -1,7 +1,10 @@
 # 架构约定
 
-- 设置归属 pages/settings，路由 `/settings/`、`?tab=` 表达七个分类。偏好校验和预览保持页面私有，主题经 shared/theme；真实课程消费者出现后再评估模型提升。
-- 三类自定义练习颜色属于已校验的用户内容数据，仅在预览根注入 `--app-color-practice-answer/text/background`，由全局语义 utility 消费；色块展示同一校验值。此边界不允许业务硬编码静态配色或输入任意 CSS。
+- 单词/句子内容弹窗留在`pages/practice`，直接消费`PracticeQuestion`并调用既有切题动作；英文/双语是学习材料显示方案，不属于界面语言或i18n。显示状态仅保留在弹窗本轮打开期间。共享层仅增加显式glass分段外观及`segment-outline`双主题描边，原分段默认值和其他内容族不变。
+
+- 完整设置归属 `features/learning-settings`，负责七 Tab 编辑、偏好校验、预览、背景图和持久化；app 的 `AppProviders` 在主题 Provider 内只挂载一个 `LearningSettingsProvider`。`pages/settings` 仅将 `/settings/?tab=` 适配为受控编辑器，`pages/practice` 使用同一编辑器的局部 Tab 弹窗和同源快照，页面之间不横向导入。存储键及 v1 合法历史值保持，主题仍经 `shared/theme`。
+- 练习左上局部选项归`pages/practice`，通过`practiceToolbarOptions`独立版本化容器按`family:mode`持久化；校验和默认值归页面模型，shared仅登记unknown容器。缓存Hook在未被题内会话key重挂的PracticePage持有，挂载后恢复，仅用户修改写入；不复制七Tab全局偏好，不恢复答案/媒体进度，不新增跨窗口同步或全局Provider。
+- 三类自定义练习颜色属于已校验的用户内容数据，仅在设置预览或练习会话根注入 `--app-color-practice-answer/text/background`，由全局语义 utility 消费；色块展示同一校验值。此边界不允许业务硬编码静态配色或输入任意 CSS。
 
 - AI 助教归属 `pages/ai-tutor`，由 app 在 `/ai-tutor/` 及 `/ai-tutor/mentors/[mentorId]/scenes/[sceneId]/` 由 Next 按路由分包并复用壳层。导师、场景、聊天静态示例、输入状态与资源为页面私有，不新增 features/widgets 或接口。选择页保持响应式网格；聊天页按用户要求一屏展示，导师栏和输入区固定，场景与消息内部滚动；切换导师显式返回父页并恢复选择。
 
@@ -69,6 +72,8 @@ app → pages → widgets → features → entities → shared
 ```
 
 查询参数仅用于筛选、排序、分页和 Tab 等可恢复视图状态。URL 契约由 `src/fsd/app/config/routes.ts` 维护，路由装配在 `src/app` 各路由 `page.tsx` 与 `src/fsd/app/router` Client 装配。
+
+`/practice/` 是首版独立静态练习演示入口，经 `(practice-session)` 分组不套用 App Shell；`demo` 与 `mode` 只表达本地演示选择，不能作为正式课程、章节或题目资源 ID。`PracticePageRoute` 在局部 Suspense 内读取查询、校验本地组合并注入 replace/返回回调，保留无关 query。固定入口只新增一份 HTML，当前路由契约共 29 项、预期业务 HTML 共 275 份（24 个固定入口 + 251 个领域枚举路径）；计数是产物校验要求，不代表本轮构建或 PC 精确视觉已经验收。言灵觉醒详情的“开始学习”进入演示选择页，章节卡和 VIP 锁定展示不接入演示，不据示例生成真实学习记录。
 
 `/profile/notes/courses/[coursePackageId]/` 已实现课程包笔记二级静态页，归属 `pages/notebook-course`；参数是课程包笔记索引，不是单条笔记 ID。`/profile/notes/[noteId]/` 仅为未来单条笔记资源的路径示例，当前未注册。一级 `?view=course-packages` 表达按课程包视图，返回入口显式保留该参数。笔记本导航前缀匹配覆盖二级页面。
 
@@ -166,6 +171,10 @@ PC 验收需覆盖 1280px、1400px、1500px、1919px、1920px 和至少一个更
 
 组件只能消费语义 utility，不知道当前主题名。新增 token 先判断是否跨组件稳定；业务局部视觉仍用现有 Tailwind 色义组合，不能把页面文案或领域状态塞入全局 token。
 
+首版练习注释使用 `practice-pos-pronoun/verb/noun/adverb` 与 `practice-syntax-subject/predicate/object/complement` 八个教学色 token，原值在全局样式 `:root` 注册，dark/light 共同继承固定配色，业务仅消费完整字面量 utility。这八项只覆盖当前本地示例实际出现的类型，不等于整份词性/句子成分配色已实现；填充亮度只作用独立填充层，不改变文字、划线与词性色。1920px 设计尺寸与字体几何仍由练习 reference 数据和实际计算样式核对，不能把设置预览字号映射或 token 复用当作精确验收证据。
+
+单词拼读的 `practice-card/deck/phoneme` 三个表面 token 和 `--app-shadow-practice-card` 来自已读取的 Figma 卡片层级；`practice-design-answer` 单独表达设计默认答题色，不修改全站 brand。dark 保留设计值，light 回退既有语义表面/品牌/阴影；已校验用户选色继续在会话局部覆盖，不根据主题在业务组件分支。音标展示另用 `phonetics-highlight/error/success/placeholder/card` 五个状态 token：dark 采用已读 Figma 值，light 回退既有语义颜色；状态色不定义判题行为。
+
 ## 资源归属与提升
 
 ```text
@@ -180,6 +189,8 @@ features/save-note/
 资源默认跟随第一个真实拥有者。第二个真实消费者出现时，移动到两者共同允许依赖的最低层，并通过公共入口导出；禁止复制文件或深层导入同层 slice。
 
 `src` 未引用资源必须随功能删除。位图优化由 `pnpm run assets:optimize` 显式执行，不进入 build/CI。固定 URL 资源才进入 `public/`。
+
+练习播放器的自制技术样例使用固定同源 URL，归属 `public/practice-demo`：WAV 正弦音与无音轨 MP4 均明确标为非课程音视频，由 `pages/practice/model/technical-media-samples.ts` 唯一声明地址并通过 `PracticeMedia.source` 消费。它们只验证播放能力，不代替业务素材/设置音色；正式课程资源仍跟随练习 owner。静态解析器在 `electron/renderer-contract.ts` 增加 `.wav`/`.mp4` 的准确 MIME，预览和 Electron 共用，保持 CSP、路径校验、资源404及 bridge 不变。
 
 ## Hook 归属
 
@@ -238,6 +249,8 @@ shared/ui/tld-button/
 README 至少包含“职责、入口、约束、扩展、验证”。资源目录、纯内部 `model`/`ui` 和空目录不机械建文档。
 
 ## 自动化源码契约
+
+练习整词输入的原生编辑命令只允许页面owner `PracticeWordSlotsInput.tsx`直接调用字面量`execCommand('insertText', false, padding)`；AST同时拒绝其他命令、别名/下标访问及其他renderer调用，单文件Oxlint覆盖仍保留Clipboard与时间限制。此窄能力只解决点击词槽补分隔空格时的Undo历史，失败不程序覆写原文，详见[兼容契约](compatibility/text-input.md)。
 
 `pnpm run lint:source-contracts` 当前检查：
 

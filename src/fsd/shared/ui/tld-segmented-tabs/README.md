@@ -1,5 +1,7 @@
 # TLD 通用页签
 
+- `appearance="glass"`显式提供46px高、8px圆角、foreground 10%表面及`segment-outline`描边/分隔线，选中背景复用原分段渐变和动画；默认brand、neutral、outlined及underline不变。文字消费tab-label-regular阶梯（16/22→md18/25），未选中400、选中500；filter语义仍为group与aria-pressed。练习页单词/句子内容弹窗为当前消费者，英文/双语只切换学习材料。SSR语义及生产专项见PracticeContentDialog和practice-content-runtime-smoke。
+
 - `typography="comfortable"` 为16/24→18/26→≥1920px20/28，0.01em字距，content布局取消按钮横向padding、文字对齐顶部、指示线位于底边内，底线2px；`gap="generous"` 的content容器45px高、文案间距24→40→≥1920px70px。推广奖励显式使用，原default/compact/display/regular消费者不变；受控选择、面板关联和动效仍复用现有能力。
 
 - 展示变体：`typography="display"` 消费全局tab-label-display阶梯（H5 16/24、md20/28、≥1920px24/34），字距0.01em，内容布局取消横向padding、指示线落在底边内；搭配compact size时高度44→48→54px。`gap="spacious"` 为24→40→60px文案间距。外语逆袭秘籍显式使用，原默认消费者不变；受控选择、筛选ARIA与动画保持现有能力。实际样式和几何由浏览器核验。
@@ -20,3 +22,6 @@ underline 的 item 宽度测量标记包含 aria-hidden 文案副本；交互测
 - 常规文字设计变体：underline/content布局显式使用`typography="regular"`，消费tab-label-regular（16/22→md18/25），40px高、文字顶部对齐、按钮无横向padding和额外字距、指示线在底边内；`gap="spread"`在这一布局提供24→md64→≥1920px130的文字边缘间距。用于奖品兑换中心，原有布局和默认消费者不变。
 
 - outlined仅用于segmented筛选：32px内层置于调用方1px渐变边框后为34px，黑/浅色语义canvas底，渐变选中与竖分隔；选中文字14/20，未选中16/22。PK榜单显式选择；受控ID、ARIA、动画与reduced-motion保持，其他外观不变。
+
+
+Glass在弹窗scale进场中以computed CSS width将视口测量转换为自身布局坐标，避免ResizeObserver不监听祖先transform而留下偏小/偏移的选中背景；仅glass启用，其他外观测量保持。此转换不改变控件尺寸、字体或用户页面缩放。rubber-geometry测试覆盖0.97倍、分数坐标、无变换与零宽/非有限值；生产专项等待高亮与真实活动按钮的x/width一致后截图，不以React的aria-pressed更新代替GSAP已收尾。

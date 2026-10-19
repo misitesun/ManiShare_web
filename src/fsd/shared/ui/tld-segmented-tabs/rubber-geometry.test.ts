@@ -8,7 +8,26 @@ import {
     getSegmentBox,
     getSegmentClipPath,
     getSegmentDirection,
+    getSegmentLayoutEdges,
 } from './rubber-geometry'
+
+test('玻璃分段按局部CSS坐标测量，弹窗scale进场不改变选中落点', (): void => {
+    const edges = getSegmentLayoutEdges({ left: 221.16, right: 331.74 }, 331.74, 342)
+    assert.ok(Math.abs(edges.left - 228) < 0.000001)
+    assert.ok(Math.abs(edges.right - 342) < 0.000001)
+    const fractional = getSegmentLayoutEdges({ left: 110.4, right: 220.8 }, 331.2, 345)
+    assert.ok(Math.abs(fractional.left - 115) < 0.000001)
+    assert.ok(Math.abs(fractional.right - 230) < 0.000001)
+})
+
+test('无transform保持原坐标，零宽及非有限测量不产生NaN', (): void => {
+    const edges = { left: 25.125, right: 50.25 }
+    assert.deepEqual(getSegmentLayoutEdges(edges, 100.5, 100.5), edges)
+    for (const invalid of [0, -1, NaN, Infinity]) {
+        assert.deepEqual(getSegmentLayoutEdges(edges, invalid, 342), edges)
+        assert.deepEqual(getSegmentLayoutEdges(edges, 342, invalid), edges)
+    }
+})
 
 test('equal segment geometry rejects invalid selections and divides the track evenly', (): void => {
     assert.equal(getEqualSegmentEdges(-1, 3), null)

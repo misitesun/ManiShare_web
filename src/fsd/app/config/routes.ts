@@ -1,4 +1,5 @@
 export const routePaths = {
+    practice: '/practice/',
     pkArena: '/pk/',
     pkMatching: '/pk/matching/',
     pkLoading: '/pk/loading/',
