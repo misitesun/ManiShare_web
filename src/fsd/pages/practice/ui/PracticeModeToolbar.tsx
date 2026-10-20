@@ -4,20 +4,15 @@ import { useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { TldSwitch } from '../../../shared/ui/tld-switch'
 import type { PracticeFamily } from '../model/practice-demo'
+import { getPracticeToolbarDescription } from '../model/practice-toolbar-description'
+import type { PracticeModeToolbarRow } from '../model/practice-toolbar-description'
 import {
     PracticeToolbarOptions,
     PracticeToolbarSegment,
     PracticeToolbarTimer,
 } from './PracticeToolbarControls'
 
-type ModeToolbarRow =
-    | 'split'
-    | 'copy'
-    | 'imageVisible'
-    | 'translationVisible'
-    | 'cutReading'
-    | 'keyboardVisible'
-    | 'sentenceAnalysisVisible'
+type ModeToolbarRow = PracticeModeToolbarRow
 
 type ModeToolbarFamily = Exclude<PracticeFamily, 'word'>
 
@@ -124,13 +119,7 @@ export function PracticeModeToolbar<TRow extends ModeToolbarRow>({
                     )}
                 </PracticeToolbarOptions>
             )}
-            <span className="sr-only">
-                {family === 'sentence'
-                    ? '完整/拆分、默写/抄写及切读仅作本轮选择，不代表正式学习功能。'
-                    : family === 'phonetics'
-                      ? '自然拼读控制当前音标练习的朗读流程选择。'
-                      : '默写/抄写及切读仅作本轮选择，不代表正式学习功能。'}
-            </span>
+            <span className="sr-only">{getPracticeToolbarDescription(family, rows)}</span>
         </div>
     )
 }

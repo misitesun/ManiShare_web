@@ -18,7 +18,7 @@
 
 - 源代码、脚本和配置文件统一使用 4 个空格缩进，禁止 Tab。项目不接受“2 空格与 4 空格混用”或“个人编辑器设置决定缩进”。
 - 根目录 `.editorconfig` 负责编辑器默认值，`prettier.config.mjs` 负责可重复的机械格式；两者均以 4 空格和 `useTabs: false` 为准。
-- 修改代码后运行 `pnpm run format`；`pnpm run format:check` 只检查不写入，并已纳入 `pnpm run lint` 和 CI。
+- 开发中只格式化本次改动的受支持文件：`pnpm exec prettier --write <文件列表>`，检查时使用`pnpm exec prettier --check <文件列表>`。需要整仓格式化时才运行`pnpm run format`，完成后检查diff并避免无关变更；`pnpm run format:check`仍纳入完整lint和CI。
 - Markdown 文档、生成的 `pnpm-lock.yaml` 和静态资源不由 Prettier 机械改写；文档中的代码示例仍应展示 4 空格缩进。
 
 ## 2. FSD 分层
@@ -177,17 +177,15 @@ React Bits 作为候选动画与背景的源码来源，不作为整库运行时
 ## 10. 测试与交付
 
 - 解析、状态转换、公共能力、兼容性降级和缺陷修复必须有就近单元测试。
-- 纯页面组合和静态 Tailwind 布局通常不写单元测试，使用构建与人工视觉复测；Codex 只复测 PC，平板/H5 在交接中列为待用户验收。
-- 默认运行：
+- 纯页面组合和静态 Tailwind 布局通常不写单元测试；开发微调检查受影响PC状态，完整构建集中到交付节点，具体按验证分级执行。Codex只复测PC，平板/H5在交接中列为待用户验收。
+- 开发中按[验证分级](testing-standards.md#0-开发期间按影响验证2026-10-19)选择检查；不要求每次文案、局部颜色或布局微调运行全量测试与生产构建。小模式准备集成或公共契约正式交付时，对最终代码运行：
 
 ```bash
-pnpm run format:check
 pnpm run test
-pnpm run lint
 pnpm run build
 ```
 
-涉及 Electron 时再运行 `pnpm run desktop:build`。所有未执行验证必须在交接中说明。
+build已包含完整lint、格式和类型检查，不重复执行。同一轮需要验证Electron边界时，以`pnpm run desktop:build`替代上面的build，不先后构建同一Web产物两次。对同一最终提交可复用有效输出；纯Markdown交付只做文档检查。交接区分已执行、留待集成及待用户验收，CI门禁和既有测试断言保持。
 
 ## 11. 依赖与安装脚本
 

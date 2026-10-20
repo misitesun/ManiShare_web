@@ -1,6 +1,10 @@
 # 练习页
 
-- 三窗口开发先读[当前进度与文件所有权](../../../../docs/practice-page-development.md#当前进度与三窗口协作入口2026-10-19)：主分支维护共用框架／接线／总文档，单词和句子分支仅改明确独占文件，并分别维护[单词记录](../../../../docs/practice-word-games-development.md)和[句子记录](../../../../docs/practice-sentence-games-development.md)。`PracticeWordSlotsInput`是跨模式共用输入；句子听力／阅读／指法／口语目前仍走通用内容，不能仅凭分支承诺零冲突。每个窗口使用独立worktree及3000／3001／3002端口。
+- 三窗口开发先读[当前进度与文件所有权](../../../../docs/practice-page-development.md#当前进度与三窗口协作入口2026-10-19)：主分支维护共用框架／接线／总文档，单词和句子分支仅改明确独占文件，并分别维护[单词记录](../../../../docs/practice-word-games-development.md)和[句子记录](../../../../docs/practice-sentence-games-development.md)。`PracticeWordSlotsInput`是跨模式共用输入；句子阅读／指法／口语仍走通用内容，听力已提取专用入口，不能仅凭分支承诺零冲突。每个窗口使用独立worktree及3000／3001／3002端口。
+
+- 沉浸听力公共前置：SentenceListeningExercise及同名测试、sentence-listening-note.svg／sentence-listening-oral.svg由主窗口首次提取后交句子窗口维护。Props为question、values、imageVisible、translationVisible、blocked、可选reading、onNote、oralEnabled、onOral。PracticeContent只为sentence:listen分派；笔记复用原题ID状态，口语门控／点击／V复用canShowQuickOral与practice.oral，外置入口排除本组合。
+- 公共AnnotatedText的sentence-listening变体按音标→词性背景标签→英文→3px划线→词义→成分名组织，默认消费者不变。词性、文字、划线、填充分层，只有填充随亮度/10变化；unknown保持中性待核对。getSentenceListeningReference记录1920×1080/100%的听力几何，文字框高不当行高；隐藏图、自定义字号和窄屏自然重排。全局owner提供固定标签黑字和双主题口语阴影。
+- 听力不消费split；句子窗口负责删局部行及专项预期，主窗口辅助说明已按真实rows生成。当前main历史行尚待合入删除，旧缓存过滤留待集成检查。中文尾部和右上五图标动作待确认，不生成空按钮。公共专项practice-sentence-listening-runtime-smoke.cjs及实际结果见总文档“句子沉浸听力公共前置”；平板/H5视觉和真机待用户验收。
 
 - 当前四层专项：`scripts/card-swap-presentation-runtime-smoke.cjs`已在Web/Electron验证4张可见、原hover透视、同DOM回插仍可见、连续再来/真实导航、无第五张、文档高度1080px、记住及reduced-motion；原卡牌与完整记住专项也在两端通过。模型/生命周期/手势/记住25项定向测试、工作区633+24项测试及lint通过，冻结副本生产构建275份业务HTML通过；暂停已由其他任务统一关闭，旧暂停入口场景记录为不适用。完整回归结果及产物范围见开发文档，旧三层/二维记录不代表当前实现。
 
@@ -91,3 +95,6 @@
 
 - 2026-10-19入口清理：单词拼读通过`canShowQuickOral`统一关闭快捷口语按钮、V及命令入口，其他模式和独立口语保持。所有模式删除“演示状态”面板及其强制判题/反馈按钮；提交继续明确未接正式判题。不可由真实UI到达的题态用`PracticeContent.test.ts`显式夹具验证，生产专项检查真实操作、设置预览及完成烟花，不新增隐藏演示入口。
 - 整词输入（2026-10-19）：`PracticeWordSlotsInput`由单词卡、句子中译英和通用文字输入共用；`word-slot-input`从完整原生文本派生词槽/选区，不维护第二份答案数组。透明小写占位与真实输入字形共同撑开自然词宽，输入居中覆盖、首尾标点独立、活动底线随原生焦点/选区移动；替代固定五线/四段比例与通用边框。保留Enter提交、Tab原生焦点、空格文本与原生编辑/IME，不引入参考项目的判题/按键总线/请求/px→rem。多词换行，单超长词局部滚动，DOM Range仅在编辑/选区变化时跟随可见光标，手动回看保持；用户字号、边框、暂停/切题及指法完整文本反馈沿用原入口。完整/拆分和抄写运行策略仍待独立接入。643项测试、lint与隔离生产构建通过；输入专项生产Web/Electron均通过，8个消费者及双主题PC/真实缩放、原生编辑、撤销与长词回归见开发文档。IME/paste夹具不冒称真机通过；平板/H5视觉、系统软键盘及真机待用户验收。
+
+
+- 沉浸听力本轮验证：668项测试、format/lint、生产构建275份业务HTML及Electron构建通过；生产Web/Electron专项通过基准双主题、真实125%/150%/200%缩放、颜色／亮度分层、独立显隐、原生笔记／口语和默认消费者回归，业务／权限／资源／控制台异常均为0。PC基准与缩放图已人工查看。normal成分行盒实测22.5px，中文前间距按52.5px校准；不是将文字框高当行高。390/768仅自动几何，平板/H5视觉及真机仍待用户验收，未宣称全站runtime:smoke通过。

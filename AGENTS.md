@@ -47,7 +47,7 @@ Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI�
 - 接口接入、数据加载或带请求的组件复用必须遵守[接口能力边界与缺失数据处理](docs/api-capability-boundaries.md)：不得擅自增加请求补字段；缺项使用默认图/空态并记录反馈，验收检查请求次数与来源。
 
 - 包管理器唯一使用 pnpm `10.28.2`。所有项目命令必须使用 `pnpm` 或 `pnpm run`；禁止 npm、yarn、npx、bun。
-- 源代码、脚本和配置文件统一使用 4 个空格缩进，禁止 Tab；根目录 `.editorconfig` 和 Prettier 配置是可执行契约。修改后使用 `pnpm run format`，`pnpm run lint` 会通过 `format:check` 阻断格式偏差。
+- 源代码、脚本和配置文件统一使用 4 个空格缩进，禁止 Tab；根目录 `.editorconfig` 和 Prettier 配置是可执行契约。开发中使用 `pnpm exec prettier --write <本次修改的文件>`；只有需要整仓格式化时才用 `pnpm run format`。`pnpm run lint` 仍通过 `format:check` 阻断格式偏差。
 - 新增运行时依赖使用 `pnpm add`，开发依赖使用 `pnpm add -D`；同一任务同步更新 `package.json`、`pnpm-lock.yaml`、文档与 CI。
 - 依赖安装脚本默认不执行；只有 `pnpm-workspace.yaml` 的 `onlyBuiltDependencies` 中经过审查的精确包名可以运行。新增白名单必须记录脚本用途和供应链风险，只能执行 `pnpm approve-builds <明确包名>`，禁止全量批准。
 - TypeScript 使用 strict 模式：禁止 `any`、非空断言和无校验的外部数据断言；所有具名函数与类方法必须标注返回类型。
@@ -85,5 +85,5 @@ Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI�
 
 - 公式、解析、状态转换、公共能力和缺陷修复必须补同目录单元测试；纯页面组合或静态布局通常不测。
 - 新增或改变公共能力、路由、存储键、语言 key、依赖、构建/CI、主题 token、响应式规则或 Electron bridge，必须同步更新文档。
-- 默认完成 `pnpm run test && pnpm run lint && pnpm run build`；涉及 Electron 再运行 `pnpm run desktop:build`。
+- 开发验证按[分级流程](docs/testing-standards.md#0-开发期间按影响验证2026-10-19)执行：文档和局部纯展示只做对应轻量检查；模式独占逻辑做定向测试；公共契约交付、小模式准备集成时，对包含最新主分支的最终代码运行 `pnpm run test && pnpm run build`。Electron边界受影响时改用 `pnpm run test && pnpm run desktop:build`。build已包含lint和类型检查，desktop:build已包含Web构建，不重复执行；同一最终提交的有效结果可复用。CI门禁保持不变，不把未执行项写成通过。
 - 不修改无关代码，不虚构学习业务规则，不擅自执行远端 Git 操作。

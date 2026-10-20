@@ -18,6 +18,7 @@ export function AnnotatedText({
     density = 'exercise',
     role = 'exercise',
     titleFirstWord = false,
+    variant = 'default',
 }: {
     readonly question: PracticeQuestion
     readonly values: LearningPreferences
@@ -25,11 +26,20 @@ export function AnnotatedText({
     readonly density?: 'exercise' | 'reading'
     readonly role?: 'exercise' | 'typing'
     readonly titleFirstWord?: boolean
+    readonly variant?: 'default' | 'sentence-listening'
 }): ReactElement {
     const appearance = getPreviewAppearance(values)
     const englishStyle = values.fontSize === '默认' ? undefined : { fontSize: appearance.fontSize }
     const grammarStyle =
         values.grammarFontSize === '默认' ? undefined : { fontSize: appearance.grammarFontSize }
+    if (variant === 'sentence-listening' && annotated && question.tokens.length > 0)
+        return (
+            <SentenceListeningAnnotation
+                question={question}
+                values={values}
+                titleFirstWord={titleFirstWord}
+            />
+        )
     if (!annotated || question.tokens.length === 0)
         return (
             <p
@@ -125,6 +135,134 @@ export function AnnotatedText({
                         </span>
                     )}
                     <span className="text-[14px] text-secondary">{token.meaning}</span>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function SentenceListeningAnnotation({
+    question,
+    values,
+    titleFirstWord,
+}: {
+    readonly question: PracticeQuestion
+    readonly values: LearningPreferences
+    readonly titleFirstWord: boolean
+}): ReactElement {
+    const appearance = getPreviewAppearance(values)
+    const englishStyle = values.fontSize === '默认' ? undefined : { fontSize: appearance.fontSize }
+    const grammarStyle =
+        values.grammarFontSize === '默认' ? undefined : { fontSize: appearance.grammarFontSize }
+    return (
+        <div
+            aria-label="逐词解析"
+            data-annotation-variant="sentence-listening"
+            className="flex max-w-full flex-wrap justify-center gap-x-4 gap-y-8 md:gap-x-[25px]"
+        >
+            {question.tokens.map((token, index) => (
+                <div
+                    key={token.id}
+                    data-listening-token={token.id}
+                    className="flex min-w-0 max-w-full flex-col items-center-safe overflow-x-auto"
+                >
+                    {values.showAnswerPhonetics && (
+                        <span
+                            data-listening-layer="phonetic"
+                            className="mb-[6px] whitespace-nowrap text-[12px] font-normal leading-[normal] text-practice-muted md:text-[14px]"
+                        >
+                            {token.phonetic}
+                        </span>
+                    )}
+                    {values.showPartOfSpeech && (
+                        <span
+                            className={
+                                token.pos === 'pronoun'
+                                    ? 'mb-0.5 rounded bg-practice-pos-pronoun'
+                                    : token.pos === 'verb'
+                                      ? 'mb-0.5 rounded bg-practice-pos-verb'
+                                      : token.pos === 'noun'
+                                        ? 'mb-0.5 rounded bg-practice-pos-noun'
+                                        : 'mb-0.5 rounded bg-practice-pos-adverb'
+                            }
+                            data-listening-layer="pos"
+                        >
+                            <span
+                                className="flex min-h-[22px] min-w-[38px] items-center justify-center px-1 text-[12px] font-normal leading-[normal] text-practice-pos-label md:text-[14px]"
+                                style={grammarStyle}
+                            >
+                                {posLabels[token.pos]}
+                            </span>
+                        </span>
+                    )}
+                    <span
+                        className={
+                            token.syntax === 'subject'
+                                ? 'text-practice-syntax-subject'
+                                : token.syntax === 'predicate'
+                                  ? 'text-practice-syntax-predicate'
+                                  : token.syntax === 'object'
+                                    ? 'text-practice-syntax-object'
+                                    : token.syntax === 'complement'
+                                      ? 'text-practice-syntax-complement'
+                                      : 'text-secondary'
+                        }
+                    >
+                        <span className="relative isolate block">
+                            {values.showGrammarFill && (
+                                <span
+                                    aria-hidden="true"
+                                    data-listening-layer="fill"
+                                    className="absolute inset-0 -z-10 rounded border border-current bg-current"
+                                    style={{ opacity: values.grammarBrightness / 10 }}
+                                />
+                            )}
+                            <span
+                                data-practice-english
+                                data-listening-layer="english"
+                                style={englishStyle}
+                                className="block whitespace-nowrap text-[28px] font-medium leading-[normal] text-practice-answer md:text-[34px] design:text-[40px]"
+                            >
+                                <span className={titleFirstWord && index === 0 ? 'capitalize' : ''}>
+                                    {token.text}
+                                </span>
+                            </span>
+                        </span>
+                        <span
+                            aria-hidden="true"
+                            data-listening-layer="underline"
+                            className="mt-[10px] block h-[3px] bg-current"
+                        />
+                    </span>
+                    <span
+                        data-listening-layer="meaning"
+                        className="mt-[14px] whitespace-nowrap text-[14px] font-normal leading-[normal] text-practice-text md:text-[16px] design:text-[18px]"
+                    >
+                        {token.meaning}
+                    </span>
+                    {values.showGrammarText && (
+                        <span
+                            className={
+                                token.syntax === 'subject'
+                                    ? 'text-practice-syntax-subject'
+                                    : token.syntax === 'predicate'
+                                      ? 'text-practice-syntax-predicate'
+                                      : token.syntax === 'object'
+                                        ? 'text-practice-syntax-object'
+                                        : token.syntax === 'complement'
+                                          ? 'text-practice-syntax-complement'
+                                          : 'text-secondary'
+                            }
+                        >
+                            <span
+                                data-listening-layer="syntax"
+                                style={grammarStyle}
+                                className="mt-[10px] block whitespace-nowrap text-[14px] font-normal leading-[normal] design:text-[16px]"
+                            >
+                                {syntaxLabels[token.syntax]}
+                            </span>
+                        </span>
+                    )}
                 </div>
             ))}
         </div>

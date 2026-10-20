@@ -66,6 +66,7 @@
     --color-practice-pos-verb: var(--app-color-practice-pos-verb);
     --color-practice-pos-noun: var(--app-color-practice-pos-noun);
     --color-practice-pos-adverb: var(--app-color-practice-pos-adverb);
+    --color-practice-pos-label: var(--app-color-practice-pos-label);
     --color-practice-syntax-subject: var(--app-color-practice-syntax-subject);
     --color-practice-syntax-predicate: var(--app-color-practice-syntax-predicate);
     --color-practice-syntax-object: var(--app-color-practice-syntax-object);
@@ -307,6 +308,7 @@
     --app-color-practice-pos-verb: #01f799;
     --app-color-practice-pos-noun: #ff99d8;
     --app-color-practice-pos-adverb: #ffeb99;
+    --app-color-practice-pos-label: #000000;
     --app-color-practice-syntax-subject: #ff5050;
     --app-color-practice-syntax-predicate: #b174e7;
     --app-color-practice-syntax-object: #5ca3ff;
@@ -476,6 +478,7 @@
         var(--app-color-sentence-tray-end) 100%
     );
     --app-shadow-practice-card: 0px 0px 50px 0px rgba(92, 255, 198, 0.25);
+    --app-shadow-sentence-listening-oral: 0px 4px 18.1px 0px rgba(73, 255, 104, 1);
     --app-color-practice-preset-default: #000000;
     --app-color-practice-preset-warm: #1c1914;
     --app-color-practice-preset-green: #111b16;
@@ -787,6 +790,7 @@
         var(--app-color-sentence-tray-end) 100%
     );
     --app-shadow-practice-card: var(--app-shadow-panel);
+    --app-shadow-sentence-listening-oral: var(--app-shadow-panel);
     --app-color-practice-preset-default: #ffffff;
     --app-color-practice-preset-warm: #fff8e8;
     --app-color-practice-preset-green: #d1e4d0;

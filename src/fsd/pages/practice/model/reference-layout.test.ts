@@ -10,12 +10,48 @@ import {
 import { SentenceExercise } from '../ui/SentenceExercise'
 import { getDemoQuestions, initialPracticeSession } from './practice-demo'
 import type { PracticePhase } from './practice-demo'
-import { getSentenceExerciseReference } from './reference-layout'
+import {
+    getPracticeReference,
+    getSentenceExerciseReference,
+    getSentenceListeningReference,
+} from './reference-layout'
 import type { SentenceExerciseMode } from './reference-layout'
 
 const sentenceModes: readonly SentenceExerciseMode[] = ['translate', 'check', 'blocks']
 
 function ignore(): void {}
+
+test('沉浸听力参考保留设计的全局坐标、字体角色与控件尺寸，不把文字框高当行高', (): void => {
+    const reference = getSentenceListeningReference()
+    assert.equal(reference.node, '546:33602')
+    assert.deepEqual(reference.viewport, { width: 1920, height: 1080 })
+    assert.deepEqual(reference.media, { x: 745, y: 183, width: 430, height: 242 })
+    assert.deepEqual(reference.annotation, {
+        phoneticTop: 484,
+        phoneticFontSize: 14,
+        partOfSpeechTop: 510,
+        partOfSpeechWidth: 38,
+        partOfSpeechHeight: 22,
+        englishTop: 534,
+        englishFontSize: 40,
+        englishFontWeight: 500,
+        underlineTop: 600,
+        underlineHeight: 3,
+        meaningTop: 617,
+        meaningFontSize: 18,
+        syntaxTop: 652,
+        syntaxFontSize: 16,
+    })
+    assert.deepEqual(reference.translation, { y: 727, fontSize: 30, fontWeight: 500 })
+    assert.deepEqual(reference.note, { x: 922, y: 797, width: 76, height: 30 })
+    assert.deepEqual(reference.oral, { x: 843, y: 886, width: 234, height: 46 })
+    for (const slot of [reference.media, reference.note, reference.oral])
+        assert.equal(slot.x + slot.width / 2, reference.viewport.width / 2)
+    const common = getPracticeReference('sentence', 'listen', 'answering')
+    assert.equal(common.top + 75, reference.media.y)
+    assert.equal(common.mediaWidth, reference.media.width)
+    assert.equal(common.mediaHeight, reference.media.height)
+})
 
 function renderSentence(mode: SentenceExerciseMode, phase: PracticePhase): string {
     const question = getDemoQuestions('sentence')[0]

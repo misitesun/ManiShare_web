@@ -50,3 +50,8 @@
 ### 指法双手几何
 
 `typing-hand-shapes.ts`从用户指定参考项目`/Users/sly/Downloads/waxueshe-client-web-optimize/src/assets/game/hands.svg`提取54套手型/424条路径，供页面私有`TypingHands`渲染。只保留几何及角色，移除旧主题CSS、颜色、全局选择器和显示控制；实际填充/轮廓/指尖提示均消费全局`practice-hand-*`语义token。左右手独立切换；Space保留左手，CapsLock无专属源手型时明确使用相邻小指示意。标签在手层上方，手层统一0.45透明且不接收事件，不把整屏效果截图作为键盘。
+
+
+## 句子沉浸听力
+
+SentenceListeningExercise复用reading-scene.png（546:33666），显示430×242。sentence-listening-note.svg来自546:33713，原根20×20；sentence-listening-oral.svg来自546:33660，原根28×28，保留导出图形和根尺寸，沿既有dialog-icon filter适配浅色主题。两份专用SVG随新组件／测试首次交付后归句子窗口；公共标注和几何仍归主窗口。546:33709中文尾部及546:33667右上组动作待确认，本轮不生成按钮。
