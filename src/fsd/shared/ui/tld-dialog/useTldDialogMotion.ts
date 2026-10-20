@@ -3,18 +3,29 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
 import { gsap, useGSAP } from '../../lib/animation'
+import { getDialogExitPose } from './dialog-motion'
+import type { TldDialogPlacement } from './dialog-motion'
 
 interface DialogMotionOptions {
     readonly open: boolean
     readonly ready: boolean
     readonly enabled: boolean
+    readonly placement?: TldDialogPlacement
+    readonly viewportRight?: number | undefined
     readonly onAfterClose?: (() => void) | undefined
 }
 
 export function useTldDialogMotion(
     layerRef: RefObject<HTMLDivElement | null>,
     frameRef: RefObject<HTMLDivElement | null>,
-    { open, ready, enabled, onAfterClose }: DialogMotionOptions,
+    {
+        open,
+        ready,
+        enabled,
+        placement = 'center',
+        viewportRight,
+        onAfterClose,
+    }: DialogMotionOptions,
 ): boolean {
     const [retained, setRetained] = useState(false)
     const initializedRef = useRef<HTMLDivElement | null>(null)
@@ -29,6 +40,12 @@ export function useTldDialogMotion(
             const layer = layerRef.current
             const frame = frameRef.current
             if (!ready || !layer || !frame || (!open && initializedRef.current !== layer)) return
+            const visible = window.visualViewport
+            const exit = getDialogExitPose(
+                placement,
+                layer.getBoundingClientRect().left + frame.offsetLeft,
+                viewportRight ?? (visible?.offsetLeft ?? 0) + (visible?.width ?? window.innerWidth),
+            )
             let motion: gsap.Context | undefined
             function complete(): void {
                 if (open) return
@@ -42,10 +59,10 @@ export function useTldDialogMotion(
                         initializedRef.current = layer
                         setRetained(true)
                         gsap.set(layer, { opacity: 0 })
-                        gsap.set(frame, { y: 12, scale: 0.97 })
+                        gsap.set(frame, exit)
                     }
                     const layerTarget = { opacity: open ? 1 : 0 }
-                    const frameTarget = { y: open ? 0 : 12, scale: open ? 1 : 0.97 }
+                    const frameTarget = open ? { x: 0, y: 0, scale: 1 } : exit
                     if (!enabled || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
                         gsap.set(layer, layerTarget)
                         gsap.set(frame, frameTarget)
@@ -64,7 +81,11 @@ export function useTldDialogMotion(
                 tweenRef.current = null
             }
         },
-        { scope: layerRef, dependencies: [open, ready, enabled], revertOnUpdate: true },
+        {
+            scope: layerRef,
+            dependencies: [open, ready, enabled, placement, viewportRight],
+            revertOnUpdate: true,
+        },
     )
 
     useGSAP(

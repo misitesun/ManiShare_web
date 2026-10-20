@@ -12,6 +12,33 @@ export interface CardSwapPointerSample extends CardSwapVector {
     readonly t: number
 }
 
+interface CardSwapPointerEndInput {
+    readonly source: 'release' | 'cancel' | 'capture-loss'
+    readonly buttons: number
+    readonly sample: CardSwapPointerSample
+    readonly samples: readonly CardSwapPointerSample[]
+}
+
+interface CardSwapPointerEnd {
+    readonly sample: CardSwapPointerSample
+    readonly cancelled: boolean
+}
+
+/** 捕获丢失可能先于pointerup；按键已松开时保留最后有效轨迹，不能直接回弹。 */
+export function getCardSwapPointerEnd({
+    source,
+    buttons,
+    sample,
+    samples,
+}: CardSwapPointerEndInput): CardSwapPointerEnd {
+    const last = samples.at(-1)
+    const final = last && (source === 'capture-loss' || last.t > sample.t) ? last : sample
+    return {
+        sample: { x: final.x, y: final.y, t: Math.max(final.t, sample.t) },
+        cancelled: source === 'cancel' || (source === 'capture-loss' && buttons !== 0),
+    }
+}
+
 /** 起点、合并移动事件和松手共用90ms窗口，并保留窗口前的最近锚点。 */
 export function appendCardSwapSample(
     samples: readonly CardSwapPointerSample[],
@@ -19,7 +46,11 @@ export function appendCardSwapSample(
 ): CardSwapPointerSample[] {
     const last = samples.at(-1)
     if (last && sample.t < last.t) return [...samples]
-    const result = last?.t === sample.t ? [...samples.slice(0, -1), sample] : [...samples, sample]
+    // 时间戳精度相同的首次move不能覆盖down锚点，否则即时轻甩会被算成零速度。
+    const result =
+        last?.t === sample.t && samples.length > 1
+            ? [...samples.slice(0, -1), sample]
+            : [...samples, sample]
     while (result.length > 2 && sample.t - (result[1]?.t ?? sample.t) >= 90) result.shift()
     return result
 }
@@ -47,12 +78,13 @@ export function getCardSwapRelease(
     cancelled: boolean,
 ): CardSwapRelease {
     const aim = { x: offset.x + velocity.x * 0.12, y: offset.y + velocity.y * 0.12 }
-    const length = Math.hypot(aim.x, aim.y) || 1
+    const projected = Math.hypot(aim.x, aim.y) > 0 ? aim : offset
+    const length = Math.hypot(projected.x, projected.y) || 1
     return {
         advance:
             !cancelled &&
             (Math.hypot(offset.x, offset.y) > Math.min(width, height) * 0.3 ||
                 Math.hypot(velocity.x, velocity.y) > 700),
-        direction: { x: aim.x / length, y: aim.y / length },
+        direction: { x: projected.x / length, y: projected.y / length },
     }
 }

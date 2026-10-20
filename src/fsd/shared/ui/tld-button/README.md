@@ -1,5 +1,7 @@
 # TLD Button 按钮
 
+- `size="note-action"`为练习笔记保存提供PC高26px、H5高40px、4px圆角、12/17px常规文字与左右4px内边距，宽度由父级76px槽控制。显式`solid`使用`accent-green`和`button-solid-disabled`，禁用时保留原稿浅绿色，不对整按钮降透明度；文字仍为inverse。原生disabled、焦点与提交属性保持；配套SSR用例已补但按用户要求未运行测试或构建。
+
 - `size="dialog-emphasis"`为退出练习继续按钮提供44px高、8px圆角、18px/500与字体normal行高；父层决定280px或流式宽度，primary沿sRGB渐变和foreground文字。只对显式消费者生效，其他尺寸及原生禁用/ARIA语义保持。
 
 - `size="dialog-slim"`为暂停提示提供PC高32px、r8、左右10px内边距及14/20常规文字，宽度由父容器决定；H5高44px，md恢复32px。primary采用既有sRGB品牌渐变与inverse文字，保留可见焦点、原生disabled/ARIA。仅显式消费者使用，既有slim/slim-tall及其他尺寸不变。

@@ -1,5 +1,13 @@
 # 练习页设计资源
 
+## 笔记侧栏（2026-10-20）
+
+`notes/`八份素材直接取自Figma `z7SIwUb9ep0j0ZaEwFrxJl` 的 `546:35888/36010`：标题`546:35990`（30×30）、关闭`546:35983`（24×24）、空态图`546:35995`（原图1536×1024，设计槽156×104）、书写`546:36134`、编辑`546:36147`、删除`546:36150`、修饰键`546:35999`及回车`546:36005`（后五项均18×18）。全部由`PracticeNotesPanel`静态导入，SVG根宽高不覆盖；关闭沿既有图标filter适配浅色，原彩色功能图标保留。两份完整画板预览只在ignored `dist/figma-inspection/practice-notes-20261020`作设计核对，不作为业务资源或渲染结果。
+
+## 既有资源说明
+
+2026-10-20：拼读的`word-card-guideline.svg`在原路径、1px高度与虚线图形基础上增加`preserveAspectRatio="none"`。`WordPronunciationCard`在全部视口按实际英文宽度伸展四线，不再仅在设计断点显示；其他图片、图标和配色资源保持原实现。按本轮用户要求未运行测试、构建或视觉验收，效果待用户查看。
+
 - 暂停弹窗：`pause/mascot.png`为Figma `2398:5700`原始图片（imageRef `fbe4ac6b7ee90678969c806d65498a62be3808e0`，1396×1127），按106×86、object-cover显示；`pause/close.svg`来自`2094:20266`，保留20×20及原路径。关闭SVG与完成窗素材的坐标不同，未用近似图替代。完整父节点`2094:20061`导出仅存ignored `dist/design-review/practice-pause-reference.png`作验收参考，不作实现背景。
 
 - 内容弹窗：`content-arrow-right.svg`来自546:35563，保留24×24根尺寸，放在卡片右下角。546:35546关闭图标与现有`error-feedback-close.svg`的SHA256一致，直接复用；两图均通过既有`--app-filter-dialog-icon`适配主题，不改写路径。546:35451设计导出仅存于被忽略的`dist/design-reference/practice-content-reference.png`作为QA参考。
@@ -21,7 +29,7 @@
 - known.svg/retry.svg：546:31286/31289，均66×66。
 - word-card-gradient-border.svg：546:31320，原始500×500透明描边，1px、20px圆角；136°紫→白（49%）→绿渐变，未改写路径或色值。
 - word-card-back-far.svg / word-card-back-near.svg：546:31238/31239，492×444 / 492×472；保留原始24px圆角、1px渐变描边。移除独立的实色底矩形，将同一原稿深色交给`practice-deck`语义token绘制，使light可使用已有表面回退；没有改写描边停点或路径。基准相对前卡偏移分别(36,28)/(22,14)，描边透明度分别0.4/0.6。
-- word-card-play.svg：546:31278完整32×32播放按钮；word-card-note.svg：546:31326笔记；word-card-lookup.svg：546:31283放大镜查词；word-card-add.svg：546:31331添加，后三项同为32×32。导出后按图形语义命名，未根据无语义Frame名称猜图标。
+- word-card-play.svg：546:31278完整32×32播放按钮；word-card-note.svg：546:31326文档图标，2026-10-20按用户纠正识别为解析入口，历史文件名保留，拼读消费名为analysisAsset；word-card-lookup.svg：546:31283放大镜查词；word-card-add.svg：546:31331添加，后三项同为32×32。解析背面的返回／查词／耳机采用继承语义文字色的内联SVG，不复制哇学社课程资源。
 - phonetics-word.png、phonetics-word-play.svg、phonetics-sound-play.svg、phonetics-note.svg：546:41847/41848/41894/41901；题图为understand三格漫画，播放与笔记分别保留36/20/58px原尺寸。
 
 单词拼读卡：546:31313释义的18px字号、400字重及18px行高已落实；未将此行高套给未核实的其他文字。546:31240原始投影为0 0 50 0 rgba(92,255,198,0.25)，当前沿用全局对应语义token的绿色光晕；未找到可核实的紫色投影数值，不新增猜测。卡片只使用独立背景/描边及图标节点，不把500×500整张内容画面导出后充当实现。上述尺寸和坐标对应1920×1080、默认字号且显示图片的基准；非默认字号或隐藏图片继续自然排版，装饰随卡片容器适配，不承诺该状态与基准坐标相同。
@@ -54,4 +62,4 @@
 
 ## 句子沉浸听力
 
-SentenceListeningExercise复用reading-scene.png（546:33666），显示430×242。sentence-listening-note.svg来自546:33713，原根20×20；sentence-listening-oral.svg来自546:33660，原根28×28，保留导出图形和根尺寸，沿既有dialog-icon filter适配浅色主题。两份专用SVG随新组件／测试首次交付后归句子窗口；公共标注和几何仍归主窗口。546:33709中文尾部及546:33667右上组动作待确认，本轮不生成按钮。
+SentenceListeningExercise复用reading-scene.png（546:33666），显示430×242。sentence-listening-note.svg来自546:33713，原根20×20；sentence-listening-oral.svg来自546:33660，原根28×28，保留导出图形和根尺寸，沿既有dialog-icon filter适配浅色主题。两份专用SVG随听力专用组件／测试留在practice页面内部；公共标注和几何按共用能力维护。546:33709中文尾部及546:33667右上组动作待确认，本轮不生成按钮。

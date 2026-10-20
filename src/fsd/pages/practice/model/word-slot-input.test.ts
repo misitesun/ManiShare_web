@@ -2,12 +2,93 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
     getWordSlotIndex,
+    getWordSlotCharacters,
+    getWordSlotTextPosition,
     getWordSlotPlaceholder,
     getWordSlotSelection,
     getWordSlotView,
     getWordSlotVisibleCaret,
     shouldSubmitWordSlots,
 } from './word-slot-input'
+
+test('反馈按调用方码点状态映射，缺字和多字不改写完整原文', (): void => {
+    const slot = getWordSlotView('cat', 'c😀s')[0]
+    assert.ok(slot)
+    assert.deepEqual(
+        getWordSlotCharacters(slot, 'c😀s', {
+            value: 'c😀s',
+            slots: [{ index: 0, states: ['correct', 'incorrect', 'pending'] }],
+        }),
+        [
+            { value: 'c', typed: true, state: 'correct' },
+            { value: '😀', typed: true, state: 'incorrect' },
+            { value: 's', typed: true, state: 'pending' },
+        ],
+    )
+    for (const [value, states, expected] of [
+        ['ca', ['correct', 'correct', 'missing'], ['correct', 'correct', 'missing']],
+        [
+            'cats',
+            ['correct', 'correct', 'correct', 'extra'],
+            ['correct', 'correct', 'correct', 'extra'],
+        ],
+    ] as const) {
+        const current = getWordSlotView('cat', value)[0]
+        assert.ok(current)
+        const view = getWordSlotCharacters(current, value, { value, slots: [{ index: 0, states }] })
+        assert.deepEqual(
+            view.map((character) => character.state),
+            expected,
+        )
+        assert.equal(
+            view
+                .filter((character) => character.typed)
+                .map((character) => character.value)
+                .join(''),
+            value,
+        )
+    }
+})
+
+test('反馈不推导比较结果；局部更正、过期快照和无效位置均不染错新文本', (): void => {
+    const slot = getWordSlotView('cat', 'dog')[0]
+    assert.ok(slot)
+    const feedback = {
+        value: 'dog',
+        slots: [{ index: 0, states: ['pending', 'incorrect', 'incorrect'] as const }],
+    }
+    assert.deepEqual(
+        getWordSlotCharacters(slot, 'dog', feedback).map((character) => character.state),
+        ['pending', 'incorrect', 'incorrect'],
+    )
+    assert.deepEqual(
+        getWordSlotCharacters(slot, 'new value', feedback).map((character) => character.state),
+        ['pending', 'pending', 'pending'],
+    )
+    const invalid = getWordSlotCharacters(slot, 'dog', {
+        value: 'dog',
+        slots: [{ index: 0, states: ['missing', 'extra', 'correct'] }],
+    })
+    assert.deepEqual(
+        invalid.map((character) => character.state),
+        ['pending', 'pending', 'correct'],
+    )
+})
+
+test('拆分文本节点定位保留UTF-16、边界及空节点，不计缺字占位', (): void => {
+    const texts = ['W', '😀', 'W']
+    for (const [caret, index, offset] of [
+        [0, 0, 0],
+        [1, 0, 1],
+        [2, 1, 1],
+        [3, 1, 2],
+        [4, 2, 1],
+        [100, 2, 1],
+    ] as const)
+        assert.deepEqual(getWordSlotTextPosition(texts, caret), { index, offset })
+    assert.equal(getWordSlotTextPosition([], 0), null)
+    assert.deepEqual(getWordSlotTextPosition(['', 'abc'], 2), { index: 1, offset: 2 })
+})
 
 test('可视光标扣除实际录入的前缀并夹紧后缀，保留中部UTF-16位置', (): void => {
     const value = 'first “W😀W.”'

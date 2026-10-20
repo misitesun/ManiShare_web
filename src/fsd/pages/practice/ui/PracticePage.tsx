@@ -41,6 +41,8 @@ import { WordSpellingResult } from './WordSpellingResult'
 import { judgeWordSpelling } from '../model/word-spelling'
 import { WordPracticeToolbar } from './WordPracticeToolbar'
 import { isWordToolbarMode } from '../model/word-toolbar-options'
+import type { WordToolbarOptions } from '../model/word-toolbar-options'
+import { getWordQuestionOrder } from '../model/word-question-order'
 import { SentencePracticeToolbar } from './SentencePracticeToolbar'
 import { AudioPracticeToolbar } from './AudioPracticeToolbar'
 import { isAudioToolbarMode } from '../model/audio-toolbar-options'
@@ -68,6 +70,8 @@ import { PracticeFooter } from './PracticeFooter'
 import { PracticeAnswerPanel } from './PracticeAnswerPanel'
 import { PracticeDraftPanel } from './PracticeDraftPanel'
 import { usePracticeDrafts } from '../model/usePracticeDrafts'
+import { usePracticeNotes } from '../model/usePracticeNotes'
+import { PracticeNotesPanel } from './PracticeNotesPanel'
 import { PracticeErrorFeedbackDialog } from './PracticeErrorFeedbackDialog'
 import { PracticeContentDialog } from './PracticeContentDialog'
 import { usesPracticeContentDialog } from '../model/practice-content-dialog'
@@ -77,9 +81,11 @@ import { createPracticeExitFlow } from '../model/practice-exit'
 import type { WordPronunciationDeckController } from '../model/word-card-deck'
 import {
     createWordRememberSession,
+    getWordPronunciationSession,
     getWordRememberProgress,
     moveWordRememberSession,
     rememberWord,
+    reorderWordRememberSession,
     retryWord,
 } from '../model/word-remember-session'
 import type { PracticeExitAction, PracticeExitDestination } from '../model/practice-exit'
@@ -244,10 +250,12 @@ function PracticeSession({
     const [wordRemember, setWordRemember] = useState(() =>
         createWordRememberSession(sourceQuestions.map((item) => item.id)),
     )
+    const [wordOrderRevision, setWordOrderRevision] = useState(0)
+    const appliedWordOrder = useRef<WordToolbarOptions['order'] | null>(null)
     const rememberProgress = getWordRememberProgress(wordRemember)
-    // 拼读的索引由剩余队列拥有；其他模式继续使用既有作答会话。
+    // 拼读题号由剩余队列拥有；章节完成与是否全部记住独立。
     const session = isWordPronunciation
-        ? { ...answerSession, index: wordRemember.index, finished: rememberProgress.complete }
+        ? getWordPronunciationSession(answerSession, wordRemember)
         : answerSession
     const [rememberAction, setRememberAction] = useState<WordRememberAction | null>(null)
     const pendingRemember = useRef<{
@@ -276,6 +284,7 @@ function PracticeSession({
         ? toolbarPreferences.additional(additionalFamily, mode)
         : null
     const [noteTarget, setNoteTarget] = useState<string>('')
+    const chapterNotes = usePracticeNotes(sourceQuestions.map((item) => item.id))
     const [resetRevision, setResetRevision] = useState(0)
     const [notes, setNotes] = useState<Record<string, string>>({})
     const [message, setMessage] = useState('')
@@ -321,6 +330,19 @@ function PracticeSession({
     // 最后一条记住后保留完成弹窗的渲染宿主，不以空态替换整个会话。
     const question = questions[session.index] ?? sourceQuestions[0]
     const blocked = overlay !== null || pause.paused
+    useEffect(() => {
+        if (
+            !isWordPronunciation ||
+            !toolbarPreferences.ready ||
+            appliedWordOrder.current === wordOptions.order
+        )
+            return
+        appliedWordOrder.current = wordOptions.order
+        const orderedIds = getWordQuestionOrder(sourceQuestions, wordOptions.order)
+        setWordRemember((current) => reorderWordRememberSession(current, orderedIds))
+        // 显式排序从新队列首张重建卡堆；普通切题与“再来”继续保留原物理节点。
+        setWordOrderRevision((revision) => revision + 1)
+    }, [isWordPronunciation, sourceQuestions, toolbarPreferences.ready, wordOptions.order])
     useEffect(() => {
         function cancelHiddenRemember(): void {
             if (document.visibilityState !== 'hidden') return
@@ -440,6 +462,7 @@ function PracticeSession({
                           ? 'blocked'
                           : 'question',
             ready: snapshot.ready,
+            answerInputCommands: demo.family === 'word' && mode === 'spell',
             values,
         },
         onCommand: executeCommand,
@@ -491,13 +514,35 @@ function PracticeSession({
         stopPracticeMedia()
         timer.reset()
         dispatch({ type: 'reset' })
-        setWordRemember(createWordRememberSession(sourceQuestions.map((item) => item.id)))
+        setWordRemember(
+            createWordRememberSession(
+                isWordPronunciation
+                    ? getWordQuestionOrder(sourceQuestions, wordOptions.order)
+                    : sourceQuestions.map((item) => item.id),
+            ),
+        )
+        if (isWordPronunciation) setWordOrderRevision((revision) => revision + 1)
         oral.reset()
         setPanelVisible(demo.family === 'phonetics')
         setMessage('')
         setResetRevision((revision) => revision + 1)
         setEvent(undefined)
         setOverlay(null)
+    }
+    function updateWordOptions(nextOptions: WordToolbarOptions): void {
+        if (!wordMode) return
+        if (isWordPronunciation && nextOptions.order !== wordOptions.order) {
+            cancelRemember()
+            wordDeck.current?.cancel()
+            stopPracticeMedia()
+            oral.reset()
+            dispatch({ type: 'reset' })
+            setPanelVisible(false)
+            setMessage('')
+            setEvent(undefined)
+            setResetRevision((revision) => revision + 1)
+        }
+        toolbarPreferences.update('word', wordMode, nextOptions)
     }
     async function toggleFullscreen(): Promise<void> {
         try {
@@ -515,20 +560,10 @@ function PracticeSession({
         else open(action)
     }
     function next(): void {
-        if (isWordPronunciation && session.index === questions.length - 1) {
-            setMessage(`还有 ${questions.length} 个单词未记住，可返回前面的单词继续练习。`)
-            return
-        }
-        if (session.index === questions.length - 1) advanceQuestion()
-        else if (wordDeck.current) wordDeck.current.next()
+        if (wordDeck.current) wordDeck.current.next()
         else advanceQuestion()
     }
     function advanceQuestion(): void {
-        if (isWordPronunciation) {
-            if (session.index < questions.length - 1) move(1)
-            else setMessage(`还有 ${questions.length} 个单词未记住，可返回前面的单词继续练习。`)
-            return
-        }
         if (session.index === questions.length - 1) {
             finishSession()
         } else move(1)
@@ -778,6 +813,7 @@ function PracticeSession({
         }
     }
     const style: PracticeStyle = {
+        fontFamily: appearance.fontFamily,
         '--app-color-practice-background': appearance.backgroundColor,
         '--app-color-practice-answer':
             values.answerColor === 'theme'
@@ -797,7 +833,7 @@ function PracticeSession({
         <div
             ref={rootRef}
             tabIndex={-1}
-            className="outline-none"
+            className={isWordPronunciation ? 'overflow-clip outline-none' : 'outline-none'}
             style={style}
             data-practice-phase={session.phase}
             data-practice-index={session.index}
@@ -826,7 +862,9 @@ function PracticeSession({
                         className={
                             demo.family === 'guess' || demo.family.endsWith('-reader')
                                 ? 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px] design:pr-[10px]'
-                                : 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
+                                : isWordPronunciation
+                                  ? 'relative z-[1] flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
+                                  : 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
                         }
                     >
                         <div className="flex min-w-0 flex-1 items-center gap-[11px]">
@@ -882,7 +920,11 @@ function PracticeSession({
                                 ? `已记住 ${rememberProgress.remembered} 个，共 ${rememberProgress.total} 个，剩余 ${rememberProgress.remaining} 个`
                                 : undefined
                         }
-                        className="h-[3px] shrink-0 bg-primary/40"
+                        className={
+                            isWordPronunciation
+                                ? 'relative z-[1] h-[3px] shrink-0 bg-primary/40'
+                                : 'h-[3px] shrink-0 bg-primary/40'
+                        }
                     >
                         <div
                             className="h-full bg-linear-to-r from-brand-start to-brand-end transition-[width] duration-300 ease-out motion-reduce:transition-none"
@@ -907,9 +949,7 @@ function PracticeSession({
                                     <WordPracticeToolbar
                                         mode={wordMode}
                                         values={wordOptions}
-                                        onChange={(next): void =>
-                                            toolbarPreferences.update('word', wordMode, next)
-                                        }
+                                        onChange={updateWordOptions}
                                         onNotice={setMessage}
                                     />
                                 ) : sentenceMode ? (
@@ -951,7 +991,7 @@ function PracticeSession({
                         <PracticeContent
                             key={
                                 demo.family === 'word' && mode === 'pronounce'
-                                    ? 'word-pronunciation'
+                                    ? `word-pronunciation:${wordOrderRevision}`
                                     : `${question.id}:${resetRevision}`
                             }
                             demo={demo}
@@ -997,6 +1037,7 @@ function PracticeSession({
                             onBlock={(id): void => dispatch({ type: 'block', id })}
                             onNote={(id): void => {
                                 setNoteTarget(id)
+                                if (isWordPronunciation) chapterNotes.open(id)
                                 open('note')
                             }}
                             oralEnabled={canShowQuickOral(
@@ -1061,8 +1102,10 @@ function PracticeSession({
                         items={footerItems}
                         onAction={executeCommand}
                         blocked={blocked || !snapshot.ready || rememberAction !== null}
+                        floating={isWordPronunciation}
                     />
                     <PracticeAnswerPanel
+                        portalRoot={rootRef}
                         open={panelVisible}
                         phonetics={demo.family === 'phonetics'}
                         question={question}
@@ -1082,7 +1125,7 @@ function PracticeSession({
                     {message && (
                         <p
                             role="status"
-                            className="pointer-events-none absolute bottom-[100px] left-4 right-4 text-center text-caption text-secondary"
+                            className="pointer-events-none absolute bottom-[100px] left-4 right-4 z-[1] text-center text-caption text-secondary"
                         >
                             {message}
                         </p>
@@ -1181,6 +1224,15 @@ function PracticeSession({
                     } else if (action !== null) onExit(action)
                 }}
             />
+            <PracticeNotesPanel
+                open={overlay === 'note' && isWordPronunciation}
+                questions={sourceQuestions}
+                controller={chapterNotes}
+                onClose={(): void => {
+                    chapterNotes.close()
+                    setOverlay(null)
+                }}
+            />
             <TldDialog
                 open={
                     overlay !== null &&
@@ -1188,6 +1240,7 @@ function PracticeSession({
                     overlay !== 'report' &&
                     overlay !== 'finish' &&
                     overlay !== 'exit' &&
+                    !(overlay === 'note' && isWordPronunciation) &&
                     !(overlay === 'content' && usesPracticeContentDialog(demo.family)) &&
                     !(overlay === 'mode' && isSelectablePracticeFamily(demo.family))
                 }

@@ -697,12 +697,30 @@ async function runChecks(window, origin, label) {
         await idle(window, 0, 10, 0)
         await setMotion(window, true)
         await navigate(window, 9, 10, 0)
+        assert.equal(
+            (await snapshot(window)).completion,
+            false,
+            'entering the last card stays open',
+        )
         await click(window, nextButton)
-        await idle(window, 9, 10, 0)
+        await waitFor(
+            window,
+            () => Boolean(document.querySelector('[data-practice-completion]')),
+            'last next completes the chapter without remembering words',
+        )
         result.states.lastNext = await snapshot(window)
-        assert.equal(result.states.lastNext.completion, false)
+        assert.equal(result.states.lastNext.completion, true)
+        assert.equal(result.states.lastNext.completionCount, '10')
+        assert.equal(result.states.lastNext.remembered, 0)
         assert.equal(result.states.lastNext.fillWidth, 0)
-        await navigate(window, 0, 10, 0)
+        await click(window, '[data-completion-action="replay"]')
+        await waitFor(
+            window,
+            () => !document.querySelector('[data-practice-completion]'),
+            'browsed chapter replay closes completion',
+        )
+        await idle(window, 0, 10, 0)
+        assert.deepEqual((await snapshot(window)).words, initialWords)
         await setMotion(window, false)
 
         const beforeFirstFrames = (await readProgressFrames(window)).length

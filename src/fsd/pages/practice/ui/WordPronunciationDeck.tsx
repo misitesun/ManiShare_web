@@ -1,14 +1,18 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import type { ReactElement } from 'react'
 import type { PracticeQuestion } from '../model/practice-demo'
 import type { WordCardNavigation, WordPronunciationDeckController } from '../model/word-card-deck'
 import { WordPronunciationActions, WordPronunciationCard } from './WordPronunciationCard'
 import type { WordPronunciationCardProps } from './WordPronunciationCard'
+import { wordCardAnalysisReducer } from '../model/word-card-analysis'
 import CardSwap from './CardSwap'
 
-interface WordPronunciationDeckProps extends WordPronunciationCardProps {
+interface WordPronunciationDeckProps extends Omit<
+    WordPronunciationCardProps,
+    'analysisOpen' | 'onAnalysis' | 'onAnalysisClose'
+> {
     readonly questions: readonly PracticeQuestion[]
     readonly index: number
     readonly busy: boolean
@@ -43,6 +47,14 @@ export function WordPronunciationDeck({
     ...face
 }: WordPronunciationDeckProps): ReactElement {
     const engine = useRef<WordPronunciationDeckController>(null)
+    const currentId = questions[index]?.id ?? null
+    const [analysis, dispatchAnalysis] = useReducer(wordCardAnalysisReducer, {
+        questionId: currentId,
+        open: false,
+    })
+    // 题目身份变化时同步清掉背面；不重挂物理卡，也不等待 Effect 才显示新题正面。
+    if (analysis.questionId !== currentId)
+        dispatchAnalysis({ type: 'select', questionId: currentId })
     useEffect(() => {
         onController(engine.current)
         return (): void => onController(null)
@@ -57,17 +69,23 @@ export function WordPronunciationDeck({
         >
             <p className="sr-only">
                 左右滑动均切换下一题；也可使用底部的上一题、下一题按钮和快捷键。
+                最后一题继续切换下一题时完成本章节，无需全部记住。
             </p>
             <CardSwap
                 ref={engine}
                 index={index}
-                allowFinish={false}
                 blocked={blocked}
                 isBlocked={isBlocked}
                 onDragStart={onDragStart}
                 onBusyChange={onBusyChange}
-                onChange={(nextIndex): void => onNavigate(nextIndex > index ? 'next' : 'previous')}
-                onFinish={(): void => onNavigate('next')}
+                onChange={(nextIndex): void => {
+                    dispatchAnalysis({ type: 'close' })
+                    onNavigate(nextIndex > index ? 'next' : 'previous')
+                }}
+                onFinish={(): void => {
+                    dispatchAnalysis({ type: 'close' })
+                    onNavigate('next')
+                }}
             >
                 {/* 每张真实卡保持同一描边与轮廓，层次由3D位姿表达，题序变化不切换卡面外观。 */}
                 {questions.map((question, questionIndex) => (
@@ -76,6 +94,15 @@ export function WordPronunciationDeck({
                         {...face}
                         question={question}
                         borderDepth="front"
+                        analysisOpen={
+                            questionIndex === index &&
+                            analysis.questionId === currentId &&
+                            analysis.open
+                        }
+                        onAnalysis={(): void =>
+                            dispatchAnalysis({ type: 'open', questionId: question.id })
+                        }
+                        onAnalysisClose={(): void => dispatchAnalysis({ type: 'close' })}
                         disabled={blocked || remembering || questionIndex !== index}
                         reading={questionIndex === index ? reading : undefined}
                     />

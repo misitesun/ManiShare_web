@@ -39,8 +39,7 @@ function renderFaces(
             onRetry: rejectAction,
             onRememberFeedbackComplete: rejectAction,
             onPlay: rejectAction,
-            onNote: rejectAction,
-            onLookup: rejectAction,
+            onExamplePlay: rejectAction,
             onAdd: rejectAction,
         }),
     )

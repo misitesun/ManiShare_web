@@ -4,6 +4,21 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { TldButton } from './TldButton'
 
+test('笔记紧凑保存按钮保留原生禁用和表单语义', (): void => {
+    const html = renderToStaticMarkup(
+        createElement(TldButton, {
+            size: 'note-action',
+            variant: 'solid',
+            disabled: true,
+            type: 'submit',
+            children: '保存',
+        }),
+    )
+    assert.match(html, /type="submit"/)
+    assert.match(html, /disabled=""/)
+    assert.match(html, />保存<\/span>/)
+})
+
 test('小尺寸纯色按钮透传原生属性，不改变默认按钮的提交语义', (): void => {
     const html = renderToStaticMarkup(
         createElement(

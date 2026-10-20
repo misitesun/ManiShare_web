@@ -7,6 +7,7 @@ interface PracticeFooterProps {
     readonly items: readonly PracticeFooterItem[]
     readonly onAction: (action: PracticeCommand) => void
     readonly blocked?: boolean
+    readonly floating?: boolean
 }
 
 function DirectionIcon({ next }: { readonly next: boolean }): ReactElement {
@@ -94,6 +95,7 @@ export function PracticeFooter({
     items,
     onAction,
     blocked = false,
+    floating = false,
 }: PracticeFooterProps): ReactElement | null {
     if (items.length === 0) return null
     const reading = items.length === 3 && items[1]?.id === 'playback'
@@ -101,7 +103,11 @@ export function PracticeFooter({
         <footer
             data-practice-footer
             aria-label="练习底部操作"
-            className="fixed inset-x-0 bottom-0 z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]"
+            className={
+                floating
+                    ? 'pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-transparent px-3 pb-[env(safe-area-inset-bottom)] [&_button]:pointer-events-auto'
+                    : 'fixed inset-x-0 bottom-0 z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
+            }
         >
             <div
                 data-practice-footer-row

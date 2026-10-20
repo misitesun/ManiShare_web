@@ -1015,11 +1015,30 @@ async function runChecks(window, origin, label) {
                 'pause interruption is not applicable while the development pause feature is disabled; modal cancellation remains covered',
             )
         }
-        await click(window, '[data-word-deck-front] button[aria-label="记录当前单词笔记"]')
-        await waitFor(window, () => document.querySelector('[role="dialog"]'), 'note')
+        await click(window, '[data-word-deck-front] [data-word-analysis-trigger]')
+        await waitFor(
+            window,
+            () =>
+                document.querySelector(
+                    '[data-word-deck-front] [data-word-analysis-open="true"][data-word-card-flipping="false"]',
+                ),
+            'word analysis flips open',
+        )
+        assert.equal(
+            await evaluate(window, () => document.querySelector('[role="dialog"]') !== null),
+            false,
+            'analysis is the card back, not a notes dialog',
+        )
         assert.equal((await state(window)).index, '0')
-        await click(window, 'button[aria-label="关闭对话框"]')
-        await waitFor(window, () => !document.querySelector('[role="dialog"]'), 'note closes')
+        await click(window, '[data-word-deck-front] [data-word-analysis-return]')
+        await waitFor(
+            window,
+            () =>
+                document.querySelector(
+                    '[data-word-deck-front] [data-word-analysis-open="false"][data-word-card-flipping="false"]',
+                ),
+            'word analysis returns to front',
+        )
         assert.equal((await state(window)).state, 'idle')
         report.interactions.push('card buttons retain independent click behavior')
         report.demoWords = [reference.english]
@@ -1055,12 +1074,15 @@ async function runChecks(window, origin, label) {
         }
         assert.equal(new Set(report.demoWords).size, reference.total, 'ten different demo words')
         await click(window, '[data-practice-footer-action="question.next"]')
-        await idle(window, reference.total - 1)
-        await delay(100)
+        await waitFor(
+            window,
+            () => Boolean(document.querySelector('[data-practice-completion]')),
+            'last next opens completion without requiring remembered words',
+        )
         assert.equal(
             (await state(window)).finish,
-            false,
-            'last-card navigation cannot complete unremembered cards',
+            true,
+            'last-card navigation completes the chapter with unremembered cards',
         )
         assert.equal((await state(window)).index, String(reference.total - 1))
         near(
@@ -1071,7 +1093,7 @@ async function runChecks(window, origin, label) {
         await load(window, origin)
         await idle(window, 0)
         report.interactions.push(
-            'footer uses card motion; last next retains the card without completion; reload restores the navigation baseline',
+            'footer uses card motion; last next completes the chapter with zero remembered words; reload restores the navigation baseline',
         )
         await click(window, '[data-practice-navigation-action="settings"]')
         await waitFor(window, () => document.querySelector('[role="tab"]'), 'settings')

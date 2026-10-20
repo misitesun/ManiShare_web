@@ -89,7 +89,9 @@ async function state(window, selector) {
                 open: layer.dataset.dialogOpen,
                 opacity: Number(getComputedStyle(layer).opacity),
                 scale: matrix.m11,
+                x: matrix.m41,
                 y: matrix.m42,
+                placement: layer.dataset.dialogPlacement,
                 inert: frame.inert,
                 ariaHidden: layer.getAttribute('aria-hidden'),
                 title: dialog.querySelector('h2')?.textContent,
@@ -112,6 +114,7 @@ async function waitOpen(window, selector) {
             const matrix = new DOMMatrixReadOnly(getComputedStyle(frame).transform)
             return (
                 Number(getComputedStyle(layer).opacity) >= 0.999 &&
+                Math.abs(matrix.m41) < 0.01 &&
                 Math.abs(matrix.m42) < 0.01 &&
                 Math.abs(matrix.m11 - 1) < 0.001
             )
@@ -136,7 +139,12 @@ async function openModal(window, trigger, tag) {
     const selector = await markTop(window, tag)
     const entering = await state(window, selector)
     assert.ok(entering.opacity > 0 && entering.opacity < 1, tag + ' has an entering fade')
-    assert.ok(entering.scale < 1 && entering.y > 0, tag + ' has matching scale and slide')
+    assert.ok(
+        entering.placement === 'right'
+            ? entering.x > 0 && Math.abs(entering.scale - 1) < 0.001 && Math.abs(entering.y) < 0.01
+            : entering.scale < 1 && entering.y > 0,
+        tag + ' has its declared entrance direction',
+    )
     await waitOpen(window, selector)
     return { selector, entering, opened: await state(window, selector) }
 }
@@ -182,7 +190,12 @@ async function closeModal(window, selector, close) {
     assert.equal(closing.inert, true)
     assert.equal(closing.ariaHidden, 'true')
     assert.ok(closing.opacity > 0 && closing.opacity < 1, before.title + ' fades out')
-    assert.ok(closing.scale < 1 && closing.y > 0, before.title + ' reverses scale and slide')
+    assert.ok(
+        closing.placement === 'right'
+            ? closing.x > 0 && Math.abs(closing.scale - 1) < 0.001 && Math.abs(closing.y) < 0.01
+            : closing.scale < 1 && closing.y > 0,
+        before.title + ' reverses its declared entrance direction',
+    )
     assert.equal(closing.title, before.title, 'exit retains its own title')
     assert.equal(
         closing.text,
@@ -358,17 +371,8 @@ async function runPracticeDialogMotionChecks(window, origin, label) {
             exit: await closeModal(window, oral.selector),
         })
 
-        await loadPractice(window, origin, 'word-basic', 'pronounce')
-        const note = await openModal(
-            window,
-            'button[aria-label="记录当前单词笔记"]',
-            label + '-note',
-        )
-        result.dialogs.push({
-            action: 'note',
-            ...note,
-            exit: await closeModal(window, note.selector),
-        })
+        // 拼读首图标已纠正为卡内解析翻面；笔记组件保留但暂未分配新入口。
+        // 翻面回归归 word-pronunciation-runtime-smoke，不将其当作模态弹窗。
 
         for (const [family, mode] of [
             ['word', 'pronounce'],

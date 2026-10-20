@@ -6,6 +6,8 @@
 - 扩展：新增桌面能力使用具名 preload API、参数校验和 sender 校验，不暴露任意 IPC/文件执行。
 - 验证：desktop:build 编译 production+main；单元测试验证解析/安全边界，production runtime smoke 验证实际水合/CSP/RSC/导航。
 
+2026-10-20欧路查词外链：`dictionary-navigation.ts`校验主窗口来源与目标，`main.ts`的原生新窗口处理只把可信renderer发起的`https://dict.eudic.net/dicts/en/<编码词条>`交给`shell.openExternal`（实现中不暴露shell对象）。Web与Electron使用同一原生`target="_blank"`词条链接；Electron始终返回deny，不创建第三方BrowserWindow。其他域名、协议、端口、凭据、非词条路径、查询／片段及表单内容保持拒绝，原will-navigate／will-redirect与sandbox／contextIsolation不变；不增加preload、IPC或renderer的Node导入。主进程安全策略独立于页面的词典地址构造，以免把产品地址配置等同于任意外站授权；更换供应商需同步两端策略及用例。已补策略用例但按用户要求未运行测试／构建或桌面实测，默认浏览器实际唤起仍待验收。
+
 完整复制 dist/production（含 Next 的 txt 与分段 RSC、_next/static、public 和 CSP manifest）。首次加载 englishlearning://app/；目录映射 index.html，未知页面返回 status404 的404.html，资源/RSC未命中绝不返回HTML。txt RSC按实际导出命名返回text/x-component，query忽略；hash资源长期缓存，HTML/RSC/public短缓存。
 
 CSP script-src self 加逐HTML SHA-256；启动校验manifest与HTML内容一致，响应时再次校验。不能用script unsafe-inline/unsafe-eval解决水合。新Next版本要重跑运行时冒烟，不能把资产SRI当作内联水合许可。

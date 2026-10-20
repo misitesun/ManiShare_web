@@ -19,6 +19,8 @@ export interface PracticeShortcutContext {
     readonly scope: 'question' | 'oral' | 'finish' | 'blocked'
     readonly ready: boolean
     readonly values: ShortcutPreferences
+    /** 仅 word:spell 的作答输入显式启用；普通编辑器始终保留原生行为。 */
+    readonly answerInputCommands?: boolean
 }
 export interface PracticeKeyInput extends ShortcutInput {
     readonly repeat?: boolean
@@ -67,6 +69,8 @@ export function resolvePracticeShortcut(
     )
         return null
     const { values, family, mode, phase } = context
+    const answerCommands =
+        context.answerInputCommands === true && family === 'word' && mode === 'spell'
     const plain = !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey
     // 原生控件的 Enter / 空格 / 方向键由控件激活一次，不由全局再执行。
     if (
@@ -108,6 +112,7 @@ export function resolvePracticeShortcut(
     // Shift方向键等显式组合仍可执行用户配置的切题动作。
     if (
         target === 'answer-input' &&
+        !answerCommands &&
         event.shiftKey &&
         !event.ctrlKey &&
         !event.altKey &&
@@ -117,7 +122,8 @@ export function resolvePracticeShortcut(
         return null
     for (const command of ['question.previous', 'question.next', 'practice.readAloud'] as const)
         if (matches(event, command, values)) return command
-    if (target === 'answer-input' && plain && event.key.startsWith('Arrow')) return null
+    if (target === 'answer-input' && !answerCommands && plain && event.key.startsWith('Arrow'))
+        return null
     if (supportsPracticeKnowledge(family, mode))
         for (const command of ['practice.markMastered', 'practice.markUnfamiliar'] as const)
             if (matches(event, command, values)) return command
@@ -127,7 +133,7 @@ export function resolvePracticeShortcut(
         if (matches(event, 'practice.panel.show', values)) return 'practice.panel.show'
     }
     if (matches(event, 'practice.oral', values)) {
-        if (target === 'answer-input') return null
+        if (target === 'answer-input' && !answerCommands) return null
         if (mode === 'oral')
             return context.oralStage === 'evaluating' || context.oralStage === 'error'
                 ? null

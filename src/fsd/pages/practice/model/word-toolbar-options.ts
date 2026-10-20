@@ -1,3 +1,5 @@
+import type { WordPhoneticMode } from './word-phonetics'
+
 export type WordToolbarMode = 'pronounce' | 'spell' | 'dictate' | 'meaning' | 'typing' | 'oral'
 
 export interface WordToolbarOptions {
@@ -8,7 +10,7 @@ export interface WordToolbarOptions {
     copy: boolean
     order: 'sequential' | 'random' | 'alphabetical'
     language: 'translate' | 'interpret' | 'bilingual'
-    phonetics: 'original' | 'syllables' | 'phonics' | 'none'
+    phonetics: WordPhoneticMode
 }
 
 export type WordToolbarRow =
@@ -34,7 +36,7 @@ export function isWordToolbarMode(value: string): value is WordToolbarMode {
     )
 }
 
-/** 截图初值仅用于本轮局部演示，不读取或写回全局学习偏好。 */
+/** 无局部缓存时使用的初值；拼读排序和中英显隐直接作用于本地题库，不回写全局偏好。 */
 export function createWordToolbarOptions(mode: WordToolbarMode): WordToolbarOptions {
     const options: WordToolbarOptions = {
         cutReading: true,

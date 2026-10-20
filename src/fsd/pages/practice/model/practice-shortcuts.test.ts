@@ -35,6 +35,61 @@ function context(changes: Partial<PracticeShortcutContext> = {}): PracticeShortc
     }
 }
 
+test('word:spell显式启用输入命令，其他模式及普通编辑器不扩大范围', (): void => {
+    const active = context({ mode: 'spell', answerInputCommands: true, panelVisible: true })
+    for (const [key, changes, expected] of [
+        ['ArrowDown', {}, 'practice.panel.show'],
+        ['ArrowUp', {}, 'practice.panel.hide'],
+        ['L', { shiftKey: true }, 'practice.readAloud'],
+        ['J', { shiftKey: true }, 'practice.markMastered'],
+        ['K', { shiftKey: true }, 'practice.markUnfamiliar'],
+        ['Enter', {}, 'practice.primary'],
+    ] as const) {
+        assert.equal(resolvePracticeShortcut(input(key, changes), active, 'answer-input'), expected)
+        assert.equal(resolvePracticeShortcut(input(key, changes), active, 'editor'), null)
+        assert.equal(
+            resolvePracticeShortcut(
+                input(key, changes),
+                { ...active, scope: 'blocked' },
+                'answer-input',
+            ),
+            null,
+        )
+    }
+    for (const key of ['v', ' ', 'a', 'ArrowLeft', 'ArrowRight'])
+        assert.equal(resolvePracticeShortcut(input(key), active, 'answer-input'), null)
+    assert.equal(
+        resolvePracticeShortcut(input('V'), { ...active, phase: 'correct' }, 'answer-input'),
+        'practice.oral',
+    )
+    assert.equal(
+        resolvePracticeShortcut(
+            input('V'),
+            { ...active, phase: 'correct', showEvaluation: false },
+            'answer-input',
+        ),
+        null,
+    )
+    for (const mode of ['dictate', 'translate', 'typing'] as const)
+        assert.equal(
+            resolvePracticeShortcut(
+                input('L', { shiftKey: true }),
+                { ...active, mode },
+                'answer-input',
+            ),
+            null,
+        )
+    const custom = { ...active, values: { ...values, nextShortcut: 'Shift + N' } }
+    assert.equal(
+        resolvePracticeShortcut(input('N', { shiftKey: true }), custom, 'answer-input'),
+        'question.next',
+    )
+    assert.equal(
+        resolvePracticeShortcut(input('A', { shiftKey: true }), custom, 'answer-input'),
+        null,
+    )
+})
+
 test('全部完成态统一按键意图，原生按钮、编辑器、IME与退场阻断不重复派发', (): void => {
     for (const demo of practiceDemos)
         for (const mode of demo.modes) {

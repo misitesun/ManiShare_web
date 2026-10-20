@@ -1,5 +1,8 @@
 # TLD Dialog 对话框
 
+- `placement="right"`（默认`center`）提供显式右侧模态面板：`fit-extra-wide`配合`referenceFrame.width`控制宽度，默认544px；PC设计阈值右距50px，较小视口沿12／24px安全边距。复用原遮罩、焦点循环、Esc／遮罩关闭、层级注册、退场保留与清理，`surface`继续支持纯色／渐变。可见视口宽高／偏移仅在右侧面板打开时订阅，关闭或卸载清理，用于软键盘与双指缩放下的可用范围；业务内容用`--dialog-available-height`限制高度。原居中消费者不订阅此视口状态。
+- 右侧动画沿草稿的240ms、打开`power2.out`／关闭`power2.in`，不缩放或纵移；退场终点取未变换布局位置到可见视口右缘再加12px。`dialog-motion`定义几何，快速反向开关接续当前位移，尺寸变化重算，reduced-motion直接结束。`referenceFrame`在设计阈值补正内框偏移，保持动画框独立。首个消费者为练习页`PracticeNotesPanel`；本轮补几何／SSR用例并更新原专项的右侧预期，按用户要求未运行测试、构建或运行时专项，PC及平板／H5待用户验收。
+
 - 局部动画：根入口额外提供`TldDialogMotionProvider`及只读`useTldDialogMotionEnabled`，在指定React业务树内启用240ms的遮罩淡入/淡出及内容12px轻位移、0.97→1缩放；嵌套Portal继承同一配置。当前只在练习页装配，其他页面默认即时显隐。原稿referenceFrame偏移继续由独立内框承担，动画只作用于新增外层，不覆盖设计坐标或缩放整页。
 - 退场：调用方持续挂载`TldDialog`并将open设false，外壳保留最后一次展开的标题/内容直至动画完成，关闭画面立即inert/aria-hidden且不接收指针；逻辑关闭仍沿原时机释放焦点/滚动隔离。快速重开从当前进度反向，每轮独立GSAP context取消旧回调并释放引用。系统reduced-motion即时到达最终状态，运行中切换也结束当前动画。可选`onAfterClose`仅在真实打开后的关闭完成时调用，适用于退场后开始新模式/返回目录；首次关闭态与预渲染不调用，重新打开取消旧完成动作。外层直接条件卸载会跳过退场，应由owner保持组件存活；确认/取消的业务状态仍由调用方负责。
 

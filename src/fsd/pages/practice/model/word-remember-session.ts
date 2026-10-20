@@ -1,3 +1,5 @@
+import type { PracticeSession } from './practice-demo'
+
 export interface WordRememberSession {
     readonly remainingIds: readonly string[]
     readonly rememberedIds: readonly string[]
@@ -10,12 +12,36 @@ export interface WordRememberProgress {
     readonly remembered: number
     /** 0–100 的百分比；导航或普通切题不改变此值。 */
     readonly percent: number
+    /** 仅表示全部单词已记住，不作为章节完成的唯一条件。 */
     readonly complete: boolean
+}
+
+/** 拼读题号来自待练队列；章节是否结束保留会话状态，不由记住比例覆盖。 */
+export function getWordPronunciationSession(
+    session: PracticeSession,
+    words: WordRememberSession,
+): PracticeSession {
+    return { ...session, index: words.index }
 }
 
 /** 同一题目 ID 只占一题，保留课程提供的首次出现顺序。 */
 export function createWordRememberSession(ids: readonly string[]): WordRememberSession {
     return { remainingIds: [...new Set(ids)], rememberedIds: [], index: 0 }
+}
+
+/** 按完整题库的排序重排剩余词，从首张继续，已记住的词不会重新加入。 */
+export function reorderWordRememberSession(
+    state: WordRememberSession,
+    orderedIds: readonly string[],
+): WordRememberSession {
+    const ranks = new Map<string, number>(orderedIds.map((id, index) => [id, index]))
+    const remainingIds = [...state.remainingIds].sort(
+        (left, right) =>
+            (ranks.get(left) ?? orderedIds.length) - (ranks.get(right) ?? orderedIds.length),
+    )
+    if (state.index === 0 && remainingIds.every((id, index) => id === state.remainingIds[index]))
+        return state
+    return { ...state, remainingIds, index: 0 }
 }
 
 /** 仅导航剩余题目，越界停在首尾，不循环、不增加记住进度。 */

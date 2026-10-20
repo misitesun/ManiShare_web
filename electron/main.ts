@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, net, protocol } from 'electron'
+import { app, BrowserWindow, ipcMain, net, protocol, shell } from 'electron'
 import { readFileSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -17,6 +17,7 @@ import {
     readMediaResponseBody,
     supportsMediaByteRanges,
 } from './media-byte-range.js'
+import { getDictionaryNavigationTarget } from './dictionary-navigation.js'
 
 const appProtocol = 'englishlearning'
 const developmentRendererUrl = process.env.DESKTOP_RENDERER_URL
@@ -118,7 +119,20 @@ async function createMainWindow(): Promise<BrowserWindow> {
     window.once('ready-to-show', (): void => {
         if (process.env.DESKTOP_SMOKE !== '1') window.show()
     })
-    window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+    window.webContents.setWindowOpenHandler((details) => {
+        const target = getDictionaryNavigationTarget(
+            details.url,
+            window.webContents.getURL(),
+            developmentRendererUrl,
+            details.postBody !== undefined,
+        )
+        if (target !== null)
+            void shell.openExternal(target).catch((error: unknown): void => {
+                console.warn('无法打开欧路词典。', error)
+            })
+        // 词典使用系统浏览器，其他新窗口继续拒绝，不在应用窗口载入第三方页面。
+        return { action: 'deny' }
+    })
     window.webContents.on('will-redirect', (event, url): void => {
         if (!isTrustedRenderer(url)) event.preventDefault()
     })

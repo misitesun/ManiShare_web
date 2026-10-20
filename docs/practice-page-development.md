@@ -1,81 +1,82 @@
 # 练习页开发文档
 
-## 当前进度与三窗口协作入口（2026-10-19）
+## 当前进度与单窗口开发入口（2026-10-20）
 
 本节是当前开发入口。下文保留各轮设计和验收历史；状态冲突时，以本节及对应最新专项为准。历史的“暂无快捷键／输入高亮”“三张二维卡堆”“暂停默认启用”“所有提交均不判题”已经分别被后续实现覆盖，不能直接作为新任务依据。
 
 ### 当前实现与适配进度
 
+- **单词拼读静态 UI 已完成（2026-10-20，用户确认）**：`word:pronounce`当前卡面、工具栏、拖拽甩出、再来／记住、末题完成、解析翻面及查词入口作为本模式静态 UI 检查点归档。代码范围、保留的笔记组件、待接接口／音源及未运行验证见[当前代码快照](checkpoints/2026-10-20-word-pronunciation-static-ui.md)。本次按用户授权提交并推送当前工作区代码，不把其他模式或真实学习业务一并标为完成。
+
+- **单词拼读查词与加号（2026-10-20）**：正面放大镜与背面单词旁图标共用`WordDictionaryLink`，按当前英文生成欧路词条链接，Web新标签页打开、Electron经主进程受限规则交给默认浏览器。按钮不再用本地词义提示代替外链；保留现有样式／配色／禁用态，不提前抓取词典内容。加号与底栏“不熟”的语义已统一登记`PRACTICE-UNFAMILIAR-LIST`；本轮不接保存接口、不修改记住／再来队列，实际列表保存待后续接口。按要求未测试或构建，浏览器／桌面外链实测待用户查看。
+
+- **单词拼读解析（2026-10-20）**：卡牌首个文档图标已按用户纠正改为解析，原位绕Y轴翻转，背面显示当前单词／完整音标／释义及三条双语例句，左上返回或Esc翻回。十个模拟词各补三句及显式中英文重点词；无例句用空态，无音源点击提示。切题恢复正面，翻面与CardSwap物理位移分层，600ms结束后恢复二维展示，支持反向接续、reduced-motion及清理。不改正面绿色词／音标，背面按截图消费深灰表面、紫边和蓝色重点词的既有语义token。
+- **保留的笔记组件（2026-10-20）**：`PracticeNotesPanel`及每题一条的本轮内存模型／素材继续保留，首图标已移除笔记事件，暂未另增入口；其他模式原笔记保持。共享侧滑和配色见下方“章节笔记侧栏”。本次按用户要求未运行测试、构建或浏览器验收，效果待用户查看。
+
 - **公共练习框架**：12个内容族、40个本地组合具备入口和基础编排；六族模式选择、按`family:mode`保存局部选项、真实计时、统一命令与快捷键、底栏、输入高亮、草稿、内容／报错／设置／退出／完成弹窗已接入。这不代表40组合已逐稿精修或接入正式学习业务。
-- **单词拼读 `word:pronounce`**：10个本地词例、四张可见3D卡堆、hover与原手势、记住移出待练队列、再来放回业务队尾及可见末槽已实现。记住进度仅本轮内存，不写服务端。
+- **单词拼读 `word:pronounce`**：10个本地词例、四张可见3D卡堆、hover与原手势、记住移出待练队列、再来放回业务队尾及可见末槽已实现。2026-10-20新增全视口四线、遮住中文／英文及本地正序／乱序／A-Z排序；章节完成与记住状态已分开，进入末题不结束，末题再切下一题退场后打开完成窗，无需全部记住，也不补写记住进度。按用户要求本轮未测试或构建，效果待用户查看。记住进度仅本轮内存，不写服务端。
 - **单词拼写 `word:spell`**：12题本地样例比对、固定词槽、Enter／末词末尾普通空格提交、答错重试、本轮提交统计、正确态口语入口与统计已实现。只按已确认的trim／ignoreCase规则本地比对；正式题库和服务端判题未接。
 - **其他单词模式**：默写、句中练义、指法、口语已有基础组合与工具栏，仍需按各小模式最新设计逐项核对；口语是明确的状态演示，不是真实录音或评分。
-- **句子七模式**：工具栏已接入；中译英、理解自查、拼块使用专用`SentenceExercise`，沉浸听力已由主窗口提取`SentenceListeningExercise`并接线，阅读、指法、口语仍走通用`PracticeContent`。听力不消费完整／拆分；句子窗口负责删除历史局部行及专项预期，合入前主分支历史行仍在。完整／拆分、抄写运行策略仍待接，不宣称七模式精修完成。
+- **句子七模式**：工具栏已接入；中译英、理解自查、拼块使用专用`SentenceExercise`，沉浸听力已提取`SentenceListeningExercise`并接线，阅读、指法、口语仍走通用`PracticeContent`。听力不消费完整／拆分；历史局部行及专项预期待清理，旧缓存过滤与图片／切读恢复待统一验证。完整／拆分、抄写运行策略仍待接，不宣称七模式精修完成。
 - **共用输入与媒体**：整词词槽及原生编辑覆盖8个消费者，彩色键帽／双手和实输高亮已接。28种支持切读的模式已接统一调度，但正式演示数据缺少课程音源，显示静态声纹和“音源待接入”；技术WAV／MP4只验证播放器。`PRACTICE-SOUND-MIGRATION`正式声音资源迁入仍待开发。
-- **当前暂停规则**：`model/practice-pause.ts`中的`PRACTICE_PAUSE_ENABLED = false`；顶部和更多菜单无暂停，窗口失焦／隐藏不触发游戏暂停。设置、退出、完成等有效浮层仍按原规则阻断。重新启用必须由主窗口统一修改并重验。
+- **共用音标展示（2026-10-20）**：`PracticeWordPhonetics`与`word-phonetics`已接原始音标／音节拆分／自然拼读／无音标；当前模拟词例已补显式分组，拼读和拼写的既有控件即时消费各自选项，默写、通用题面和逐词标注复用展示或格式规则并保留原门控。移除两处woman专用分块，缺数据回退完整IPA；配色与密度见[配色方案第9节](practice-page-color-scheme.md#9-单词音标展示2026-10-20)。本轮按用户要求未测试、构建或视觉验收；真实音源及音标课程专用朗读策略不在本次接线中。
+- **当前暂停规则**：`model/practice-pause.ts`中的`PRACTICE_PAUSE_ENABLED = false`；顶部和更多菜单无暂停，窗口失焦／隐藏不触发游戏暂停。设置、退出、完成等有效浮层仍按原规则阻断。重新启用时统一修改公共开关并重验。
 - **PC及缩放**：已有各专项的1920×1080或1440×900基准、深浅主题、较窄PC及真实125%／150%／200%缩放记录；以各节实际范围为准，不把历史专项拼成一次当前全站验收。
 - **响应式代码**：小于1280px顶部操作收为更多菜单；单词手机音标改为同值下拉，极窄工具栏局部横滚；小于`md`底栏隐藏键位与朗读，上下题保留24px箭头和40×40触控区，其他动作为文字；词槽自然换行，超长词局部滚动。
 - **待用户验收**：平板／H5视觉、触摸、系统软键盘、OS输入法、横竖屏、外接键盘及真机声音／媒体兼容。390／768等自动几何检查不等于这些项目通过。
 - **未闭合的广域验收**：最新整站`runtime:smoke`未完整重新通过；历史较广检查保留卡片行高`normal`与38px期望不符的失败，暂停40组合扩大尝试保留宿主销毁原因未定位的记录。本次主分支归档的测试／构建结果单独记录，不能覆盖上述运行时缺口。
 
-### 三个窗口、分支与服务
+word:spell公共依赖已准备验收：答案Portal层级、仅拼写输入聚焦命令及可选逐字反馈契约完成；比较／快照／卡面实际启用仍待开发。本轮678项测试、生产构建和相关双端专项结果见[公共交付说明](#wordspell-公共依赖契约2026-10-20)，尚未提交。
 
-三个窗口必须选择三个独立工作目录（同一仓库的Git worktree），各自持有分支，不能在同一个目录开三个窗口后轮流切分支。
+### 单窗口工作区与服务
 
-- **主窗口：`main`，端口3000**。维护练习共用能力、全站共享组件、公共接线、总文档及集成验收。当前原目录`/Users/sly/react_work/漫奇说web`作为主窗口目录。
-- **单词窗口：`codex/word-games`，端口3001**。维护下方单词独占文件和[单词开发记录](practice-word-games-development.md)。实际worktree路径以本次创建结果为准。
-- **句子窗口：`codex/sentence-games`，端口3002**。维护下方句子独占文件和[句子开发记录](practice-sentence-games-development.md)。实际worktree路径以本次创建结果为准。
+练习页的公共组件、单词模式、句子模式、公共接线、文档和验收统一在同一个窗口内完成。
 
-至少运行单词和句子两个开发服务；主窗口需要查看公共组件修改时，再运行第三个服务。各目录中分别使用`pnpm run dev --port 3000`、`pnpm run dev --port 3001`、`pnpm run dev --port 3002`；已运行的3000服务无需重复启动。练习直达示例：`http://localhost:3001/practice/?demo=word-basic&mode=pronounce`和`http://localhost:3002/practice/?demo=sentence-basic&mode=translate`。
+- 固定工作目录：`/Users/sly/react_work/漫奇说web`，分支`main`。
+- Web预览端口：3000；启动命令：`pnpm run dev --port 3000`。先确认已有服务是否来自本工作区，已运行时不重复启动。
+- 单词和句子共用同一服务，例如`http://localhost:3000/practice/?demo=word-basic&mode=pronounce`、`http://localhost:3000/practice/?demo=sentence-basic&mode=translate`。统一使用`localhost`，避免与`127.0.0.1`产生额外存储来源差异。
+- 同目录dev与build／typecheck不能并行；需要构建时正常停止本目录服务，不删除活锁。Electron及生产验证的服务要求见[环境配置](environment.md#练习页开发服务)。
+- 每项任务开始前核对目录、分支和Git状态，保留已有未提交改动；仅修改当前需求涉及的模块，提交及远端操作按当前任务授权执行。
 
-每个worktree独立安装依赖并维护自己的`node_modules`、`.next`、`out`、`dist`及本地环境文件；可共享pnpm store，禁止把整个`node_modules`软链到主目录。Git不会复制被忽略的个人环境文件，需要按[环境配置](environment.md)初始化。不要在同一目录同时运行dev和build／typecheck，它们使用同一runner锁；验证构建前正常停止该目录dev，或在独立验收副本构建，不删活锁、不影响其他目录服务。
+### 模块职责：公共能力与模式专用内容
 
-不同端口的浏览器存储互相独立，主题、设置和局部练习偏好需分别配置；统一使用`localhost`，避免与`127.0.0.1`混用造成额外来源差异。日常并行使用Web浏览器；`desktop:dev`会自行启动Next且普通Electron未配置多实例profile隔离，Electron按需单实例验收，不能把smoke专用profile变量当作普通桌面隔离能力。
+以下按代码概念说明范围，均由同一窗口维护。这里的“练习共用”表示`pages/practice`内部多个模式共享，不代表要移到FSD的`shared`层。单词、句子属于同一个practice页面slice，通过根`index.ts`对外暴露；同名测试跟随被测文件。
 
-### 文件归属：公共组件与模式独占内容
+**全站公共基础与练习共用内容。**
 
-这里的“练习共用”表示`pages/practice`内部多个模式共享，不代表要移到FSD的`shared`层。单词、句子仍属于同一个practice页面slice，通过原根`index.ts`对外暴露；不为分支新建同层互相导入的页面slice。
-
-**主窗口维护：全站公共基础与练习共用内容。**
-
-- 全站基础：`src/fsd/shared/ui/tld-*`、`shared/lib/animation`、`shared/lib/storage`、`shared/lib/time`、`shared/theme`、`shared/config`，全局样式`src/fsd/app/styles/index.css`；公共入口、Props、主题token和存储键统一由主窗口处理。
+- 全站基础：`src/fsd/shared/ui/tld-*`、`shared/lib/animation`、`shared/lib/storage`、`shared/lib/time`、`shared/theme`、`shared/config`，全局样式`src/fsd/app/styles/index.css`；公共入口、Props、主题token和存储键按真实消费者统一评估。
 - 独立功能：`features/learning-settings`与`features/practice-mode-selection`的公共入口、跨族配置及资源；课程入口、`src/app/(practice-session)`、`app/router/PracticePageRoute.tsx`和路由配置。
-- 页面装配与共用数据：`pages/practice/index.ts`、`ui/PracticePage.tsx`、`ui/PracticeContent.tsx`及其测试、`model/practice-demo.ts`及测试、`model/reference-layout.ts`及测试。即使其中有单词或句子分支代码，也先交主窗口接线。
-- 共用输入：`ui/PracticeWordSlotsInput.tsx`、`model/word-slot-input.ts`及测试。名称含Word，但被单词、句子等共同使用；`AnnotatedText`、`TypingKeyboard`／`TypingHands`及实输映射也归主窗口。
+- 页面装配与共用数据：`pages/practice/index.ts`、`ui/PracticePage.tsx`、`ui/PracticeContent.tsx`及其测试、`model/practice-demo.ts`及测试、`model/reference-layout.ts`及测试。
+- 共用输入：`ui/PracticeWordSlotsInput.tsx`、`model/word-slot-input.ts`及测试。名称含Word，但被单词、句子等共同使用；`AnnotatedText`、`TypingKeyboard`／`TypingHands`及实输映射同属共用能力。
 - 共同交互：`PracticeNavigation`、`PracticeFooter`、`PracticeModeToolbar`、`PracticeToolbarControls`、`PracticeMedia`、`PracticeReadingOverlay`、`PracticeFeedback`及共用弹窗；导航、底栏、命令／绑定／快捷键、可见性、计时、暂停、切读、媒体互斥、偏好缓存及相应`usePractice*`生命周期模型和测试。
-- 共同资源：`assets/word-woman-e23d5f.png`也被猜词使用，`reading-scene.png`被句子和音频等使用，`word-toolbar-*.svg`被共用工具栏使用；不能只按文件前缀认定独占。暂停／退出／完成等共用素材同属主窗口。
-- 协作与验证入口：本文、练习页`README.md`、根`README.md`、总待办、架构／兼容性／环境／测试文档、`package.json`、lockfile、CI和共用运行时宿主／总runner。
+- 共同资源：`assets/word-woman-e23d5f.png`也被猜词使用，`reading-scene.png`被句子和音频等使用，`word-toolbar-*.svg`被共用工具栏使用；不能只按文件前缀认定专用。暂停／退出／完成等素材同属共用资源。
+- 文档与验证入口：本文、练习页`README.md`、根`README.md`、总待办、架构／兼容性／环境／测试文档、`package.json`、lockfile、CI和共用运行时宿主／总runner。
 
-**单词窗口维护：当前已独立的单词实现。** 以下路径均相对`src/fsd/pages/practice/`，同名测试跟随被测文件。
+**单词专用实现。** 以下路径相对`src/fsd/pages/practice/`，进度与验收记录在[单词开发记录](practice-word-games-development.md)。
 
 - UI：`ui/WordPronunciationCard.tsx`、`WordPronunciationDeck.tsx`、`WordAnswerCard.tsx`、`WordRememberFeedback.tsx`、`WordSpellingResult.tsx`、`WordPracticeToolbar.tsx`、`CardSwap.tsx`。
 - 模型：`model/word-card-deck.ts`、`word-card-outline.ts`、`word-remember-session.ts`、`word-spelling.ts`、`word-toolbar-options.ts`、`card-swap-dismissal.ts`、`card-swap-gesture.ts`、`card-swap-presentation.ts`、`card-swap-seed.ts`、`card-swap-sequence.ts`及`card-swap-source.md`。
 - 专用资源：`assets/word-card-*.svg`和`word-card-remember.json`；其他资源先检查真实消费者，新增专用资源仍留在practice owner的`assets`内。
-- 专用验证：`scripts/word-mode-runtime-smoke.cjs`、`word-pronunciation-runtime-smoke.cjs`、`word-remember-runtime-smoke.cjs`、`word-toolbar-runtime-smoke.cjs`、`card-swap-presentation-runtime-smoke.cjs`。跨模式输入专项`practice-word-input-runtime-smoke.cjs`归主窗口。
-- 新增独占文件使用可识别的`Word*`／`word-*`概念，继续留在practice页面内；变更公共调用方需要的Props或类型时，先由主窗口协调契约，不能自行改公共接线。
+- 专用验证：`scripts/word-mode-runtime-smoke.cjs`、`word-pronunciation-runtime-smoke.cjs`、`word-remember-runtime-smoke.cjs`、`word-toolbar-runtime-smoke.cjs`、`card-swap-presentation-runtime-smoke.cjs`。跨模式输入专项`practice-word-input-runtime-smoke.cjs`按全部受影响消费者验证。
+- 新增专用文件使用可识别的`Word*`／`word-*`概念，继续留在practice页面内；公共Props或类型变化时，在同一任务内同步调用方、测试和说明。
 
-**句子窗口维护：当前已独立的句子实现。**
+**句子专用实现。** 进度与验收记录在[句子开发记录](practice-sentence-games-development.md)。
 
-- `ui/SentenceExercise.tsx`及对应新增行为测试：目前只覆盖`sentence:translate/check/blocks`。
+- `ui/SentenceExercise.tsx`及对应行为测试：目前只覆盖`sentence:translate/check/blocks`。
 - `ui/SentencePracticeToolbar.tsx`、`model/sentence-toolbar-options.ts`及同名测试，`scripts/sentence-toolbar-runtime-smoke.cjs`。
-- 新增独占文件使用可识别的`Sentence*`／`sentence-*`概念；专用资源跟随practice owner。
-- `ui/SentenceListeningExercise.tsx`、同名`.test.ts`及`assets/sentence-listening-note.svg`、`assets/sentence-listening-oral.svg`由主窗口首次提取、接线及验证后交句子窗口维护；只服务`sentence:listen`。公共标注、几何、接线和公共专项继续归主窗口。
-- `sentence:read/typing/oral`当前仍在通用内容中；开始这些模式前，先由主窗口提取页面内部的句子入口／插槽并完成接线，再交句子窗口维护。不能承诺当前任意句子任务都只改独占文件。
+- `ui/SentenceListeningExercise.tsx`、同名`.test.ts`及`assets/sentence-listening-note.svg`、`assets/sentence-listening-oral.svg`只服务`sentence:listen`；公共标注、几何和接线仍按共用能力维护。
+- `sentence:read/typing/oral`当前仍在通用内容中；开发这些模式时，依据真实代码判断是否需要提取页面内部专用入口，并在同一任务内完成接线。
+- 新增专用文件使用可识别的`Sentence*`／`sentence-*`概念；专用资源跟随practice owner。
 
-分支隔离不等于零冲突。上述单写归属可以减少冲突；Props契约、共享数据、总文档或公共脚本改变时仍需协调。同一个文件只能由一个窗口负责当前变更，不让游戏分支自行修公共文件后等待合并时解决冲突。
+### 每个小模式的开发与交付流程
 
-### 每个小模式的交付与合并流程
+1. **评估需求**：先读本文、对应模式记录及真实源码，写明大模式／小模式、设计节点、题态、改动文件、公共依赖和PC／平板／H5验收边界。设计驱动任务执行[编码前方案和确认](ai-collaboration.md#设计稿驱动任务的编码前方案)。
+2. **统一实现**：在本窗口完成需求涉及的公共能力、模式专用逻辑与接线；一次完成一个可独立验收的小模式或明确增量，保护已有改动，不扩大到无关模块。
+3. **按影响验证**：遵守[开发期验证分级](testing-standards.md#0-开发期间按影响验证2026-10-19)。开发微调先做对应静态检查、定向测试与受影响PC状态检查；小模式或公共契约稳定交付时，对最终源码集中运行一次`pnpm run test`和`pnpm run build`。Electron构建边界受影响时用`desktop:build`替代`build`，相关生产专项按真实影响选择。
+4. **同步记录**：在同一任务内更新本文、练习README及对应单词／句子记录，按需要更新总待办与公共契约说明；区分本轮执行、未执行、历史证据、失败和待用户验收。同一有效源码结果可复用，源码改变后按影响重验。
+5. **验收交付**：提供实际改动、稳定契约、验证证据和剩余事项；PC设计基准、适配与相关生产专项集中在正式交付时完成，平板／H5视觉及真机明确待用户验收。提交、推送按用户当前授权执行。
 
-1. **提出需求并评估**：先读本文、对应模式记录及真实源码，写明大模式／小模式、设计节点、题态、改动文件、公共依赖和PC／平板／H5验收边界。设计驱动任务仍执行[编码前方案和确认](ai-collaboration.md#设计稿驱动任务的编码前方案)。
-2. **公共部分交主窗口**：组件变体、输入行为、命令、路由、偏好、数据或公共接线先在`main`实现和验证；确定公共契约后，游戏分支同步最新`main`再继续。若必须先拆出模式入口，拆分本身由主窗口完成。
-3. **独占部分交游戏窗口**：一次只交付一个可独立验收的小模式或明确的增量，限制在对应owner文件；单词窗口只更新单词记录，句子窗口只更新句子记录，不同时改本文和练习README。
-4. **分支验证**：按[开发期验证分级](testing-standards.md#0-开发期间按影响验证2026-10-19)执行：局部文案／颜色／布局只做改动文件静态检查和受影响PC状态检查，独占逻辑做定向单测及交互；小模式包含最新main并准备集成时才集中运行`pnpm run test`和一次`pnpm run build`。Electron构建边界受影响时用desktop:build替代build，公共回归和生产专项按真实影响选择，不每次微调重跑全模式／全缩放。结果写入该分支记录，区分本轮执行、留待集成、真实运行、夹具、失败和待用户验收。
-5. **主窗口集成**：游戏工作区先提交并保持干净，同步最新`main`；如有冲突先按owner审查解决，并对最终提交重验。主窗口检查范围及验证记录，按单词／句子逐个顺序合并，不并发操作主工作区。同一已验证最终提交可复用输出，不在两个窗口原样重跑；冲突处理、主分支前进或实现变化后再按影响重验，确保最终集成代码具有有效门禁。更新本文／总待办；未验证、未解决的失败不能写成通过。
-6. **确认后推送并继续**：完成该小模式的测试验证及用户验收确认后，将结果合入并推送`main`，再让两个游戏分支同步最新主分支。后续远端推送沿用户当前任务授权执行，不把本次初始化推送视为永久远端授权。长期游戏分支保留，用下一个独立提交继续下一个小模式，不积攒多个未验收模式后一次合入。
-
-本次只归档已有实现、补齐进度／所有权／协作记录并初始化分支和worktree；不借此重构题面或改变学习行为。三个新窗口先阅读本节，再按owner领取任务。
-
-开发阶段的小改动验证以测试规范第0节为准，其他窗口的旧初始化提示词由用户转达更新；完整设计基准、PC适配和相关生产专项集中到对应小模式正式交付，不将延后检查说成已通过。纯文档更新不运行源码构建。CI保持不变，历史专项报告仅代表当次范围。
+纯文档更新不运行源码构建；CI门禁保持不变，历史专项报告仅代表当次范围。
 
 ### 本次主分支基线验证（2026-10-19）
 
@@ -91,7 +92,8 @@
 - `CardSwap`继续使用已提供的React Bits组件及原rAF积分、速度/阻尼和clearance阶段。`card-swap-presentation`集中记录4个显示槽、32px层间水平位移、2px竖向位移、80px深度、900px透视、0.5鼠标视差和0.12悬停展开；后卡恢复`translate3d`的真实z投影，不再使用492×472等横纵非等比缩放。主卡500×500@(710,228)、卡面内容和66px按钮保持。hover仅用于非触屏且未开启reduced-motion的输入，离开后沿原弹簧收回；触屏继续原拖动，reduced-motion立即停止视差/展开，避免无终点rAF。
 - 完整业务顺序与四张展示槽独立：再来先展示真正的后续题目，再把当前同一节点放回第4层（少量题目按实际可用数）；补位期间不提前出现第五张。回插完成后该卡仍在可见底层，同时宿主按原`retryWord`移到完整业务队尾。下一次操作按真实业务顺序补位，不提前把回插词当下一题，不删除题目或增加进度。连续再来、普通上一/下一题、记住及末位再来共用同一受控索引。
 - 引擎以稳定卡片key绑定物理节点，成员身份由排序后的key集合表达；业务重排不销毁同一个节点或重启运动。逻辑索引通过最新key序列映射到物理实例，导航/拖动仍返回业务索引；仅增删成员（如记住删除）重建实例并采用新的有效索引。静态首帧样式也按key保存，避免React重排覆盖刚回插的尾卡位姿/显隐。前轮按完整顺序重建`card-swap-seed`的方案不再用于仅重排。
-- 滚动条根因经双端隔离复现：1920×1080向下拖动后，已隐藏卡仍保留约679px位移，文档高度约1407px；临时排除该隐藏盒后恢复1080px。现在只在单词拼读局部`data-word-deck-motion-viewport`裁切双轴动画溢出，隐藏卡的DOM transform清为none，保留内部实例和布局盒供上一题恢复。不锁body滚动，不裁掉正常长内容，不改其他模式滚动或固定底栏。
+- 滚动条根因曾经双端隔离复现：1920×1080向下拖动后，已隐藏卡仍保留约679px位移，文档高度约1407px；临时排除该隐藏盒后恢复1080px。2026-10-20用户进一步发现局部`data-word-deck-motion-viewport`裁切会截断仍在拖动的可见卡。本次将动画溢出裁切移至单词拼读会话根容器，局部卡堆保持可见溢出；隐藏卡的DOM transform继续清为none，保留内部实例和布局盒供上一题恢复。整页边界限制拖动造成的文档溢出，正常长内容仍决定页面高度，不锁body滚动；其他模式保留原滚动和底栏。
+- 拼读卡堆及其局部容器为z-0；标题／进度、局部工具栏、卡下再来／记住、底部快捷栏与状态文字在上一层。`CardSwap`继续隔离内部卡片层级，拖动卡的高z-index不能越过页面控件；底栏使用`PracticeFooter floating`透明变体，空白处不拦截指针，实际按钮恢复指针事件。100px／安全区占位、按钮位置、局部横滚及命令入口保留；没有改拖动角度、弹簧、阈值或题序。修复仅做定向格式化和差异检查，未重跑本节历史专项、测试、构建或视觉验收，PC／平板／H5效果交由用户查看。
 
 验证入口为`card-swap-presentation.test.ts`与`scripts/card-swap-presentation-runtime-smoke.cjs`，原记住和卡牌专项同步按四层真实投影验收。已在Web与真实Electron生产协议验证：4张静止可见、左右hover的透视中心/后卡位移变化、连续再来的同DOM可见尾卡、无第五张、业务导航、手动向下拖动后文档仍1080px、记住删除与reduced-motion；PC1920×1080/100%过程图已人工核对。
 
@@ -138,6 +140,25 @@
 - [两端汇总](../dist/practice-word-input-runtime-validation.json)、[Electron](../dist/practice-word-input-electron-validation.json)、[Web](../dist/practice-word-input-web-validation.json)、[源码与验收副本摘要对照](../dist/word-input/source-comparison.json)归档于ignored dist。人工查看PC1920深色与1440浅色输入截图，布局与缩放记录分别保留；平板/H5视觉、触摸、软键盘、输入法和真机仍待用户验收。本轮不宣称整站或全部40模式专项重新运行。
 - 另在相同最终产物补拍单词拼写/默写及句子中译英两端共6张1920×1080/100%图片，人工查看卡面和句子布局；实际横线底边分别为571/610/723px，句子四词均与723px锚点一致。移除曾使横线抬高4px的多余内边距，并显式限定词槽只横向滚动；计算样式及几何同时证明无纵向滚动条、横线未被裁剪，输入不与已显示翻译重叠。该默认夹具没有显示音标，不冒称覆盖音标开启态。[PC几何汇总](../dist/word-input-pc-snapshot-validation.json)、[句子PC图](../dist/word-input-pc-web-translate.png)、[单词默写PC图](../dist/word-input-pc-electron-dictate.png)另存于ignored dist。
 
+## 单词拼读章节笔记侧栏（2026-10-20）
+
+用户确认Figma `546:35888/36010`，每题最多一条、先本轮内存、按草稿动画从右侧弹出。此前把`WordPronunciationCard`首图标误识别为笔记，现按用户纠正改为卡内解析翻面；笔记组件、`PracticePage`预留接线、Hook／模型与素材保留，暂不分配新入口，其他模式保留原居中笔记。组件／Hook／模型留在`pages/practice`，现有笔记本多记录静态展示不共享本轮状态。
+
+- `practice-notes`按原始题库ID保存已提交正文和当前编辑，列表按原始章节顺序，每题唯一。空白或超过原生1000 UTF-16单位不能保存，保存保留正文换行／空白；同题改写不重复，取消恢复已保存文本，关闭丢弃未保存输入，删除只影响目标。记住／排序／再来及重练保留笔记，换模式或退出会话释放；不新增API、Storage键或跨页面同步。条目显示所属单词与本轮真实经过时间，分钟任务只在打开时运行并清理。
+- PC参考1920×1080／100%：外框544×743@(1326,169)、r12；标题20px/500/normal行高与字距0，正文14/20、辅助12/17；关闭24×24@(1826,194)、标题图30×30。编辑框504×100@(1346,750)，保存76×26@(1774,864)，空态插图156×104@(1520,362)。这些是设计及实现目标，尚未读取浏览器计算样式或实测几何，不记为已验收。
+- `TldDialog placement="right"`显式提供右侧定位，沿原遮罩、焦点循环、Esc／遮罩关闭及背景命令隔离；右滑240ms与草稿同节奏，不缩放。共享默认仍为center，退场保留内容、快速反向接续、reduced-motion及卸载清理沿用。右侧打开时订阅可见视口，H5／平板按可用宽高约束，列表内部滚动，极矮时整面板可滚动；H5隐藏保存键位图并保留40px触控。
+- 表面／边框／绿色控件均用语义token，八份原稿素材归`assets/notes`。`TldButton note-action + solid`提供26px PC密度及原浅绿禁用态，dark/light补齐`button-solid-disabled`；用户答题颜色不覆盖笔记控件。不新增依赖、路由或Electron bridge。
+- 就近补状态／边界、右侧退场几何及SSR用例，更新旧卡堆关闭选择器和弹窗专项侧滑断言。按要求未执行测试、lint、类型检查、构建、浏览器或Electron专项；仅定向Prettier、素材根尺寸／引用及diff核对。PC视觉／缩放、实际进出／快速反向、中文输入法及平板／H5软键盘均待用户查看，历史结果不代表本轮通过。
+
+## 单词拼读章节完成与记住进度分离（2026-10-20）
+
+用户明确确认：最后一题继续切下一题时提示章节完成，进入最后一题时仍可查看和练习；无需全部点击“记住”。本节覆盖历史“只有全部记住才完成”“末题下一题停留提示／拖动回弹”的限制，复用已有完成弹窗及原样式。
+
+- `WordPronunciationDeck`移除`allowFinish={false}`覆盖，使用`CardSwap`原有末题退场完成路径。手势、底栏下一题和统一快捷键经过同一引擎，退场完成后由`onFinish`调用页面`advanceQuestion`／`finishSession`。进入末题不提前完成；收尾互斥、阻断取消、迟到回调和reduced-motion沿既有生命周期处理。
+- `getWordPronunciationSession`只从待练队列取得题号，章节结束继续由`PracticeSession.finished`持有，避免未全记住时覆盖已经完成的会话。完成窗统计仍按原始题库总量，不自动把未记住词移出或标为记住，记住进度允许保持0%或部分比例。
+- 全部记住后待练队列为空仍可完成；“再来”继续回插队尾，末位再来从队首继续。再练一次清理章节完成状态，恢复完整待练队列与0记住进度；本轮不新增接口、持久化、主题、路由、依赖或统计规则。
+- 就近补齐无记住浏览完成、进入末题不结束、部分记住后的剩余末题、单题与重练回归用例；更新两份既有卡堆／记住专项的旧末题预期。按用户要求未执行测试、lint、类型检查、构建或运行时专项，仅定向格式化与diff核对；PC效果及平板／H5视觉和真机仍待用户验收，历史结果不代表本轮通过。
+
 ## 单词拼读“再来”放回队尾（2026-10-19）
 
 用户最新要求：“再来”把当前卡放到剩余待练数组的最后一张，并呈现原插件明显的回插效果。核对[React Bits官方源码](https://github.com/DavidHDev/react-bits/blob/main/src/ts-tailwind/Components/CardSwap/CardSwap.tsx)及用户原附件后，`CardSwap.requeue`从旧向右飞出改为：向下退场（`DOWN`）→清除顶层层级→同一张卡沿原弹簧回到队尾槽。`enter/under`属于源码反向切卡，不混入本次正向回插。卡面500×500、描边、后卡尺寸、原积分/阻尼与手势阈值保持。
@@ -151,6 +172,8 @@
 原`word-pronunciation-runtime-smoke.cjs`最终在Web/Electron均通过：八方向快速轻甩、停顿回弹、短拖、底栏接管、再来队列、原500px卡面/66px按钮、双主题、PC宽度/真实缩放及其他5个单词模式。两套专项均无renderer错误、资源失败和业务请求；此次不改路由、主题、存储、依赖或Electron bridge。
 
 ## 单词拼读“记住”与剩余待练队列（2026-10-19）
+
+本节保留当日实现与验收历史；章节完成条件以[2026-10-20最新规则](#单词拼读章节完成与记住进度分离2026-10-20)为准，以下旧有“末题停留／回弹、全部记住才完成”不再是当前约束。记住队列、真实记住进度及专用动画仍沿用。
 
 本节按用户确认覆盖单词拼读旧有“会了仅提示、不记录”和“末题下一题即完成”的演示规则；其他小模式、底部“掌握/不熟”、既有按键绑定和拖动参数保持。
 
@@ -698,7 +721,7 @@ P0 优先展示字体、颜色、背景、音标 / 词性 / 语法开关、输�
 | `backgroundSource`            | preset；preset/image                           | 纯色与已保存图片是两个来源                                  |
 | `backgroundDim`               | 25；0–100%                                     | 只影响背景遮罩，不降低前景文字透明度                             |
 | `backgroundBlur`              | 10；0–30px                                     | 只模糊背景图                                         |
-| `answerColor`                 | theme；theme、六位 HEX、dark-default、light-default | 用户数据校验后局部注入；两个具名值是固定选色                         |
+| `answerColor`                 | theme；theme、六位 HEX、dark-default、light-default | 用户数据校验后局部注入；两个具名值分别固定为夜间绿#00e088／白天绿#10bb82，theme按场景选默认 |
 | `textColor`                   | theme；theme/六位 HEX                            | 与答题颜色独立                                        |
 | `font`                        | 默认字体；另有圆体、无衬线西文体、现代体、圆角黑体                     | 使用已有系统字体栈，不能保证各设备都安装选项中的字体                     |
 | `border`                      | 实线；实线/虚线                                      | 当前旧点线恢复为合法默认                                   |
@@ -2103,7 +2126,7 @@ PC基准：1920×1080 CSS视口、100%页面缩放，外框686×827@(617,127)，
 
 卡面单指任意方向属于卡牌拖动，touch-action保留pinch-zoom，移除pan-y；页面滚动从卡片外围发起。用户明确确认“拖动期间底部操作也保持可用”，所以底栏不再因wordDeckBusy禁用，键盘及底栏执行时通过页面私有interruptDrag释放指针占用、保留当前位姿，再交给同一引擎执行操作；迟到pointerup不再切题。该规则不放开暂停/浮层/末题完成收尾。原卡面尺寸、有限题序及上一题恢复保留。
 
-真实浏览器触屏仿真进一步复现：触点在图片上开始时浏览器先隐式捕获图片，起拖后转交卡堆root，图片的lostpointercapture会冒泡到root。旧封装只要有drag就cancel/snap，误把该正常交接当中断，使卡片直接归零。现在仅处理root自身、对应pointerId且确实已失去捕获的事件；正常交接继续跟手，意外失去捕获保留当前位姿回弹。pointercancel、暂停、后台及卸载仍按既有取消流程处理。
+真实浏览器触屏仿真进一步复现：触点在图片上开始时浏览器先隐式捕获图片，起拖后转交卡堆root，图片的lostpointercapture会冒泡到root。旧封装只要有drag就cancel/snap，误把该正常交接当中断，使卡片直接归零。只处理root自身、对应pointerId且确实已失去捕获的事件，正常交接继续跟手。2026-10-20后续鼠标实录又确认，按键已经释放的root捕获丢失同样不能直接回弹，须按下节的结束事件归一处理；按键仍按住的意外丢失、pointercancel、后台及卸载保留取消。
 
 本次573项测试（源码/主进程553、脚本20）、lint、format、工作区TypeScript及diff检查通过；保留共享弹窗既有3条warning。主工作区Next runner保持原开发服务进程锁，类型检查另以pnpm exec tsc --noEmit --incremental false通过；隔离副本Next类型检查及275份HTML生产构建通过。副本仅同步本次卡堆和两处页面接线，排除原有并行声纹prop差异，不扩大为其他任务的生产验收。
 
@@ -2118,6 +2141,22 @@ PC1920×1080/100%卡面已人工复核；平板/H5仅浏览器触屏仿真及自
 修正限定在输入采样：down记录原点；move纳入浏览器合并事件（有则使用）及最终move；up计入最终坐标与事件时间，必要时补足尚未收到move的释放。样本使用PointerEvent自带单调时间，不再以回调处理时间估算；动画时钟仍通过shared/lib/time。统一90ms窗口保留最近的前置锚点，并插值窗口左边缘，避免0px@0ms→80px@80ms→up@100ms刚跨窗又丢起点。快速移动后停顿再松手会清除旧速度，避免短拖误切。原30%/700px/s/0.12投射、5px起拖和全部弹簧参数不变；正常点击、pointercancel、底栏接管后的迟到up、有限序列及末题完成规则保留。
 
 回归新增八方向80px单move轻甩、up补最终距离、没有move但up位移足够、短拖停顿后回弹，以及90ms边界/重复时间戳/合并样本。本次577项测试（源码/主进程557、脚本20）、lint、format、工作区TypeScript及diff检查通过，保留共享弹窗既有3条warning；隔离副本275份HTML生产构建通过，只同步本次4个实现/测试/专项文件，不扩大为其他并行任务验收。Web/Electron完整专项均通过：每端八方向80px单move均推进一题；up补坐标及无move释放正常切题；短拖停顿后不切题。原卡堆全方向拖动、连续操作、上一题恢复、10题完成/重练、取消/接管不重复推进、reduced-motion及双主题/桌面缩放继续通过，控制台错误、资源失败与业务请求均为0。源码范围及修复前后的结果见[轻甩验收汇总](../dist/word-card-release-validation-summary.json)。PC1920×1080/100%卡面几何保持原稿；平板/H5手感及真机待用户验收。
+
+### 松手飞出与快速拖动接管修复（2026-10-20）
+
+用户反馈拖远后松手缺少继续飞出的过程，轻甩有时立即回弹、需要等待才容易切题。源码核对发现普通exit仍以卡片自身尺寸计算clearance，释放点超过旧范围后会很快进入gone；原局部裁切已移至整页，旧短退场范围不再适合当前可见区域。新增页面私有`card-swap-throw`，按当前可见视口、释放位姿、二维方向、旋转后的外框和光晕余量计算路径，沿原弹簧与释放速度持续飞到屏幕外后才隐藏。上一题从对应视口外恢复；记住／再来保留各自原专用退出和回插流程。
+
+有效按下时即建立指针捕获，5px只决定何时正式起拖，快速移动／松手不必等下一帧或等待固定毫秒。move及时写入卡片真实位姿，up以最终指针坐标判定；down与首次move同时间戳时保留起点，避免轻甩算成零速度。restore中的当前卡不再保持inert或拒绝按下，可从现有位置和旋转接续；判定只使用本次指针位移，不将已有动画偏移计入距离。30%距离、700px/s速度、90ms采样窗口、0.12秒方向投射及原弹簧／回弹参数保留，慢速短拖、取消和有限末题继续回弹。窗口／可见视口resize取消旧路径并在卸载清理。
+
+已新增`card-swap-throw.test.ts`的八方向、旋转、超过卡宽但仍可见、窄／偏移视口和无效方向用例，并补采样同时间戳与投射抵消回归。按用户本系列要求，仅做定向格式化和diff核对，未执行这些用例、测试、lint、类型检查、构建、专项或浏览器验收。当前实现、前次层级／裁切修复及其他未提交改动继续保留，未提交或推送；实际甩出轨迹、连续操作、PC缩放及平板／H5触摸与真机仍待用户查看。旧专项结果只代表旧实现，不作为此次修复已通过的证据。
+
+### 快速松手先丢捕获的实录修复（2026-10-20）
+
+用户补充“甩动与松开几乎同时，卡牌明显跟手后反复回弹”。临时只在本地开发环境记录事件，用户手动复现、Codex只读取得：同一题连续多次轨迹已达约261／471／483／625px（阈值150px），结束却只有lostpointercapture，未进入释放判定；继续记录确认该事件buttons=0。此前root捕获丢失无条件interruptDrag，正常松手被误当取消，速度与距离阈值不是这批失败的根因。
+
+修复限定CardSwap和页面私有gesture模型：pointerup／pointercancel在document捕获阶段接收，仅匹配当前手势pointerId；root丢捕获通过`getCardSwapPointerEnd`区分释放／取消，buttons=0且页面仍活动时使用最后有效移动样本完成正常判定，不使用捕获事件可能无效的坐标。按键仍按住、显式pointercancel、失焦／后台仍取消。先取走拖动状态再释放捕获，迟到up／lost不重复推进；卸载清理document监听。原30%／700px/s／90ms、飞出路径、卡堆层级与业务题序保持。
+
+用户刷新手动复测后明确反馈“现在能正常甩出”；只读记录也显示同一lostpointercapture／buttons=0路径advance与advanced均为true，包括约144px、1738px/s的短距离甩出，以及其他方向的正常释放。这是用户当前PC浏览器的反馈与只读诊断证据，不是自动测试或全端验收。已删除临时记录和诊断依赖；新增真实失败轨迹、按住时丢捕获、pointercancel与迟到坐标的就近用例，未运行测试、lint、类型检查、构建或自动拖动。仅定向格式化与diff核对；Electron、PC其他缩放及平板／H5真机仍待验收。
 
 ## 原版声纹与Lottie动画接入（2026-10-19）
 
@@ -2226,11 +2265,11 @@ PC1440×900/100%人工查看深浅主题底栏，平板/H5只做自动几何/显
 
 ## 句子沉浸听力公共前置（2026-10-19）
 
-用户确认546:33602方案后，从主分支f6caa18实施。只修改主目录；已有句子独占文件及两个游戏worktree未修改。设计中的暂停和完整／拆分不作为本轮恢复依据。
+用户确认546:33602方案后，从f6caa18实施听力专用入口及公共标注、几何和工具栏说明。该轮未修改既有句子工具栏配置，设计中的暂停和完整／拆分不作为恢复依据。
 
 ### 入口与稳定Props
 
-PracticeContent只为sentence:listen分派ui/SentenceListeningExercise.tsx。新组件、同名测试和两份专用SVG在主窗口首次交付后归句子窗口维护；仍在practice页面slice内，不新增路由、公共slice或Provider。其内部Props为：
+PracticeContent只为sentence:listen分派ui/SentenceListeningExercise.tsx。组件、同名测试和两份专用SVG留在practice页面slice内，作为听力专用内容维护；不新增路由、公共slice或Provider。其内部Props为：
 
 - question: PracticeQuestion；values: LearningPreferences。
 - imageVisible、translationVisible、blocked、oralEnabled：boolean。
@@ -2247,15 +2286,54 @@ getSentenceListeningReference()记录1920×1080／100%的全局CSS坐标：题�
 
 原稿将together标为谓语，现有显式题库为unknown，仍显示中性“成分待核对”；原稿音标额外分号不写入题库，不为还原颜色改写语法数据。
 
-### 待确认动作与句子窗口接续
+### 待确认动作与后续任务
 
 - 中文尾部546:33709（20px）及右上组546:33667的五个24px图标，目前设计节点和仓库没有可靠动作映射；列为待确认，本轮不生成空按钮、不猜绑媒体或切题动作。
-- 句子窗口负责在sentence-toolbar-options.ts删除听力split行，更新自身测试和专项预期。本轮不改该owner文件。公共PracticeModeToolbar经practice-toolbar-description按真实rows派生辅助说明；纯图片／切读配置不残留完整／拆分、默写／抄写，阅读无行时不宣称这些能力。
-- 缓存白名单继续读取真实sentenceToolbarRows，不新增键或迁移版本。当前main历史听力split行仍在，不能提前宣称旧split已过滤。集成时必须验证：旧sentence:listen.split被解析／序列化白名单排除、图片／切读恢复、其他句子模式split保留；默认值对象的兼容字段不代表该字段仍被存储或渲染。
+- 待在sentence-toolbar-options.ts删除听力split行，并更新对应测试和专项预期；该轮未修改此文件。公共PracticeModeToolbar经practice-toolbar-description按真实rows派生辅助说明；纯图片／切读配置不残留完整／拆分、默写／抄写，阅读无行时不宣称这些能力。
+- 缓存白名单继续读取真实sentenceToolbarRows，不新增键或迁移版本。当前main历史听力split行仍在，不能提前宣称旧split已过滤。后续统一验证：旧sentence:listen.split被解析／序列化白名单排除、图片／切读恢复、其他句子模式split保留；默认值对象的兼容字段不代表该字段仍被存储或渲染。
 
 ### 本轮验证
 
-公共专项scripts/practice-sentence-listening-runtime-smoke.cjs由主窗口维护，加载真实生产Electron协议／preload及严格静态Web，使用独立profile，检查基准、双主题、原生笔记／口语入口、相关默认消费者、PC真实缩放与严格资源／请求。本轮最终实际结果：format、644项源码／Electron测试＋24项脚本测试（共668项）、lint、生产build和desktop:build通过，275份业务HTML及完整RSC／资源校验通过；lint仅保留共享弹窗原有3条warning。生产Web与真实Electron专项均通过：1920×1080／100%双主题严格核对给定坐标、字号、字重与两份图标几何；每端另有14项双主题PC宽度／真实125%／150%／200%缩放及390／768自动几何。笔记原生点击／录入／关闭重开保留，口语按钮及V均打开原演示窗且无重复入口，相关五个默认消费者分派回归通过。生产隔离偏好夹具验证亮度1／4／10仅改变填充透明度、标签／成分／划线颜色及其他层opacity保持；独立关闭音标／词性／成分文字／中文／口语均按原偏好生效。160个W的临时DOM布局夹具证明局部滚动两端可见且不撑宽页面，不作为真实题库或输入法验收。资源／CSP／控制台异常、业务及权限请求均为0。报告为dist/practice-sentence-listening-runtime-validation.json及双端子报告，PC图在dist/sentence-listening/。本轮未重新运行全站runtime:smoke或所有历史练习专项。平板／H5视觉、触摸、软键盘、输入法与真机声音兼容仍待用户验收。
+练习公共专项scripts/practice-sentence-listening-runtime-smoke.cjs，加载真实生产Electron协议／preload及严格静态Web，使用独立profile，检查基准、双主题、原生笔记／口语入口、相关默认消费者、PC真实缩放与严格资源／请求。本轮最终实际结果：format、644项源码／Electron测试＋24项脚本测试（共668项）、lint、生产build和desktop:build通过，275份业务HTML及完整RSC／资源校验通过；lint仅保留共享弹窗原有3条warning。生产Web与真实Electron专项均通过：1920×1080／100%双主题严格核对给定坐标、字号、字重与两份图标几何；每端另有14项双主题PC宽度／真实125%／150%／200%缩放及390／768自动几何。笔记原生点击／录入／关闭重开保留，口语按钮及V均打开原演示窗且无重复入口，相关五个默认消费者分派回归通过。生产隔离偏好夹具验证亮度1／4／10仅改变填充透明度、标签／成分／划线颜色及其他层opacity保持；独立关闭音标／词性／成分文字／中文／口语均按原偏好生效。160个W的临时DOM布局夹具证明局部滚动两端可见且不撑宽页面，不作为真实题库或输入法验收。资源／CSP／控制台异常、业务及权限请求均为0。报告为dist/practice-sentence-listening-runtime-validation.json及双端子报告，PC图在dist/sentence-listening/。本轮未重新运行全站runtime:smoke或所有历史练习专项。平板／H5视觉、触摸、软键盘、输入法与真机声音兼容仍待用户验收。
 
 
 基准实测文字采用normal行高：音标实际盒高20px、英文56px、词义25px、成分22.5px，分别记录计算样式normal与实际几何，不把设计文字框高冒称CSS行高。中文前52.5px间距依据实测成分行盒校准，使中文y727和后续按钮位置准确，基准无额外纵向滚动条；其他状态继续自然流。真实缩放下clientWidth为整数、DOMRect保留小数，专项保留严格scrollWidth溢出断言并单独容忍小于等于1CSS px的整数舍入。PC已人工查看Electron深色、Web浅色基准及200%缩放图。
+
+## word:spell 公共依赖契约（2026-10-20）
+
+该轮交付公共层级、输入命令和逐字反馈接口，不包含卡片边框修改。WordAnswerCard.tsx仅经用户确认增加可选feedback声明／解构／透传。PracticeContentProps.wordSpellingFeedback只向word:spell透传；当前PracticePage尚未生成逐字结果，实际卡面启用、比较函数、提交错误快照和局部纠错仍待在本窗口继续实现、接线和验证，不将接口就绪记为整个模式完成。
+
+### 公共层级与快捷键
+
+普通模式层级为工具栏30、非模态草稿40、Portal菜单50、答案55、模态窗口60。单词拼读显式将卡堆固定在0层、页面标题／工具栏／快捷按钮置于1层，卡堆内部层级不越过该边界；草稿、Portal菜单、答案与模态层级保持。答案挂载后Portal进入练习根容器，越过背景isolate，继续继承配色／字体和命令作用域。复用原motion与reduced-motion，关闭或阻断立即inert，退场保留DOM。显隐不写input、选区或题态，共享答案及音标详情均使用此契约。
+
+PracticeShortcutContext.answerInputCommands默认关闭，PracticePage仅word:spell显式开启，解析器再检查family／mode。绑定按模式／题态／设置执行，包括↑↓、Shift+L/J/K及自定义切题；V仍受口语门控，不可执行时正常输入v。命中后preventDefault，同次长按持续消费但只派发一次，收起后的重复↑也不移动选区。IME／229、已消费事件、弹窗阻断、原生Ctrl／Meta+A/C/X/V/Z/Y仍优先；普通草稿／设置编辑器不透传。空格保留末槽已填／全文末尾／无选区的局部提交条件。扩其他模式必须先列消费者和影响，不恢复暂停或引入全局补字符。
+
+### 反馈Props与调用接线
+
+页面内部WordSlotsFeedback位于model/word-slot-input.ts：`{ value: string, slots: readonly { index: number, states: readonly WordSlotCharacterState[] }[] }`。状态为correct／incorrect／missing／extra／pending。value绑定完整原生原文；index取getWordSlotView槽索引；states按槽内可见词的Unicode码点排列。首尾静态标点已剥离，词内撇号／连字符仍占位置，不能套用旧源码的全局ASCII下标。
+
+```tsx
+// 示例对应target="cat"、input="cx"；实际由单词模型生成feedback。
+<PracticeWordSlotsInput
+    target="cat"
+    value={input}
+    onChange={onInput}
+    phase={phase}
+    blocked={blocked}
+    feedback={{ value: input, slots: [{ index: 0, states: ['correct', 'incorrect', 'missing'] }] }}
+/>
+// PracticeContent使用wordSpellingFeedback；WordAnswerCard使用feedback原样透传。
+```
+
+公共组件不比较答案、不推导正确性。未传feedback保持整词原行为；显式启用后按位显示文字和下划线：incorrect／extra／missing使用danger，correct使用practice-answer，pending线跟随活动状态。缺字保留宽度和错误线、隐藏答案字形，不向input补字；多余原文不截断。未提供状态、过期快照和无效位置声明降级pending。
+
+已读指定参考的InputAnswer/index.vue、inputAnswerSession.ts、inputAnswerView.ts、InputAnswerDisplay.vue。旧组件固定字母位并覆写隐藏input；较新session以Array.from按相同位置比较到max(答案长度,输入长度)，分别保存wrongInputIndexes／wrongAnswerIndexes：cat→ca末位缺失；cat→cats末位多余；cat→ct第2位错误且末位缺失，并非编辑距离对齐。提交保留错误快照；局部修改只清本位、其他错误保留，改过的位置pending，下次提交重算。后续实现需在现有trim／ignoreCase规则下维护比较和生命周期，通过onChange接收全文、生成新feedback；不迁入旧接口、错题本、自动切题、全局兜底、强制跳错误位或程序赋input.value。
+
+原生input仍唯一输入源。分段按实际字形测宽；DOM Range遍历实际录入文本节点、累计UTF-16并排除缺字占位，继续经词槽／首尾标点映射。反馈更新不改变selection或拉回手动滚动，编辑／选区变化才跟随光标。保留原生粘贴、Undo／Redo、composition及原定位空格的原生命令路径。
+
+本轮修改文件：PracticeAnswerPanel、PracticePage／PracticeContent、practice-shortcuts、usePracticeCommands、PracticeWordSlotsInput、word-slot-input及对应测试；公共专项practice-word-spell-public-runtime-smoke.cjs和两个仅测试fixture／loader，现有跨模式输入专项。WordAnswerCard本轮仅4行Props相关变动。比较与卡面实际启用仍待后续实现，单词进度按对应模式记录维护。新专项打包实际组件，不增加产品路由；反馈夹具不代替真实单词比较接入。
+
+本轮最终验证：定向格式化、678项完整测试（654项源码／Electron＋24项脚本）、lint、生产build及Electron主进程编译通过，275份业务HTML与完整RSC／资源校验通过。lint仅保留共享弹窗原有3条warning。最终生产Web／Electron各通过新公共专项及现有8个输入消费者回归；新专项同时复用答案／草稿动画子检查，验证开关／反向接续／inert／reduced-motion、Portal菜单50＜答案55＜模态60、输入聚焦↑↓和Shift+L/J/K执行且不漏字、普通草稿编辑隔离、word:dictate原策略、正确／错误／缺失／多余反馈、3px分段线、缺字文字隐藏、过期／局部反馈、原生Undo／Redo、跨文本节点UTF-16选区及长词滚动／手动回看。每端另有5组答案PC基准／重排／真实125%／150%／200%缩放、音标入口回归；旧输入专项每端8消费者与16组双主题响应式／缩放记录通过。PC截图已人工查看，390／768仅自动几何，IME／paste与程序选区属于注入夹具，不冒称OS输入法／剪贴板或真机通过。相关双端严格资源、CSP、控制台和业务请求异常均为0。完整结果见dist/practice-word-spell-public-validation-summary.json，专项见dist/practice-word-spell-public-runtime-validation.json和dist/practice-word-input-runtime-validation.json。
+
+扩展运行旧practice-panel-motion总专项时，答案／草稿动画子检查通过，但后续学习内容弹窗仍使用旧“关闭对话框”选择器，实际名称是“关闭练习内容”，总专项因此失败；未修改无关产品／旧弹窗选择器，未将总专项或全站runtime:smoke记为通过。该失败报告保留于dist/practice-panel-motion-runtime-validation.json；相关动画子检查已独立纳入新公共专项，并在双端最终代码中通过。开发中的类名字面量检查、夹具压缩插件及音标图片导航时序失败均已修正并重验，不放宽源码或资源断言。平板／H5视觉、触摸、OS输入法／软键盘及真机仍待用户验收。提交、推送等待用户另行确认。

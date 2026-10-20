@@ -5,12 +5,15 @@ import type { CSSProperties, ReactElement, RefObject } from 'react'
 import type { PracticePhase } from '../model/practice-demo'
 import {
     getWordSlotIndex,
+    getWordSlotCharacters,
+    getWordSlotTextPosition,
     getWordSlotPlaceholder,
     getWordSlotSelection,
     getWordSlotView,
     getWordSlotVisibleCaret,
     shouldSubmitWordSlots,
 } from '../model/word-slot-input'
+import type { WordSlotsFeedback } from '../model/word-slot-input'
 
 interface VisibleCaretVisit {
     readonly value: string
@@ -31,6 +34,7 @@ export interface PracticeWordSlotsInputProps {
     readonly label?: string | undefined
     readonly compact?: boolean | undefined
     readonly onSubmit?: ((value: string) => void) | undefined
+    readonly feedback?: WordSlotsFeedback | undefined
 }
 
 /** 词槽只映射完整原生文本与选区；提交、编辑快捷键和输入法仍由原生输入及页面命令负责。 */
@@ -46,6 +50,7 @@ export function PracticeWordSlotsInput({
     label = '练习答案',
     compact = false,
     onSubmit,
+    feedback,
 }: PracticeWordSlotsInputProps): ReactElement {
     const id = useId()
     const internalInputRef = useRef<HTMLInputElement>(null)
@@ -109,10 +114,27 @@ export function PracticeWordSlotsInput({
         visibleCaretVisitRef.current = { value, target, caret, wordIndex: activeIndex }
         const container = scrollContainersRef.current.get(activeIndex)
         const slot = getWordSlotView(target, value)[activeIndex]
-        const text = container?.querySelector('[data-word-slot-answer]')?.firstChild
-        if (!container || !slot || !text || text.nodeType !== 3) return
+        const answer = container?.querySelector('[data-word-slot-answer]')
+        if (!container || !slot || !answer) return
+        const walker = container.ownerDocument.createTreeWalker(answer, 4)
+        const texts: Node[] = []
+        let node = walker.nextNode()
+        while (node) {
+            if (!node.parentElement?.closest('[data-word-slot-placeholder-character]'))
+                texts.push(node)
+            node = walker.nextNode()
+        }
+        const position = getWordSlotTextPosition(
+            texts.map((text) => text.textContent ?? ''),
+            getWordSlotVisibleCaret(value, caret, slot),
+        )
+        const text = position ? texts[position.index] : undefined
+        if (!text || !position) {
+            if (!slot.value) container.scrollLeft = 0
+            return
+        }
         const range = container.ownerDocument.createRange()
-        range.setStart(text, getWordSlotVisibleCaret(value, caret, slot))
+        range.setStart(text, position.offset)
         range.collapse(true)
         const caretRect = range.getBoundingClientRect()
         const containerRect = container.getBoundingClientRect()
@@ -260,6 +282,10 @@ export function PracticeWordSlotsInput({
             >
                 {slots.map((slot): ReactElement => {
                     const active = focused && !blocked && slot.index === activeIndex
+                    const characters =
+                        feedback === undefined
+                            ? undefined
+                            : getWordSlotCharacters(slot, value, feedback)
                     const hasInputSlot = Boolean(
                         slot.target ||
                         slot.value ||
@@ -306,13 +332,15 @@ export function PracticeWordSlotsInput({
                                         onClick={(): void => focusWord(slot.index)}
                                         style={{ borderBottomStyle: borderStyle }}
                                         className={
-                                            phase === 'incorrect'
-                                                ? 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-danger bg-transparent px-[0.12em] py-0 align-bottom text-danger outline-none disabled:cursor-not-allowed'
-                                                : active
-                                                  ? slot.value
-                                                      ? 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-practice-answer bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
-                                                      : 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-accent-blue bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
-                                                  : 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-practice-muted bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
+                                            characters
+                                                ? 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-transparent bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
+                                                : phase === 'incorrect'
+                                                  ? 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-danger bg-transparent px-[0.12em] py-0 align-bottom text-danger outline-none disabled:cursor-not-allowed'
+                                                  : active
+                                                    ? slot.value
+                                                        ? 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-practice-answer bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
+                                                        : 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-accent-blue bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
+                                                    : 'relative inline-grid min-w-[0.8em] cursor-pointer whitespace-nowrap border-0 border-b-[3px] border-practice-muted bg-transparent px-[0.12em] py-0 align-bottom text-practice-answer outline-none disabled:cursor-not-allowed'
                                         }
                                     >
                                         <span
@@ -333,8 +361,65 @@ export function PracticeWordSlotsInput({
                                             data-word-slot-answer
                                             className="pointer-events-none absolute inset-x-0 top-0 text-center"
                                         >
-                                            {slot.value}
+                                            {characters ? (
+                                                <span className="inline-flex whitespace-pre">
+                                                    {characters.map((character, index) => (
+                                                        <span
+                                                            key={index}
+                                                            data-word-slot-character={
+                                                                character.state
+                                                            }
+                                                            className={
+                                                                character.state === 'incorrect' ||
+                                                                character.state === 'extra' ||
+                                                                character.state === 'missing'
+                                                                    ? 'inline-block shrink-0 border-b-[3px] border-danger text-danger'
+                                                                    : character.state === 'correct'
+                                                                      ? 'inline-block shrink-0 border-b-[3px] border-practice-answer text-practice-answer'
+                                                                      : active
+                                                                        ? 'inline-block shrink-0 border-b-[3px] border-accent-blue text-practice-answer'
+                                                                        : 'inline-block shrink-0 border-b-[3px] border-practice-muted text-practice-answer'
+                                                            }
+                                                            style={{
+                                                                borderBottomStyle: borderStyle,
+                                                            }}
+                                                        >
+                                                            <span
+                                                                data-word-slot-placeholder-character={
+                                                                    character.typed
+                                                                        ? undefined
+                                                                        : true
+                                                                }
+                                                                className={
+                                                                    character.typed
+                                                                        ? ''
+                                                                        : 'invisible'
+                                                                }
+                                                            >
+                                                                {character.value}
+                                                            </span>
+                                                        </span>
+                                                    ))}
+                                                </span>
+                                            ) : (
+                                                slot.value
+                                            )}
                                         </span>
+                                        {characters && (
+                                            <span
+                                                data-word-slot-feedback-measure
+                                                className="invisible col-start-1 row-start-1 inline-flex whitespace-pre"
+                                            >
+                                                {characters.map((character, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="inline-block shrink-0"
+                                                    >
+                                                        {character.value}
+                                                    </span>
+                                                ))}
+                                            </span>
+                                        )}
                                     </button>
                                 </span>
                             )}

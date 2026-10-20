@@ -14,6 +14,7 @@ import { getPracticeReference } from '../model/reference-layout'
 import { practiceTechnicalMediaSources } from '../model/technical-media-samples'
 import { isPracticeAnswerVisible } from '../model/practice-visibility'
 import type { WordToolbarOptions } from '../model/word-toolbar-options'
+import type { WordSlotsFeedback } from '../model/word-slot-input'
 import {
     getSentenceToolbarTranslationOverride,
     isSentenceToolbarMode,
@@ -43,6 +44,7 @@ import { TypingKeyboard } from './TypingKeyboard'
 import { WordPronunciationDeck } from './WordPronunciationDeck'
 import type { WordCardNavigation, WordPronunciationDeckController } from '../model/word-card-deck'
 import { WordAnswerCard } from './WordAnswerCard'
+import { PracticeWordPhonetics } from './PracticeWordPhonetics'
 import { SentenceExercise } from './SentenceExercise'
 import { SentenceListeningExercise } from './SentenceListeningExercise'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
@@ -71,6 +73,7 @@ export interface PracticeContentProps {
     readonly additionalOptions?: AdditionalToolbarOptions
     readonly onInput: (value: string) => void
     readonly onWordSpellingSubmit?: ((value: string) => void) | undefined
+    readonly wordSpellingFeedback?: WordSlotsFeedback | undefined
     readonly onBlock: (id: string) => void
     readonly onNote: (questionId: string) => void
     readonly oralEnabled: boolean
@@ -115,6 +118,7 @@ export function PracticeContent({
     additionalOptions,
     onInput,
     onWordSpellingSubmit,
+    wordSpellingFeedback,
     onBlock,
     onNote,
     oralEnabled,
@@ -310,7 +314,7 @@ export function PracticeContent({
         return (
             <div
                 data-word-deck-motion-viewport
-                className="overflow-clip px-4 pb-8 pt-16 design:pt-[153px]"
+                className="relative z-0 px-4 pb-8 pt-16 design:pt-[153px]"
             >
                 <WordPronunciationDeck
                     questions={questions ?? [question]}
@@ -325,8 +329,11 @@ export function PracticeContent({
                     question={question}
                     showImage={imageVisible}
                     reading={reading}
-                    showTranslation={showTranslation}
+                    showTranslation={localOptions ? true : showTranslation}
+                    hideEnglish={localOptions?.language === 'translate'}
+                    hideTranslation={localOptions?.language === 'interpret'}
                     showPhonetics={localOptions?.phonetics !== 'none'}
+                    phoneticMode={localOptions?.phonetics ?? 'original'}
                     displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
                     onKnown={onKnown}
                     onRetry={onRetry}
@@ -335,13 +342,8 @@ export function PracticeContent({
                     onPlay={
                         onReadAloud ?? ((): void => onNotice('单词发音素材未接入，暂不能朗读。'))
                     }
-                    onNote={(): void => onNote(question.id)}
-                    onLookup={(): void =>
-                        onNotice(
-                            `${question.english}：${question.translation}。当前仅展示本地词义，词典服务未接入。`,
-                        )
-                    }
-                    onAdd={(): void => onNotice('添加词条入口已演示，生词本保存尚未接入。')}
+                    onExamplePlay={(): void => onNotice('例句音源未接入，暂不能朗读。')}
+                    onAdd={(): void => onNotice('不熟标记暂未开放，当前未保存。')}
                 />
             </div>
         )
@@ -358,10 +360,12 @@ export function PracticeContent({
                     input={session.input}
                     onInput={onInput}
                     onSubmit={onWordSpellingSubmit}
+                    feedback={mode === 'spell' ? wordSpellingFeedback : undefined}
                     blocked={blocked}
                     showImage={imageVisible}
                     reading={reading}
                     showTranslation={showTranslation}
+                    phoneticMode={localOptions?.phonetics ?? 'original'}
                     showPhonetics={
                         mode === 'spell' && localOptions?.phonetics === 'none'
                             ? false
@@ -431,7 +435,9 @@ export function PracticeContent({
                     }}
                 >
                     {demo.family === 'phonetics' && (
-                        <p className="mb-5 text-[38px] text-brand">{question.phonetic}</p>
+                        <p className="mb-5 text-[38px] text-brand">
+                            <PracticeWordPhonetics phonetic={question.phonetic} />
+                        </p>
                     )}
                     {showEnglish && (
                         <div
@@ -456,7 +462,11 @@ export function PracticeContent({
                     )}
                     {(showPhonetics || mode === 'pronounce') && (
                         <p className="mt-5 text-[24px] font-light text-secondary">
-                            {question.phonetic}
+                            <PracticeWordPhonetics
+                                phonetic={question.phonetic}
+                                breakdown={question.wordPhonetics}
+                                mode={localOptions?.phonetics ?? 'original'}
+                            />
                         </p>
                     )}
                     {!reader &&

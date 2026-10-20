@@ -1,5 +1,7 @@
 # Tailwind 与全局主题
 
+- 练习笔记侧栏复用`dialog-border`五层渐变、`dialog-surface/accent`、`foreground/hint`及`accent-green`；编辑框为绿色70%描边。新增`button-solid-disabled`：dark来自Figma空输入态的#58BF8D，light以#A3D4BA配合现有深绿按钮适配，仅`TldButton note-action + solid`显式消费。笔记控件不消费练习答题色偏好，dark/light均完整注册；未运行本轮测试、构建或PC视觉验收。
+
 - 退出练习使用`practice-exit-home/course`及对应`-border`四个语义色。dark来自Figma `546:32006/32007` 的两卡填充/描边，light以品牌色与现有surface混合适配。仅退出弹窗显式消费，图片与箭头使用原稿本地素材，白色圆形箭头槽复用media-foreground，不改变其他练习或主题默认值。
 
 - 分段控件显式glass外观使用`segment-outline`：dark为原稿#575757，light回退border-strong。只新增该语义色并由shared/tld-segmented-tabs消费；字号复用tab-label-regular。
@@ -52,7 +54,7 @@ dialog-title-soft为紧凑俱乐部标题的语义色，dark#D9D9D9/light primar
 
 - 设置紧凑开关的关闭轨道新增switch-off，dark/light均为中性灰；开启沿用accent-green，其他开关消费者不变。
 
-外观练习背景：practice-preset-default/warm/green/blue提供完整dark/light配色；practice-image-mask在dark为黑、light为白，由局部opacity控制遮罩浓度。answer-default-dark/light为固定白/黑选色的语义来源，两主题均完整注册。由设置预览和练习会话显式消费，不新增主题或按主题写业务分支。
+外观练习背景：practice-preset-default/warm/green/blue提供完整dark/light配色；practice-image-mask在dark为黑、light为白，由局部opacity控制遮罩浓度。answer-default-dark/light分别提供“夜间模式默认色”#00e088与“白天模式默认色”#10bb82，两主题均完整注册并保持固定选色；practice-design-answer随当前主题引用对应预设，避免theme与具名默认色分叉。2026-10-20纠正旧预设误用白/黑导致已保存dark-default/light-default覆盖设计绿的问题。设置色块预览与练习会话共用该映射；句子theme默认色、用户六位HEX自选色和其他文字色不变，不迁移或清空偏好。
 
 - 首版练习注释色：新增 `practice-pos-pronoun`、`practice-pos-verb`、`practice-pos-noun`、`practice-pos-adverb` 与 `practice-syntax-subject`、`practice-syntax-predicate`、`practice-syntax-object`、`practice-syntax-complement` 共八项语义 token，固定教学配色在 `:root` 定义、由 dark/light 共同继承，经 `@theme inline` 暴露；组件不硬编码原始色或根据主题分支。当前只覆盖本地示例实际出现的类型，其余配色按文档后续补齐；语法填充亮度只调填充层，文字/划线/词性色保持。练习默认字号及几何按设计 reference 核对；用户字号档位的实际消费以练习实现清单记录，未接通时不得声称已生效，也不能用设置预览固定字号冒充1920px设计值。本轮PC计算样式、几何与视觉验证结果及剩余限制见[练习页开发文档第17.4节](../../../../docs/practice-page-development.md#174-验证记录)，平板/H5视觉和真机兼容由用户验收。
 

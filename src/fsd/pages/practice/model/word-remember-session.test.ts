@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { getCardSwapNavigation } from './card-swap-sequence'
+import { initialPracticeSession, reducePracticeSession } from './practice-demo'
 import {
     createWordRememberSession,
+    getWordPronunciationSession,
     getWordRememberProgress,
     moveWordRememberSession,
     rememberWord,
@@ -32,7 +35,7 @@ test('初始总量固定，空题集不作为已完成练习', (): void => {
     assert.equal(rememberWord(empty, 'woman'), empty)
 })
 
-test('只有每张卡都记住才完成，记住过程不改变总题数', (): void => {
+test('只有每张卡都记住才达到100%记住进度，记住过程不改变总题数', (): void => {
     let state = createWordRememberSession(ids)
     for (const [index, id] of ids.entries()) {
         state = rememberWord(state, id)
@@ -46,6 +49,78 @@ test('只有每张卡都记住才完成，记住过程不改变总题数', (): v
     assert.deepEqual(state.remainingIds, [])
     assert.deepEqual(state.rememberedIds, ids)
     assert.equal(state.index, 0)
+})
+
+test('未点击记住也可浏览完本章，进入末题不提前结束，继续下一题才完成', (): void => {
+    let words = createWordRememberSession(ids)
+    for (let index = 1; index < ids.length; index += 1) {
+        const session = getWordPronunciationSession(initialPracticeSession, words)
+        const next = getCardSwapNavigation(session.index, words.remainingIds.length, 'next')
+        assert.equal(next.kind, 'move')
+        if (next.kind !== 'move') throw new Error('到达末题前应继续浏览')
+        words = moveWordRememberSession(words, next.index)
+        assert.equal(getWordPronunciationSession(initialPracticeSession, words).finished, false)
+    }
+    const last = getWordPronunciationSession(initialPracticeSession, words)
+    assert.equal(last.index, ids.length - 1)
+    assert.equal(last.finished, false)
+    assert.equal(
+        getCardSwapNavigation(last.index, words.remainingIds.length, 'next').kind,
+        'finish',
+    )
+    const finished = getWordPronunciationSession(
+        reducePracticeSession(last, { type: 'finish' }),
+        words,
+    )
+    assert.equal(finished.finished, true)
+    assert.equal(finished.phase, 'answering', '章节完成不冒充答对')
+    assert.deepEqual(words.remainingIds, ids, '浏览完成不删除未记住单词')
+    assert.deepEqual(words.rememberedIds, [])
+    assert.equal(getWordRememberProgress(words).percent, 0)
+    assert.equal(getWordRememberProgress(words).complete, false)
+})
+
+test('部分记住后按剩余队列判断末题，章节完成不补写记住进度', (): void => {
+    const remembered = rememberWord(createWordRememberSession(ids), 'woman')
+    const words = moveWordRememberSession(remembered, remembered.remainingIds.length - 1)
+    const last = getWordPronunciationSession(initialPracticeSession, words)
+    assert.equal(last.index, 2)
+    assert.equal(last.finished, false)
+    assert.deepEqual(getCardSwapNavigation(last.index, words.remainingIds.length, 'next'), {
+        kind: 'finish',
+        index: 2,
+    })
+    const progress = getWordRememberProgress(words)
+    const finished = getWordPronunciationSession(
+        reducePracticeSession(last, { type: 'finish' }),
+        words,
+    )
+    assert.equal(finished.finished, true)
+    assert.deepEqual(getWordRememberProgress(words), progress)
+    assert.equal(progress.percent, 25)
+    assert.equal(progress.complete, false)
+    assert.deepEqual(words.rememberedIds, ['woman'])
+})
+
+test('单张末题可继续下一题完成，重练恢复未完成会话及完整待练列表', (): void => {
+    const words = createWordRememberSession(['woman'])
+    const session = getWordPronunciationSession(initialPracticeSession, words)
+    assert.equal(session.finished, false)
+    assert.equal(
+        getCardSwapNavigation(session.index, words.remainingIds.length, 'next').kind,
+        'finish',
+    )
+    const finished = getWordPronunciationSession(
+        reducePracticeSession(session, { type: 'finish' }),
+        words,
+    )
+    assert.equal(finished.finished, true)
+    const restarted = getWordPronunciationSession(
+        reducePracticeSession(finished, { type: 'reset' }),
+        createWordRememberSession(ids),
+    )
+    assert.equal(restarted.finished, false)
+    assert.equal(restarted.index, 0)
 })
 
 test('从末题记住后仍有剩余内容，停在剩余末张而不完成或循环', (): void => {

@@ -32,8 +32,8 @@ const orderOptions = [
     { value: 'alphabetical', label: 'A-Z' },
 ] as const
 const languageOptions = [
-    { value: 'translate', label: '中译英' },
-    { value: 'interpret', label: '英译中' },
+    { value: 'interpret', label: '遮住中文' },
+    { value: 'translate', label: '遮住英文' },
     { value: 'bilingual', label: '中英显示' },
 ] as const
 const phoneticOptions = [
@@ -85,7 +85,7 @@ export function WordPracticeToolbar({
             aria-label="单词练习局部设置"
             className={
                 mode === 'pronounce'
-                    ? 'relative z-30 min-w-0 px-3 pt-5 text-practice-control-text design:absolute design:left-3 design:right-3 design:top-[21px] design:p-0'
+                    ? 'relative z-[1] min-w-0 px-3 pt-5 text-practice-control-text design:absolute design:left-3 design:right-3 design:top-[21px] design:p-0'
                     : 'relative z-30 min-w-0 px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
             }
         >
@@ -156,7 +156,6 @@ export function WordPracticeToolbar({
                                     )
                                         return
                                     onChange({ ...values, order: value })
-                                    onNotice('排序为演示选择，当前本地题目顺序保持。')
                                 }}
                             />
                         </div>
@@ -182,7 +181,6 @@ export function WordPracticeToolbar({
                                     )
                                         return
                                     onChange({ ...values, language: value })
-                                    onNotice('中英显示方式已选择，题面变体待后续精修。')
                                 }}
                             />
                         </div>
@@ -217,8 +215,6 @@ export function WordPracticeToolbar({
                                     )
                                         return
                                     onChange({ ...values, phonetics: value })
-                                    if (value !== 'none')
-                                        onNotice('音标方案已选择，对应展示数据待后续接入。')
                                 }}
                             />
                         </div>
@@ -247,8 +243,6 @@ export function WordPracticeToolbar({
                                     }
                                     onClick={(): void => {
                                         onChange({ ...values, phonetics: option.value })
-                                        if (option.value !== 'none')
-                                            onNotice('音标方案已选择，对应展示数据待后续接入。')
                                     }}
                                 >
                                     <span className="relative z-20">{option.label}</span>
@@ -258,7 +252,7 @@ export function WordPracticeToolbar({
                     </>
                 )}
             </div>
-            <span className="sr-only">排序、切读和音标方案仅作本轮选择，不代表正式学习功能。</span>
+            <span className="sr-only">排序、中英显示与音标方案均作用于当前本地练习。</span>
         </div>
     )
 }

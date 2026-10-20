@@ -20,6 +20,31 @@ function renderInput(props: Partial<PracticeWordSlotsInputProps> = {}): string {
     )
 }
 
+test('显式反馈分段显示正确错误缺失多余，下划线独立且不增加输入框', (): void => {
+    const markup = renderInput({
+        target: 'cat dog',
+        value: 'cx dogs',
+        phase: 'incorrect',
+        feedback: {
+            value: 'cx dogs',
+            slots: [
+                { index: 0, states: ['correct', 'incorrect', 'missing'] },
+                { index: 1, states: ['correct', 'correct', 'correct', 'extra'] },
+            ],
+        },
+    })
+    assert.equal((markup.match(/<input\b/g) ?? []).length, 1)
+    assert.match(markup, /<input[^>]*value="cx dogs"/)
+    for (const state of ['correct', 'incorrect', 'missing', 'extra'])
+        assert.match(markup, new RegExp('data-word-slot-character="' + state + '"'))
+    assert.match(markup, /data-word-slot-placeholder-character="true" class="invisible">t<\/span>/)
+    assert.match(markup, /data-word-slot-feedback-measure/)
+    assert.doesNotMatch(
+        renderInput({ value: 'cx', phase: 'incorrect' }),
+        /data-word-slot-character=/,
+    )
+})
+
 test('整词展示保留一个完整的原生文本输入和独立标点', (): void => {
     const markup = renderInput({ value: 'hi ' })
     assert.equal((markup.match(/<input\b/g) ?? []).length, 1)

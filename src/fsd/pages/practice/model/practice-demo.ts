@@ -1,5 +1,9 @@
 import { judgeWordSpelling } from './word-spelling'
 import type { WordSpellingStatistics } from './word-spelling'
+import { getDemoWordPhonetics } from './word-phonetics-demo'
+import type { WordPhoneticBreakdown } from './word-phonetics'
+import { getDemoWordCardExamples } from './word-card-analysis-demo'
+import type { WordCardExample } from './word-card-analysis'
 
 export type PracticeFamily =
     | 'word'
@@ -48,6 +52,9 @@ export interface PracticeQuestion {
     readonly english: string
     readonly translation: string
     readonly phonetic: string
+    readonly wordPhonetics?: WordPhoneticBreakdown
+    /** 可选的本地解析例句，真实接口由适配器映射；缺失时显示空态。 */
+    readonly wordExamples?: readonly WordCardExample[]
     readonly tokens: readonly PracticeToken[]
     /** 页面内部的可选朗读音源，后续由真实接口适配器映射；不是后台字段约定。 */
     readonly readingSource?: string
@@ -194,6 +201,12 @@ const readingTokens: readonly PracticeToken[] = [
         syntax: 'unknown',
     },
 ]
+function withDemoWordPhonetics(question: PracticeQuestion): PracticeQuestion {
+    if (question.wordPhonetics) return question
+    const wordPhonetics = getDemoWordPhonetics(question.english, question.phonetic)
+    return wordPhonetics ? { ...question, wordPhonetics } : question
+}
+
 const wordPronunciationQuestions: readonly PracticeQuestion[] = [
     {
         id: 'woman',
@@ -265,7 +278,12 @@ const wordPronunciationQuestions: readonly PracticeQuestion[] = [
         phonetic: '/ˈhæpi/',
         tokens: [],
     },
-]
+].map((question) =>
+    withDemoWordPhonetics({
+        ...question,
+        wordExamples: getDemoWordCardExamples(question.english),
+    }),
+)
 
 export function getDemoQuestions(
     family: PracticeFamily,
@@ -284,7 +302,7 @@ export function getDemoQuestions(
                 phonetic: '/skuːl/',
                 tokens: [],
             },
-        ]
+        ].map(withDemoWordPhonetics)
     if (family === 'phonetics')
         return [
             {
@@ -301,7 +319,7 @@ export function getDemoQuestions(
                 phonetic: '/ʌndəstænd/',
                 tokens: [],
             },
-        ]
+        ].map(withDemoWordPhonetics)
     if (family === 'word' || family === 'guess')
         return [
             {
@@ -318,7 +336,7 @@ export function getDemoQuestions(
                 phonetic: '/ˈwʊmən/',
                 tokens: [],
             },
-        ]
+        ].map(withDemoWordPhonetics)
     if (family === 'picture') {
         const pictureQuestion =
             mode === 'listen'
@@ -333,7 +351,7 @@ export function getDemoQuestions(
         return [
             { id: 'picture-example', ...pictureQuestion, tokens: [] },
             { id: 'picture-review', ...pictureQuestion, tokens: [] },
-        ]
+        ].map(withDemoWordPhonetics)
     }
 
     return [
@@ -351,7 +369,7 @@ export function getDemoQuestions(
             phonetic: '/wiː riːd bʊks təˈɡeðə(r)/',
             tokens: readingTokens,
         },
-    ]
+    ].map(withDemoWordPhonetics)
 }
 export interface ResolvedPracticeView {
     readonly demo: PracticeDemo

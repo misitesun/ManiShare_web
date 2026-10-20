@@ -1,21 +1,31 @@
 # 练习页
 
-- 三窗口开发先读[当前进度与文件所有权](../../../../docs/practice-page-development.md#当前进度与三窗口协作入口2026-10-19)：主分支维护共用框架／接线／总文档，单词和句子分支仅改明确独占文件，并分别维护[单词记录](../../../../docs/practice-word-games-development.md)和[句子记录](../../../../docs/practice-sentence-games-development.md)。`PracticeWordSlotsInput`是跨模式共用输入；句子阅读／指法／口语仍走通用内容，听力已提取专用入口，不能仅凭分支承诺零冲突。每个窗口使用独立worktree及3000／3001／3002端口。
+- 2026-10-20完成检查点：用户已确认`word:pronounce`单词拼读静态 UI 对接完成，并授权推送 Git、记录当前代码。实现范围、保留组件、待接音源／不熟列表接口与本轮未执行验证见[代码快照](../../../../docs/checkpoints/2026-10-20-word-pronunciation-static-ui.md)；其他模式不因本次归档标为完成。
 
-- 沉浸听力公共前置：SentenceListeningExercise及同名测试、sentence-listening-note.svg／sentence-listening-oral.svg由主窗口首次提取后交句子窗口维护。Props为question、values、imageVisible、translationVisible、blocked、可选reading、onNote、oralEnabled、onOral。PracticeContent只为sentence:listen分派；笔记复用原题ID状态，口语门控／点击／V复用canShowQuickOral与practice.oral，外置入口排除本组合。
+- 2026-10-20查词与不熟语义：拼读正面放大镜和背面单词旁图标共用`WordDictionaryLink`／`word-dictionary`，原生`target="_blank"`打开当前英文的欧路词条，正文编码为单个路径段、空词／无效字符不导航，禁用卡不进入Tab序列；`noopener noreferrer`隔离opener及referrer。Web为新标签，Electron由主进程词条白名单交给系统浏览器；无预取或词典API请求。右下加号已标为“不熟”并提示当前未保存，真实接口接入归`docs/todo.md`的`PRACTICE-UNFAMILIAR-LIST`，后续与底栏不熟共用业务动作；不修改再来／记住队列。其他单词模式的原查词占位不在本次范围。已补地址／禁用与宿主边界用例，本轮按要求仅格式化和差异检查，未执行测试、lint、类型检查、构建或浏览器／Electron实测，PC／平板／H5外链效果待用户查看。
+
+- 2026-10-20单词解析：`WordPronunciationCard`首图标改为解析，私有`WordPronunciationAnalysis`展示当前题词／完整IPA／释义及三条双语例句，返回或Esc翻回；`word-card-analysis`按真实题目ID重置背面，不重挂物理卡。`useWordCardFlip`只控制内层600ms翻转，稳定后恢复二维；原外层拖拽／甩出及按钮层级保持，翻转期间不新起拖拽。十个模拟词各有三句，重点词用显式安全文本片段；缺例句空态、缺音源提示，不引入请求。背面消费既有语义色，正面绿色不变；窄屏局部滚动、触屏背面允许纵向阅读，reduced-motion即时到位。已补状态／数据／SSR用例并更新旧脚本入口，按要求未执行测试、lint、类型检查、构建或浏览器／Electron验收。
+
+- 2026-10-20保留的单词拼读笔记组件：`PracticeNotesPanel`按Figma `546:35888/36010`提供右侧模态列表，卡牌首图标已按用户纠正改为解析，笔记面板与页面预留接线保留，暂未另设入口。`practice-notes`／`usePracticeNotes`以原始章节ID管理本轮内存，每题最多一条；输入未保存不进列表，保存更新同题，支持编辑／删除／取消、1000原生UTF-16单位计数、Ctrl／Command+Enter保存（IME及长按隔离）。排序／再来／记住移出卡堆不删除笔记，重练保留；关闭丢弃未保存编辑，刷新、离开或换模式后释放，不请求接口或写Storage。列表始终按原始题序，条目显示所属单词与本轮真实经过时间，已有条目可直接改写。
+- 笔记样式：1920×1080／100%下外框544×743@(1326,169)、r12，标题20px/500、正文14/20px、辅助12/17px；标题栏与底部504×100编辑框固定，列表局部滚动，低高度可滚动整面板。八份原设计素材归`assets/notes`，图标保留30／24／18px根尺寸。`TldDialog placement="right"`仅显式启用240ms侧滑与可见视口适配，复用原遮罩／焦点／键盘隔离，reduced-motion即时结束。双主题沿语义色，保存按钮`note-action + solid`；H5隐藏键位提示并保留40px触控。拼读当前保留组件但不提供入口，其他模式原笔记保留；就近用例已补，按用户要求未运行测试、lint、类型检查、构建或浏览器验收，PC及平板／H5和Electron仍待用户查看。
+
+- 练习页统一在同一窗口开发，先读[当前进度与模块职责](../../../../docs/practice-page-development.md#当前进度与单窗口开发入口2026-10-20)。固定目录`/Users/sly/react_work/漫奇说web`，分支`main`、端口3000，使用`pnpm run dev --port 3000`。公共组件、单词／句子模式及接线按真实消费者统一修改，同步维护总文档、本README及[单词记录](../../../../docs/practice-word-games-development.md)／[句子记录](../../../../docs/practice-sentence-games-development.md)，保护已有改动。`PracticeWordSlotsInput`是跨模式共用输入；句子阅读／指法／口语仍走通用内容，听力已提取专用入口。验证遵守测试规范第0节，提交与推送按当前授权执行。
+
+- 沉浸听力公共前置：SentenceListeningExercise及同名测试、sentence-listening-note.svg／sentence-listening-oral.svg留在practice页面内部，作为听力专用内容维护。Props为question、values、imageVisible、translationVisible、blocked、可选reading、onNote、oralEnabled、onOral。PracticeContent只为sentence:listen分派；笔记复用原题ID状态，口语门控／点击／V复用canShowQuickOral与practice.oral，外置入口排除本组合。
 - 公共AnnotatedText的sentence-listening变体按音标→词性背景标签→英文→3px划线→词义→成分名组织，默认消费者不变。词性、文字、划线、填充分层，只有填充随亮度/10变化；unknown保持中性待核对。getSentenceListeningReference记录1920×1080/100%的听力几何，文字框高不当行高；隐藏图、自定义字号和窄屏自然重排。全局owner提供固定标签黑字和双主题口语阴影。
-- 听力不消费split；句子窗口负责删局部行及专项预期，主窗口辅助说明已按真实rows生成。当前main历史行尚待合入删除，旧缓存过滤留待集成检查。中文尾部和右上五图标动作待确认，不生成空按钮。公共专项practice-sentence-listening-runtime-smoke.cjs及实际结果见总文档“句子沉浸听力公共前置”；平板/H5视觉和真机待用户验收。
+- 听力不消费split；历史局部行及专项预期待清理，公共工具栏辅助说明已按真实rows生成。旧缓存split过滤、图片／切读恢复及其他模式split保留待统一验证。中文尾部和右上五图标动作待确认，不生成空按钮。公共专项practice-sentence-listening-runtime-smoke.cjs及实际结果见总文档“句子沉浸听力公共前置”；平板/H5视觉和真机待用户验收。
 
 - 当前四层专项：`scripts/card-swap-presentation-runtime-smoke.cjs`已在Web/Electron验证4张可见、原hover透视、同DOM回插仍可见、连续再来/真实导航、无第五张、文档高度1080px、记住及reduced-motion；原卡牌与完整记住专项也在两端通过。模型/生命周期/手势/记住25项定向测试、工作区633+24项测试及lint通过，冻结副本生产构建275份业务HTML通过；暂停已由其他任务统一关闭，旧暂停入口场景记录为不适用。完整回归结果及产物范围见开发文档，旧三层/二维记录不代表当前实现。
 
 - 2026-10-19单词拼写：`word:spell`在原2题上新增10个不同单词，共12题，复用已有woman图片作为共用示意。`word-spelling`只做本地样例比对（trim与既有ignoreCase），`PracticeSession`原子更新题态和本轮提交/正确数，错误保留输入可重试，空提交不计错；切题保留统计，重置/重练清零。正确后自动打开当前答案面板，卡下`WordSpellingResult`显示口语和真实提交统计，回答中/答错/揭晓均隐藏；口语按钮与V继续共用原门控，不接真实录音评分。词槽按题目词数固定，超额原文保留在末槽；单词拼写末词末尾的普通空格和Enter提交，原生input覆盖无keydown录入，IME/粘贴不误交。其他模式不接判题；详情、设计基准与验收见开发文档最新节。
 - 拼写验证：657项测试、format/lint与隔离生产构建通过；Web/Electron输入专项覆盖12题、共图、正确/错误、Shift+空格、input空格、口语返回、统计重置及5项结果态PC窗口/真实缩放。1920×1080实测口语234×46@(843,813)、统计385×68@(767.5,896)，正确词横线自然撑宽；报告/PC截图归档`dist/word-spelling/`。平板/H5视觉及真实软键盘、OS输入法、触摸仍待用户验收，口语仍为演示。
 
-- 2026-10-19单词拼读“记住”：`word-remember-session`以剩余ID、已记住ID和剩余队列索引管理本轮状态；标题显示当前/剩余，进度改为已记住/原始总量并沿用300ms宽度过渡。普通滑动/上下题不增加完成数、不循环，末题下一题停留、末题滑动回弹；记住从当前队列移除，上一题不恢复已记住词，删末题回剩余末题，全部记住才显示完成窗，题数仍为原始10条。重练恢复，刷新/换模式不持久化；底栏“掌握/不熟”保持原演示含义。
+- 2026-10-20单词拼读章节完成与记住状态分离：`word-remember-session`以剩余ID、已记住ID和剩余队列索引管理记住状态；`getWordPronunciationSession`保留`PracticeSession.finished`，不由记住比例覆盖。进入末题仍继续练习，末题再滑动／点击下一题／执行切题快捷键时沿卡堆退场，结束后打开现有完成窗，无需全部记住。记住进度仍为已记住／原始总量并沿用300ms过渡，浏览完成不伪造100%或删除未记住词；全部记住移出队列仍可完成。题数保留原始10条，重练恢复全部待练及0进度，刷新／换模式不持久化；底栏“掌握／不熟”保持原演示含义。补用例但按用户要求未运行测试或构建。
 - 2026-10-19单词拼读四层展示：`card-swap-presentation`将4个显示槽与完整待练数组分开，参数32/2/80、900px透视、0.5视差及0.12悬停展开来自原组件；主卡500×500和66px按钮保持，后卡恢复真实z投影。再来DOWN退场后回插可见末槽，不提前补第五张，完成后业务ID仍放真实队尾且不增进度；后续导航按真实业务顺序补位，上一题不提前取回重排词。reduced-motion与触屏不启用hover。
 - 前轮历史验证：再来回插追加验证：635项测试、TypeScript、格式化/lint及隔离完整生产构建275业务HTML通过；Web/Electron记住专项真实采样10/3/2张的DOWN→降层→回插、同DOM队尾及单次提交，设置中断后无迟到重排；记住与完成/重练继续通过。PC1920×1080/100%过程图与报告归档`dist/word-requeue/`，不以文件名代替逐帧轨迹。平板/H5视觉及真机仍待用户验收。
 - 前轮历史验证：同次原卡牌专项Web/Electron回归通过：八方向轻甩、停顿/短拖回弹、底栏接管、原卡面/按钮几何、双主题、PC宽度/真实缩放及其他5个单词模式。快速单move夹具不在move/up间等待绘制，产品采样与阈值保持；两套专项无renderer错误、资源失败或业务请求。
-- 物理实例按稳定key和成员集合维护；仅业务重排不重建引擎或初始样式，逻辑索引经最新key序列映射到原物理节点。记住删除成员后才重建并使用有效索引。局部`data-word-deck-motion-viewport`裁切动画溢出，隐藏卡transform清零且保留布局盒/历史，避免手动拖出后撑高文档；body及其他模式滚动保持。
+- 物理实例按稳定key和成员集合维护；仅业务重排不重建引擎或初始样式，逻辑索引经最新key序列映射到原物理节点。记住删除成员后才重建并使用有效索引。拼读会话根容器裁切超出整页的动画溢出，`data-word-deck-motion-viewport`不再按卡堆局部高度裁切，支持卡牌在可见页面内向任意方向拖动。卡堆为z-0，页面标题／进度、局部工具栏、再来／记住和底部快捷栏为z-1；卡内高z-index限制在卡堆自身的层叠上下文内，菜单／草稿／答案／模态层级沿原契约。拼读显式使用`PracticeFooter floating`透明底栏，空白区域不拦截指针，实际按钮仍可操作；其他模式保留默认底栏。隐藏卡transform清零且保留布局盒/历史，页面正常长内容滚动保留，不锁body。
+- 松手退场（2026-10-20）：`model/card-swap-throw.ts`按当前可见视口、释放位姿、方向与旋转外框计算普通浏览的飞出路径，完全离屏后才隐藏；上一题从对应视口外恢复，记住／再来的原专用路径保留。pointerdown立即捕获，move／up及时写入真实位姿；同时间戳的首次移动不覆盖down锚点。restore中的当前卡可直接接管，判定只使用此次指针位移与速度，起拖5px／30%位移／700px/s／90ms窗口保持。窗口或可见视口resize取消旧路径，卸载清理。已补几何与采样回归用例但按用户要求未运行测试、构建或浏览器验收，实际拖动及PC／平板／H5效果由用户查看。
 - 前轮历史验证：本轮验证：620项测试、lint/TypeScript、隔离生产构建275业务HTML及Electron主进程构建通过；记住/再来交错专项与原卡牌手势/几何专项在Web/Electron均通过。实际图面、计数和2/3张补位采样均等待绘制，原IPA行不与朗读声纹混用role选择器；报告/截图与1100份代码资源一致性校验归档`dist/word-remember/`。平板/H5视觉及真机仍待用户验收。
 - `WordRememberFeedback`复用`shared/lib/animation.createLottiePlayback`播放owner内原版`word-card-remember.json`，转圈/对号/彩带为同一时间轴，单次1.5倍速约1.678秒；保留66px按钮及原卡面尺寸，reduced-motion或动画失败直接进入静态反馈。动画结束后`CardSwap.dismiss`沿原弹簧轨道抽出当前卡，完全不可见后一次提交删除和补位；旧children保留到退场结束，不复用next提前推进索引。pending捕获当前题对象防重复/迟到提交；暂停、阻断弹窗、后台、尺寸中断、重置和卸载取消未完成动作。该反馈不伪造判题correct事件、不新增记住音效/接口/Storage/快捷键。
 
@@ -29,8 +39,8 @@
 
 - 单词拼读本地示例：`model/practice-demo.ts`提供10个不同短词（默认首题woman），每条含独立ID、完整音标和释义，统一复用当前插图；题号/内容列表消费本轮剩余队列，完成题数保留原始列表长度。其他单词小模式及猜词示例保持原数据。卡片默认字号共用原稿基准，音标按内容宽度居中；新增词使用完整音标兜底，不做通用音素自动拆分。无新增接口、图片资源、存储或音源。
 
-- 单词拼读：`WordPronunciationDeck`直接挂载用户提供的`CardSwap.tsx`组件并复用原卡面。原rAF、二维速度/惯性、积分/阻尼、全角度跟手、预抬升及层间补位保留；四层3D/hover及独立展示队列以上方最新说明为准。左右滑只浏览下一题、上一题恢复，普通末题不循环，全部记住才完成；底栏在普通拖动中可接管，专用记住/再来动作仍互斥。暂停/阻断/重置/尺寸变化/卸载取消未完成动作，reduced-motion直接更新。PC1920×1080/100%主卡500×500@(710,228)和内容几何保持，后卡按原32/2/80及900px透视投影；H5流式布局不缩放整页。来源和许可见`model/card-swap-source.md`，无新增依赖或接口；平板/H5视觉及真机待用户验收。
-- 卡堆触屏捕获：图片的隐式捕获转交给root时，子图片冒泡的lostpointercapture必须忽略；仅同一pointerId、root自身且确实已无捕获时释放手势并保留位姿回弹。正常松手/接管/卸载先清拖动状态再释放捕获，避免迟到事件重复推进。原生CDP触屏专项覆盖该回归，真机手感另验。
+- 单词拼读：`WordPronunciationDeck`直接挂载用户提供的`CardSwap.tsx`组件并复用原卡面。原rAF、二维速度/惯性、积分/阻尼、全角度跟手、预抬升及层间补位保留；四层3D/hover及独立展示队列以上方最新说明为准。左右滑只浏览下一题、上一题恢复，普通末题不循环，再次下一题退场后完成章节；底栏在普通拖动中可接管，专用记住/再来动作仍互斥。暂停/阻断/重置/尺寸变化/卸载取消未完成动作，reduced-motion直接更新。PC1920×1080/100%主卡500×500@(710,228)和内容几何保持，后卡按原32/2/80及900px透视投影；H5流式布局不缩放整页。来源和许可见`model/card-swap-source.md`，无新增依赖或接口；平板/H5视觉及真机待用户验收。
+- 卡堆指针结束：图片隐式捕获转交root时，子图片冒泡的lostpointercapture必须忽略；仅同一pointerId、root自身且确实已无捕获时处理。2026-10-20用户实际鼠标记录确认，快速松手可能先到lostpointercapture且buttons为0：此时通过`getCardSwapPointerEnd`取最后有效轨迹执行正常释放判定；仍按住、pointercancel、失焦或后台才取消。pointerup／pointercancel在document捕获阶段接收，仅消费当前手势ID；完成／接管／卸载先清拖动状态再释放捕获，迟到事件不重复推进。已补真实失败轨迹回归但未运行；用户确认修复后能正常甩出，Codex只读核对释放结果，未自动操作或执行测试／构建。历史CDP触屏结果不替代本轮H5／平板真机验收。
 - 卡堆轻甩采样：down、合并move及up使用事件时间戳进入统一90ms窗口，保留前置锚点并插值边界；up最终坐标参与位移，停顿后速度归零。单move80px快甩不能被当作零速，普通5px内点击不触发；距离30%/速度700px每秒及原弹簧参数保持。
 
 - 退出确认：`PracticeExitDialog`按Figma `546:31918`组合首页/课程插画入口及继续按钮，PC为580×414居中弹窗，沿已有240ms动画/焦点隔离/主题。整卡点击先记录单次意图，退场后由app注入`onExit(home|course)`导航；课程目标复用来源白名单，无来源回课程列表。继续/X/Esc/遮罩只取消退出，题号/输入/草稿/笔记保持，退场结束后才解除阻断。打开时暂停计时、内容媒体与口语演示，媒体保留位置且不自动播放；开发阶段失焦不再叠加游戏暂停窗。页面不拼路由、不新增接口或学习记录。私有`practice-exit`保证首个动作生效、同步或异步退场只消费一次。响应式单/双列及低高度内部滚动，平板/H5视觉和真机待用户验收。
@@ -58,6 +68,10 @@
 - 右上导航：`model/practice-navigation.ts`按12个内容族派生稳定的动作清单，同一游戏全部小模式与题态共用，不保存导航状态。`PracticeNavigation`复用原18px操作SVG、30px全屏SVG和页面按钮样式；`PracticePage`继续拥有独立答案面板、浮层及原生全屏处理。开发阶段暂停关闭，单词/句子/音频/视频/看图为8项；独立指法/音标为内容、重置、草稿、设置、全屏；猜词为答案、模式、重置、草稿、设置、全屏；四阅读器仅草稿、设置、全屏。删除项不渲染隐藏按钮，不据此删除内容能力、题内状态或底部操作。PC导航保持右对齐，普通族右12px，猜词与阅读器右10px；小于1280 CSS px时只显示44px的“更多练习操作”三点按钮，原动作与图标通过共享`TldDropdownMenu`展示，≥1280px恢复平铺。顶部左右同排、左侧允许收缩截断；菜单按原内容族白名单提供8/5/6/3项，不新增动作，选择同步调用原`handleNavigationAction`，草稿展开关系同步。菜单Portal在普通浮窗上方、模态层下方，内部滚动，关闭立即inert；键盘不透传练习，变宽隐藏触发器时自动关闭。设计证据和验证见开发文档第31节。
 
 - 单词局部工具栏：`WordPracticeToolbar`只服务单词族的拼读、拼写、默写、句中练义、指法与口语六种模式，模式行序、截图初值及1920px几何由`model/word-toolbar-options.ts`维护。浮层默认关闭，点击/键盘展开、外点/失焦/Esc关闭；排序、中英、手机音标下拉和设置浮层互斥。图片、中文/翻译、音标显隐接入既有题面；默写的结果态继续使用解析音标门控。无音标不隐藏英文主词。
+- 共用单词音标（2026-10-20）：`model/word-phonetics.ts`维护四种展示模式、单对斜线格式和显式词组／音段；`ui/PracticeWordPhonetics.tsx`以pronunciation／spelling／inherit密度供拼读、拼写、默写、通用题面和逐词标注复用。原始音标显示完整文本，音节拆分与自然拼读分别消费题目`wordPhonetics.syllables`／`phonics`，无音标不渲染；分组缺失或含空组回退完整音标，不按字符推断音节／音素。
+- `model/word-phonetics-demo.ts`只提供当前模拟词例的明确分组，`practice-demo`按英文与完整IPA一致性附着可选数据，保留原题数、题序和句子标注。拼读／拼写沿现有独立缓存切换，其余位置保留原显示门控；切换不重挂作答输入、不改题号、排序或记住进度。词块使用`bg-practice-phoneme`／`text-practice-answer`，卡面完整IPA的音标字符同样使用`text-practice-answer`，只有斜线使用`text-practice-muted`，其他消费者继承本场景文字色；不引入参考项目的蓝色、点击播音接口或自动发音。音标课程专用的目标音高亮及自然拼读朗读顺序开关保持独立。本轮按用户要求不运行测试、构建或页面验收，平板／H5视觉与真机待用户验收。
+- 2026-10-20拼读增量：`WordPronunciationCard`的四条虚线在全部视口显示，随英文容器及字号适配；原虚线SVG仅增加非等比视框适配以保持1px高度。拼读的“遮住中文／遮住英文／中英显示”控制卡面正文，使用不可见占位及ARIA隐藏，四线、音标和朗读入口独立保留；拼读正文以本模式局部选项为准。旧缓存`interpret`对应遮住中文、`translate`对应遮住英文、`bilingual`对应中英显示，键和值不迁移。
+- 拼读排序由`model/word-question-order.ts`生成原题序／Fisher–Yates乱序／英文A-Z题序，`reorderWordRememberSession`只重排剩余词并回到首张，不恢复已记住词。偏好恢复后才首次应用排序，普通渲染、切题和显隐不洗牌；重置／重练按当前排序重新开始，乱序重新生成。显式排序会取消未提交的记住／再来／拖动，重建卡堆；普通切题与再来仍复用物理节点。只保存既有排序选项，不持久化随机队列或学习记录。本轮按用户要求未执行测试、构建或页面验收，效果由用户查看，平板／H5视觉及真机待用户验收。
 - 全部局部设置经`usePracticeToolbarPreferences`在未被会话key重挂的`PracticePage`持有，以`family:mode`隔离并通过`shared/lib/storage`保存到`practiceToolbarOptions`。切题、重置、设置往返、切回模式和刷新恢复各自选择；无有效缓存才用截图初值。首屏保持确定默认值，挂载只读恢复，恢复前控件禁用，仅用户修改时写入，避免默认值覆盖缓存。数据校验和白名单在页面私有`practice-toolbar-preferences`，不写全局学习偏好或URL，不缓存菜单、输入、题号和媒体进度。读取/写入失败通过统一通知反馈，保留本页内存并可在后续成功写入时补存；不新增跨标签同步。抄写、切读和缺数据的显示方案不冒充正式算法。
 - 真实计时：`practice-timer`累计单调毫秒，`usePracticeTimer`在会话已就绪且未被完整浮层阻断时启动；口语练习及非模态草稿继续累计。所有模式共用`PracticeToolbarTimer`，首屏为`00:00:00`，只由文本订阅秒数变化，题面不随计时重渲染。切题保留累计；设置等阻断、退出确认及完成时停止，后续重新开启的游戏暂停也沿用此规则；继续不补算暂停时间；确认重置、再练一次及切换游戏 / 小模式开启新一轮。卸载清除刷新任务并使旧回调失效，StrictMode重放仍只保留一个任务。不写本地缓存、不产生学习记录或请求。共享时钟经`shared/lib/time`读取；规则与验证见开发文档第37节。
 - 工具栏使用`TldSwitch`/`TldSelect`的practice显式密度，颜色为全局`practice-control-surface/text/accent`完整双主题token；计时和六边形图标保留18px原尺寸，浮层箭头用原SVG轮廓作为主题色遮罩。PC基准84×26计时卡、26×26设置按钮、12px间距、64px浮层/24px行；小屏触控区至少40px、浮层128px，不缩放画布。页内共用`PracticeToolbarControls`的计时、设置浮层与27×16双项分段；音标组消费`TldMovingHighlight tone="practice-outline"`单个绿色轮廓，200ms滑动并遵守reduced-motion。练习下拉与查漏补缺共用surface移动高亮，已提交选中和悬停/键盘焦点分别表达。
@@ -98,3 +112,6 @@
 
 
 - 沉浸听力本轮验证：668项测试、format/lint、生产构建275份业务HTML及Electron构建通过；生产Web/Electron专项通过基准双主题、真实125%/150%/200%缩放、颜色／亮度分层、独立显隐、原生笔记／口语和默认消费者回归，业务／权限／资源／控制台异常均为0。PC基准与缩放图已人工查看。normal成分行盒实测22.5px，中文前间距按52.5px校准；不是将文字框高当行高。390/768仅自动几何，平板/H5视觉及真机仍待用户验收，未宣称全站runtime:smoke通过。
+
+- word:spell公共依赖（2026-10-20）：答案Portal挂在练习根容器，层级55高于工具栏30／非模态菜单50，低于模态60；开合不修改输入、选区或题态。仅word:spell显式开启输入聚焦命令，命中拦截且长按只执行一次，保留IME／229／原生编辑／普通编辑器隔离及其他模式策略。
+- 公共PracticeWordSlotsInput新增可选feedback，结构为完整value＋按槽index的码点states（correct／incorrect／missing／extra／pending）；不传保持原行为。缺字只显示占位错误线、多字保留原文；Range跨文本节点累计UTF-16并排除缺字占位，保留原生编辑和手动滚动。PracticeContent.wordSpellingFeedback→WordAnswerCard.feedback→公共输入仅在spell透传。比较、提交快照、局部纠错及真实数据接线仍待实现，契约与调用方式见[本轮公共说明](../../../../docs/practice-page-development.md#wordspell-公共依赖契约2026-10-20)。本轮678项测试、format／lint／生产build／Electron主进程编译及相关生产Web／Electron公共专项、8消费者回归通过；答案／草稿动画子检查双端通过。旧面板总专项在学习内容关闭按钮历史选择器处失败，未记为通过。PC基准、双主题及真实缩放图已查看；平板／H5视觉和真机待用户验收。未提交／推送。

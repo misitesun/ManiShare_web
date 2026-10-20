@@ -38,10 +38,13 @@ import { getMonotonicMilliseconds } from '../../../shared/lib/time'
 import { createCardSwapDismissal } from '../model/card-swap-dismissal'
 import {
     appendCardSwapSample,
+    getCardSwapPointerEnd,
     getCardSwapRelease,
     getCardSwapVelocity,
 } from '../model/card-swap-gesture'
 import type { CardSwapPointerSample } from '../model/card-swap-gesture'
+import { getCardSwapThrowPath } from '../model/card-swap-throw'
+import type { CardSwapThrowPath } from '../model/card-swap-throw'
 import { getCardSwapSeed } from '../model/card-swap-seed'
 import {
     cardSwapPresentation,
@@ -123,6 +126,7 @@ interface DeckCard extends Pose {
     phase: 'rest' | 'exit' | 'enter' | 'drag' | 'restore' | 'gone'
     dir: Vec
     tilt: number
+    throwPath: CardSwapThrowPath | null
     top: number
     under: boolean
     v: Pose
@@ -133,6 +137,8 @@ interface DragState {
     index: number
     startX: number
     startY: number
+    origin: Vec
+    rotation: number
     active: boolean
     samples: CardSwapPointerSample[]
 }
@@ -320,6 +326,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 phase: 'rest',
                 dir: { x: 0, y: 1 },
                 tilt: 0,
+                throwPath: null,
                 top: 0,
                 under: false,
                 x: 0,
@@ -376,6 +383,21 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 getCardSwapOrder(at, count).map(physicalIndex)
             const clearance = (s: Settings, dir: Vec): number =>
                 Math.abs(dir.x) * s.width + Math.abs(dir.y) * s.height + 12
+            const throwPath = (position: Vec, dir: Vec, rotation: number): CardSwapThrowPath => {
+                const viewport = window.visualViewport
+                return getCardSwapThrowPath({
+                    card: root.getBoundingClientRect(),
+                    viewport: {
+                        left: viewport?.offsetLeft ?? 0,
+                        top: viewport?.offsetTop ?? 0,
+                        width: viewport?.width ?? document.documentElement.clientWidth,
+                        height: viewport?.height ?? window.innerHeight,
+                    },
+                    position,
+                    direction: dir,
+                    rotation,
+                })
+            }
             const currentIndex = (): number => state.order[0] ?? 0
             const blocked = (): boolean =>
                 settingsRef.current.blocked || settingsRef.current.isBlocked()
@@ -391,8 +413,8 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                     const base = slot(0, s)
                     const reach = clearance(s, card.dir) * 1.3
                     return {
-                        x: base.x + card.dir.x * reach,
-                        y: base.y + card.dir.y * reach,
+                        x: card.throwPath?.target.x ?? base.x + card.dir.x * reach,
+                        y: card.throwPath?.target.y ?? base.y + card.dir.y * reach,
                         z: base.z,
                         r: card.tilt,
                         p: card.phase === 'gone' ? s.visible : 0,
@@ -453,11 +475,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                           : 'default'
                 const active = card.index === currentIndex()
                 const inert =
-                    dismissal.pending() !== null ||
-                    !active ||
-                    blocked() ||
-                    card.phase === 'exit' ||
-                    card.phase === 'restore'
+                    dismissal.pending() !== null || !active || blocked() || card.phase === 'exit'
                 if (el.inert !== inert) el.inert = inert
                 if (el.getAttribute('aria-hidden') !== String(!active))
                     el.setAttribute('aria-hidden', String(!active))
@@ -605,10 +623,10 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                         dt,
                     )
                     if (card.phase === 'exit') {
-                        const base = slot(0, s)
+                        const base = card.throwPath?.origin ?? slot(0, s)
                         const travelled =
                             (card.x - base.x) * card.dir.x + (card.y - base.y) * card.dir.y
-                        if (travelled >= clearance(s, card.dir)) {
+                        if (travelled >= (card.throwPath?.clearance ?? clearance(s, card.dir))) {
                             // 原组件正向轮转：下落清出前卡后降层，沿原弹簧回到尾槽。
                             card.phase = card.index === requeueIndex ? 'rest' : 'gone'
                             card.top = 0
@@ -730,6 +748,8 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                     front.phase = 'exit'
                     front.dir = options.dir ?? { x: 1, y: 0 }
                     front.tilt = options.tilt ?? 0
+                    front.throwPath = throwPath(front, front.dir, front.tilt)
+                    front.dir = front.throwPath.direction
                     front.top = ++state.layers
                     front.under = false
                     front.nudge = 0
@@ -747,15 +767,16 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                     state.order = canonicalOrder(step.kind === 'move' ? step.index : 0)
                     settleOrder(time, stagger * 1000)
                     if (!alreadyExiting) {
-                        const reach = clearance(s, back.dir) * 1.3
+                        const path = throwPath({ x: 0, y: 0 }, back.dir, back.tilt)
                         Object.assign(back, slot(0, s), {
-                            x: back.dir.x * reach,
-                            y: back.dir.y * reach,
+                            x: path.target.x,
+                            y: path.target.y,
                             r: back.tilt,
                         })
                         back.v = { x: 0, y: 0, z: 0, r: 0, p: 0, sx: 0, sy: 0 }
                     }
                     back.phase = 'restore'
+                    back.throwPath = null
                     back.top = ++state.layers
                     back.under = false
                     back.nudge = 0
@@ -847,6 +868,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 front.phase = 'exit'
                 front.dir = requeue ? DOWN : { x: 0, y: -1 }
                 front.tilt = 0
+                front.throwPath = null
                 front.top = ++state.layers
                 front.under = false
                 front.nudge = 0
@@ -887,6 +909,22 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 }
             }
 
+            const applyDragOffset = (
+                card: DeckCard,
+                drag: DragState,
+                offset: Vec,
+                s: Settings,
+            ): void => {
+                const base = slot(0, s)
+                card.x = drag.origin.x + offset.x
+                card.y = drag.origin.y + offset.y
+                card.z = base.z
+                card.sx = base.sx
+                card.sy = base.sy
+                card.r = clamp(drag.rotation + offset.x * 0.035, -9, 9)
+                card.p = 0
+            }
+
             const onMove = (event: PointerEvent): void => {
                 if (blocked()) {
                     cancel()
@@ -924,21 +962,15 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                     state.dragged = true
                     const card = deck[drag.index]
                     if (!card) return
+                    drag.origin = { x: card.x, y: card.y }
+                    drag.rotation = card.r
                     card.phase = 'drag'
                     card.v = { x: 0, y: 0, z: 0, r: 0, p: 0, sx: 0, sy: 0 }
-                    root.setPointerCapture?.(event.pointerId)
                     root.style.cursor = 'grabbing'
                 }
                 const card = deck[drag.index]
                 if (!card) return
-                const base = slot(0, s)
-                card.x = base.x + dx
-                card.y = base.y + dy
-                card.z = base.z
-                card.sx = base.sx
-                card.sy = base.sy
-                card.r = clamp(dx * 0.035, -9, 9)
-                card.p = 0
+                applyDragOffset(card, drag, { x: dx, y: dy }, s)
                 const history = event.getCoalescedEvents?.() ?? []
                 for (const point of [...history, event]) {
                     drag.samples = appendCardSwapSample(drag.samples, {
@@ -955,6 +987,8 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 const nextIndex = state.order[1]
                 const next = nextIndex === undefined ? undefined : deck[nextIndex]
                 if (next && next.phase === 'rest') next.nudge = -0.22 * progress
+                // 输入位置即时写入；轻甩的move/up同帧到达也不依赖下一次rAF才跟手。
+                write(card, s)
                 wake()
             }
 
@@ -984,7 +1018,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 if (
                     event.target instanceof Element &&
                     event.target.closest(
-                        'button, a, input, textarea, select, [contenteditable="true"]',
+                        'button, a, input, textarea, select, [contenteditable="true"], [data-word-card-flipping="true"]',
                     )
                 )
                     return
@@ -994,65 +1028,83 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                         : null
                 if (!target || !root.contains(target)) return
                 const index = physicalIndex(Number(target.getAttribute('data-swap-index')))
-                if (index !== currentIndex() || deck[index]?.phase !== 'rest') return
+                const card = deck[index]
+                if (
+                    index !== currentIndex() ||
+                    !card ||
+                    (card.phase !== 'rest' && card.phase !== 'restore')
+                )
+                    return
                 state.drag = {
                     id: event.pointerId,
                     index,
                     startX: event.clientX,
                     startY: event.clientY,
+                    origin: { x: card.x, y: card.y },
+                    rotation: card.r,
                     active: false,
                     samples: [{ x: 0, y: 0, t: event.timeStamp }],
                 }
+                // 在首个move前建立捕获，接住快速划出卡堆的移动及松手事件。
+                root.setPointerCapture(event.pointerId)
                 schedule()
             }
 
             const onUp = (event: PointerEvent): void => {
                 const drag = state.drag
                 if (!drag || drag.id !== event.pointerId) return
+                const end = getCardSwapPointerEnd({
+                    source:
+                        event.type === 'pointercancel'
+                            ? 'cancel'
+                            : event.type === 'lostpointercapture'
+                              ? 'capture-loss'
+                              : 'release',
+                    buttons: event.buttons,
+                    sample: {
+                        x: (event.clientX - drag.startX) / state.scale,
+                        y: (event.clientY - drag.startY) / state.scale,
+                        t: event.timeStamp,
+                    },
+                    samples: drag.samples,
+                })
+                // 先取走手势；后续lostpointercapture或迟到pointerup不能重复完成。
                 state.drag = null
                 notifyBusy()
                 root.style.cursor = ''
-                const finalOffset = {
-                    x: (event.clientX - drag.startX) / state.scale,
-                    y: (event.clientY - drag.startY) / state.scale,
-                }
+                const finalOffset = { x: end.sample.x, y: end.sample.y }
+                if (root.hasPointerCapture(event.pointerId))
+                    root.releasePointerCapture(event.pointerId)
                 if (
                     !drag.active &&
-                    (event.type === 'pointercancel' || Math.hypot(finalOffset.x, finalOffset.y) < 5)
+                    (end.cancelled || Math.hypot(finalOffset.x, finalOffset.y) < 5)
                 ) {
                     schedule()
                     return
                 }
-                if (root.hasPointerCapture(event.pointerId))
-                    root.releasePointerCapture(event.pointerId)
                 const s = settingsRef.current
                 const card = deck[drag.index]
                 if (!card) return
-                const base = slot(0, s)
-                if (event.type !== 'pointercancel') {
+                if (!end.cancelled) {
                     if (!drag.active) {
                         state.dragged = true
                         s.onDragStart()
+                        drag.origin = { x: card.x, y: card.y }
+                        drag.rotation = card.r
                     }
-                    card.x = base.x + finalOffset.x
-                    card.y = base.y + finalOffset.y
-                    card.r = clamp(finalOffset.x * 0.035, -9, 9)
-                    drag.samples = appendCardSwapSample(drag.samples, {
-                        ...finalOffset,
-                        t: event.timeStamp,
-                    })
+                    applyDragOffset(card, drag, finalOffset, s)
+                    drag.samples = appendCardSwapSample(drag.samples, end.sample)
                 }
                 const velocity = getCardSwapVelocity(drag.samples)
-                const offset = { x: card.x - base.x, y: card.y - base.y }
                 const nextIndex = state.order[1]
                 const next = nextIndex === undefined ? undefined : deck[nextIndex]
                 if (next) next.nudge = 0
                 const release = getCardSwapRelease(
-                    offset,
+                    finalOffset,
                     velocity,
                     s.width,
                     s.height,
-                    event.type === 'pointercancel',
+                    end.cancelled,
                 )
                 if (release.advance) {
                     card.phase = 'rest'
@@ -1069,6 +1121,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 setPhase('returning')
                 card.v.x = velocity.x
                 card.v.y = velocity.y
+                write(card, s)
                 wake()
                 schedule()
             }
@@ -1112,6 +1165,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                     card.hold = 0
                     card.nudge = 0
                     card.phase = 'rest'
+                    card.throwPath = null
                     card.top = 0
                     card.under = false
                     Object.assign(card, slot(position, settingsRef.current))
@@ -1148,12 +1202,15 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
             }
             const onLostPointerCapture = (event: PointerEvent): void => {
                 // 触屏先由命中的图片隐式捕获；转交root会冒泡图片的lost事件，不是拖动中断。
+                // root在快速松手时也可能先失去捕获；按键已释放时必须进入同一结束判定。
                 if (
                     event.target === root &&
                     state.drag?.id === event.pointerId &&
                     !root.hasPointerCapture(event.pointerId)
-                )
-                    interruptDrag()
+                ) {
+                    if (document.hidden || !document.hasFocus()) interruptDrag()
+                    else onUp(event)
+                }
             }
 
             const interruptDrag = (): boolean => {
@@ -1222,11 +1279,13 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
             root.addEventListener('pointermove', onMove)
             root.addEventListener('pointerleave', onLeave)
             root.addEventListener('pointerdown', onDown)
-            root.addEventListener('pointerup', onUp)
-            root.addEventListener('pointercancel', onUp)
+            document.addEventListener('pointerup', onUp, true)
+            document.addEventListener('pointercancel', onUp, true)
             root.addEventListener('click', onClick, true)
             root.addEventListener('lostpointercapture', onLostPointerCapture)
             media.addEventListener('change', onReducedChange)
+            window.addEventListener('resize', cancel)
+            window.visualViewport?.addEventListener('resize', cancel)
             document.addEventListener('visibilitychange', onVisibility)
             schedule()
 
@@ -1243,11 +1302,13 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                 root.removeEventListener('pointermove', onMove)
                 root.removeEventListener('pointerleave', onLeave)
                 root.removeEventListener('pointerdown', onDown)
-                root.removeEventListener('pointerup', onUp)
-                root.removeEventListener('pointercancel', onUp)
+                document.removeEventListener('pointerup', onUp, true)
+                document.removeEventListener('pointercancel', onUp, true)
                 root.removeEventListener('click', onClick, true)
                 root.removeEventListener('lostpointercapture', onLostPointerCapture)
                 media.removeEventListener('change', onReducedChange)
+                window.removeEventListener('resize', cancel)
+                window.visualViewport?.removeEventListener('resize', cancel)
                 const drag = state.drag
                 state.drag = null
                 if (drag && root.hasPointerCapture(drag.id)) root.releasePointerCapture(drag.id)
@@ -1268,7 +1329,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
             data-card-swap
             data-word-deck-stage
             data-word-deck-state="idle"
-            className="relative isolate grid min-w-0"
+            className="relative isolate z-0 grid min-w-0"
             style={{ perspective: cardSwapPresentation.perspective }}
             role="group"
             aria-label="单词拼读卡片堆"
@@ -1286,8 +1347,8 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
                     style={initialStyles.get(card.key ?? String(cardIndex))}
                     className={
                         cardIndex === index && !disabled
-                            ? 'relative col-start-1 row-start-1 w-full min-w-0 cursor-pointer touch-pinch-zoom select-none self-start'
-                            : 'relative col-start-1 row-start-1 w-full min-w-0 touch-pinch-zoom select-none self-start'
+                            ? 'relative col-start-1 row-start-1 w-full min-w-0 cursor-pointer touch-pinch-zoom select-none self-start has-[[data-word-analysis-open=true]]:touch-pan-y'
+                            : 'relative col-start-1 row-start-1 w-full min-w-0 touch-pinch-zoom select-none self-start has-[[data-word-analysis-open=true]]:touch-pan-y'
                     }
                 >
                     {card}

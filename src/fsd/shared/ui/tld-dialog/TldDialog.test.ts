@@ -71,3 +71,26 @@ test('动画作用域含嵌套弹窗时预渲染仍不输出Portal，也不提�
     }
     assert.equal(closed, 0)
 })
+
+test('右侧弹窗在预渲染中不读取可见视口、不提前调用关闭完成', (): void => {
+    let closed = 0
+    for (const open of [false, true]) {
+        assert.equal(
+            renderToStaticMarkup(
+                createElement(TldDialog, {
+                    open,
+                    placement: 'right',
+                    size: 'fit-extra-wide',
+                    referenceFrame: { width: 544, offsetX: 0, offsetY: 0.5 },
+                    title: '笔记',
+                    onOpenChange: (): void => undefined,
+                    onAfterClose: (): void => {
+                        closed += 1
+                    },
+                }),
+            ),
+            '',
+        )
+    }
+    assert.equal(closed, 0)
+})

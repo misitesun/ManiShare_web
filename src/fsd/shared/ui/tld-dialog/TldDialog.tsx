@@ -20,6 +20,7 @@ import type { DialogFocusPosition } from './dialog-behavior'
 import { canRestoreDialogFocus, isTopDialogLayer, registerDialogLayer } from './dialog-runtime'
 import { useTldDialogMotionEnabled } from './TldDialogMotionProvider'
 import { useTldDialogMotion } from './useTldDialogMotion'
+import type { TldDialogPlacement } from './dialog-motion'
 
 /** 退场期间保留最后一帧内容，父层清空overlay/表单时不闪成空窗。 */
 const DialogPresentation = memo(
@@ -67,7 +68,19 @@ interface DialogFrameStyle extends CSSProperties {
     '--dialog-reference-offset-y': string
 }
 
+interface DialogViewport {
+    readonly left: number
+    readonly top: number
+    readonly width: number
+    readonly height: number
+}
+
+interface DialogLayerStyle extends CSSProperties {
+    '--dialog-available-height': string
+}
+
 export interface TldDialogProps {
+    readonly placement?: TldDialogPlacement
     readonly referenceFrame?: TldDialogReferenceFrame
     readonly surface?: 'gradient' | 'solid'
     readonly titleTone?: 'default' | 'soft'
@@ -104,6 +117,7 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 }
 
 export function TldDialog({
+    placement = 'center',
     referenceFrame,
     surface = 'gradient',
     titleTone = 'default',
@@ -135,9 +149,31 @@ export function TldDialog({
     const titleId = useId()
     const contentId = useId()
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
+    const [viewport, setViewport] = useState<DialogViewport | null>(null)
     useEffect(() => {
         setPortalTarget(document.body)
     }, [])
+    useEffect(() => {
+        if (placement !== 'right' || !open) return
+        function updateViewport(): void {
+            const visible = window.visualViewport
+            setViewport({
+                left: visible?.offsetLeft ?? 0,
+                top: visible?.offsetTop ?? 0,
+                width: visible?.width ?? window.innerWidth,
+                height: visible?.height ?? window.innerHeight,
+            })
+        }
+        updateViewport()
+        window.addEventListener('resize', updateViewport)
+        window.visualViewport?.addEventListener('resize', updateViewport)
+        window.visualViewport?.addEventListener('scroll', updateViewport)
+        return (): void => {
+            window.removeEventListener('resize', updateViewport)
+            window.visualViewport?.removeEventListener('resize', updateViewport)
+            window.visualViewport?.removeEventListener('scroll', updateViewport)
+        }
+    }, [open, placement])
     const dialogRef = useRef<HTMLDivElement>(null)
     const layerRef = useRef<HTMLDivElement>(null)
     const motionFrameRef = useRef<HTMLDivElement>(null)
@@ -146,6 +182,9 @@ export function TldDialog({
         open,
         ready: portalTarget !== null,
         enabled: motionEnabled,
+        placement,
+        viewportRight:
+            placement === 'right' && viewport ? viewport.left + viewport.width : undefined,
         onAfterClose,
     })
     const onOpenChangeRef = useRef(onOpenChange)
@@ -161,22 +200,36 @@ export function TldDialog({
                   '--dialog-reference-offset-y': `${referenceFrame.offsetY}px`,
               }
             : undefined
+    const layerStyle: DialogLayerStyle | undefined =
+        placement === 'right' && viewport
+            ? {
+                  left: viewport.left,
+                  top: viewport.top,
+                  right: 'auto',
+                  bottom: 'auto',
+                  width: viewport.width,
+                  height: viewport.height,
+                  '--dialog-available-height': `${viewport.height}px`,
+              }
+            : undefined
     const dialogFrameClassName =
-        size === 'full'
-            ? 'max-h-[calc(100dvh-24px)] w-full rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
-            : size === 'fit-extra-wide'
-              ? 'max-h-[calc(100dvh-24px)] w-full max-w-[var(--dialog-fit-width,819px)] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)] design:translate-x-[var(--dialog-reference-offset-x,-0.5px)] design:translate-y-[clamp(calc(50%_+_24px_-_50dvh),var(--dialog-reference-offset-y,-0.5px),calc(50dvh_-_50%_-_24px))]'
-              : size === 'fit-medium'
-                ? 'max-h-[calc(100dvh-24px)] w-full max-w-[470px] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
-                : size === 'fit-wide'
-                  ? 'max-h-[calc(100dvh-24px)] w-full max-w-[563px] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
-                  : size === 'small'
-                    ? 'max-h-[calc(100dvh-24px)] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[220px] md:max-h-[calc(100dvh-48px)]'
-                    : size === 'medium'
-                      ? 'max-h-[calc(100dvh-24px)] w-full max-w-[576px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
-                      : size === 'extra-large'
-                        ? 'max-h-[calc(100dvh-24px)] w-full max-w-[802px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
-                        : 'max-h-[calc(100dvh-24px)] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
+        placement === 'right'
+            ? 'max-h-[calc(var(--dialog-available-height,100dvh)-24px)] w-full rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(var(--dialog-available-height,100dvh)-48px)] design:translate-x-[var(--dialog-reference-offset-x,0px)] design:translate-y-[var(--dialog-reference-offset-y,0px)]'
+            : size === 'full'
+              ? 'max-h-[calc(100dvh-24px)] w-full rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+              : size === 'fit-extra-wide'
+                ? 'max-h-[calc(100dvh-24px)] w-full max-w-[var(--dialog-fit-width,819px)] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)] design:translate-x-[var(--dialog-reference-offset-x,-0.5px)] design:translate-y-[clamp(calc(50%_+_24px_-_50dvh),var(--dialog-reference-offset-y,-0.5px),calc(50dvh_-_50%_-_24px))]'
+                : size === 'fit-medium'
+                  ? 'max-h-[calc(100dvh-24px)] w-full max-w-[470px] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+                  : size === 'fit-wide'
+                    ? 'max-h-[calc(100dvh-24px)] w-full max-w-[563px] rounded-xl bg-dialog-border p-px shadow-panel md:max-h-[calc(100dvh-48px)]'
+                    : size === 'small'
+                      ? 'max-h-[calc(100dvh-24px)] w-full max-w-[420px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[220px] md:max-h-[calc(100dvh-48px)]'
+                      : size === 'medium'
+                        ? 'max-h-[calc(100dvh-24px)] w-full max-w-[576px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[280px] md:max-h-[calc(100dvh-48px)]'
+                        : size === 'extra-large'
+                          ? 'max-h-[calc(100dvh-24px)] w-full max-w-[802px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
+                          : 'max-h-[calc(100dvh-24px)] w-full max-w-[742px] rounded-xl bg-linear-to-r from-brand-start to-brand-end p-px shadow-panel md:min-h-[320px] md:max-h-[calc(100dvh-48px)]'
 
     useEffect(() => {
         onOpenChangeRef.current = onOpenChange
@@ -288,11 +341,17 @@ export function TldDialog({
             ref={layerRef}
             data-tld-dialog-layer
             data-dialog-open={open}
+            data-dialog-placement={placement}
             aria-hidden={!open || undefined}
+            style={layerStyle}
             className={
-                open
-                    ? 'fixed inset-0 z-60 grid place-items-center overflow-y-auto bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6'
-                    : 'pointer-events-none fixed inset-0 z-60 grid place-items-center overflow-y-auto bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6'
+                placement === 'right'
+                    ? open
+                        ? 'fixed inset-0 z-60 grid items-center justify-items-end overflow-hidden bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6 design:pr-[50px]'
+                        : 'pointer-events-none fixed inset-0 z-60 grid items-center justify-items-end overflow-hidden bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6 design:pr-[50px]'
+                    : open
+                      ? 'fixed inset-0 z-60 grid place-items-center overflow-y-auto bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6'
+                      : 'pointer-events-none fixed inset-0 z-60 grid place-items-center overflow-y-auto bg-dialog-overlay p-3 backdrop-blur-[2px] md:p-6'
             }
             onPointerDown={handleBackdropPointerDown}
         >
@@ -300,7 +359,12 @@ export function TldDialog({
                 ref={motionFrameRef}
                 data-tld-dialog-motion
                 inert={!open}
-                className="flex w-full justify-center"
+                style={placement === 'right' ? frameStyle : undefined}
+                className={
+                    placement === 'right'
+                        ? 'flex w-full min-w-0 max-w-[var(--dialog-fit-width,544px)] justify-end'
+                        : 'flex w-full justify-center'
+                }
             >
                 <DialogPresentation open={open}>
                     <div className={dialogFrameClassName} style={frameStyle}>
@@ -310,11 +374,15 @@ export function TldDialog({
                             aria-labelledby={titleId}
                             aria-modal="true"
                             className={
-                                surface === 'solid'
-                                    ? 'relative flex max-h-[calc(100dvh-26px)] min-h-[inherit] flex-col overflow-hidden rounded-[11px] bg-dialog-surface text-primary outline-none md:max-h-[calc(100dvh-50px)]'
-                                    : size === 'fit-extra-wide'
-                                      ? 'relative flex max-h-[calc(100dvh-26px)] min-h-[inherit] flex-col overflow-hidden rounded-[11px] bg-linear-to-r/srgb from-dialog-surface via-dialog-surface-accent to-dialog-surface text-primary outline-none md:max-h-[calc(100dvh-50px)]'
-                                      : 'relative flex max-h-[calc(100dvh-26px)] min-h-[inherit] flex-col overflow-hidden rounded-[11px] bg-linear-to-r from-dialog-surface via-dialog-surface-accent to-dialog-surface text-primary outline-none md:max-h-[calc(100dvh-50px)]'
+                                placement === 'right'
+                                    ? surface === 'solid'
+                                        ? 'relative flex max-h-[calc(var(--dialog-available-height,100dvh)-26px)] min-h-0 flex-col overflow-hidden rounded-[11px] bg-dialog-surface text-primary outline-none md:max-h-[calc(var(--dialog-available-height,100dvh)-50px)]'
+                                        : 'relative flex max-h-[calc(var(--dialog-available-height,100dvh)-26px)] min-h-0 flex-col overflow-hidden rounded-[11px] bg-linear-to-r/srgb from-dialog-surface via-dialog-surface-accent to-dialog-surface text-primary outline-none md:max-h-[calc(var(--dialog-available-height,100dvh)-50px)]'
+                                    : surface === 'solid'
+                                      ? 'relative flex max-h-[calc(100dvh-26px)] min-h-[inherit] flex-col overflow-hidden rounded-[11px] bg-dialog-surface text-primary outline-none md:max-h-[calc(100dvh-50px)]'
+                                      : size === 'fit-extra-wide'
+                                        ? 'relative flex max-h-[calc(100dvh-26px)] min-h-[inherit] flex-col overflow-hidden rounded-[11px] bg-linear-to-r/srgb from-dialog-surface via-dialog-surface-accent to-dialog-surface text-primary outline-none md:max-h-[calc(100dvh-50px)]'
+                                        : 'relative flex max-h-[calc(100dvh-26px)] min-h-[inherit] flex-col overflow-hidden rounded-[11px] bg-linear-to-r from-dialog-surface via-dialog-surface-accent to-dialog-surface text-primary outline-none md:max-h-[calc(100dvh-50px)]'
                             }
                             role="dialog"
                             tabIndex={-1}
@@ -385,9 +453,11 @@ export function TldDialog({
                             <div
                                 id={hasBodyContent ? contentId : undefined}
                                 className={
-                                    density === 'compact'
-                                        ? 'min-h-0 flex-1 overflow-y-auto text-body-tight text-secondary'
-                                        : 'min-h-0 flex-1 overflow-y-auto px-4 pb-5 text-body text-secondary md:px-6 md:pb-6'
+                                    placement === 'right'
+                                        ? 'flex min-h-0 flex-1 flex-col overflow-hidden text-body-tight text-secondary'
+                                        : density === 'compact'
+                                          ? 'min-h-0 flex-1 overflow-y-auto text-body-tight text-secondary'
+                                          : 'min-h-0 flex-1 overflow-y-auto px-4 pb-5 text-body text-secondary md:px-6 md:pb-6'
                                 }
                             >
                                 {bodyContent}

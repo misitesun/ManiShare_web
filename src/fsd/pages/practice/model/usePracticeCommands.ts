@@ -4,7 +4,48 @@ import { useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
 import type { PracticeCommand } from './practice-command-types'
 import { resolvePracticeShortcut } from './practice-shortcuts'
-import type { PracticeKeyboardTarget, PracticeShortcutContext } from './practice-shortcuts'
+import type {
+    PracticeKeyInput,
+    PracticeKeyboardTarget,
+    PracticeShortcutContext,
+} from './practice-shortcuts'
+
+export interface PracticeKeydownDecision {
+    readonly preventDefault: boolean
+    readonly command: PracticeCommand | null
+}
+
+/** 显式启用的作答输入持续拦截命中后的长按；其他目标沿用原重复键策略。 */
+export function getPracticeKeydownDecision(
+    event: PracticeKeyInput,
+    context: PracticeShortcutContext,
+    target: PracticeKeyboardTarget,
+    held: boolean,
+): PracticeKeydownDecision {
+    const answerCommands =
+        target === 'answer-input' &&
+        context.answerInputCommands === true &&
+        context.family === 'word' &&
+        context.mode === 'spell'
+    if (!answerCommands && (held || event.repeat)) return { preventDefault: false, command: null }
+    const command = resolvePracticeShortcut({ ...event, repeat: false }, context, target)
+    const nativeEdit =
+        (event.ctrlKey || event.metaKey) &&
+        !event.altKey &&
+        ['a', 'c', 'x', 'v', 'z', 'y'].includes(event.key.toLowerCase())
+    const retainedAnswerPress =
+        held &&
+        answerCommands &&
+        context.scope === 'question' &&
+        context.ready &&
+        !event.isComposing &&
+        !event.defaultPrevented &&
+        !nativeEdit
+    return {
+        preventDefault: command !== null || retainedAnswerPress,
+        command: held || event.repeat ? null : command,
+    }
+}
 
 export function practiceKeyboardTarget(target: EventTarget | null): PracticeKeyboardTarget {
     if (!(target instanceof HTMLElement)) return 'content'
@@ -70,12 +111,23 @@ export function usePracticeCommands({
                 else held.current.add(key)
                 return
             }
-            if (held.current.has(key)) return
-            const command = resolvePracticeShortcut(event, context, practiceKeyboardTarget(target))
-            if (!command) return
+            const decision = getPracticeKeydownDecision(
+                {
+                    key: event.key,
+                    ctrlKey: event.ctrlKey,
+                    altKey: event.altKey,
+                    shiftKey: event.shiftKey,
+                    metaKey: event.metaKey,
+                    repeat: event.repeat,
+                },
+                context,
+                practiceKeyboardTarget(target),
+                held.current.has(key),
+            )
+            if (decision.preventDefault) event.preventDefault()
+            if (!decision.command) return
             held.current.add(key)
-            event.preventDefault()
-            onCommand(command)
+            onCommand(decision.command)
         }
         function keyup(event: KeyboardEvent): void {
             held.current.delete(event.code || event.key.toLowerCase())

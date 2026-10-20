@@ -88,6 +88,7 @@
     --color-checkin-glow: var(--app-color-checkin-glow);
     --color-dialog-title-soft: var(--app-color-dialog-title-soft);
     --color-button-muted: var(--app-color-button-muted);
+    --color-button-solid-disabled: var(--app-color-button-solid-disabled);
     --font-sans:
         "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
         sans-serif;
@@ -445,7 +446,7 @@
     --app-color-phonetics-success: #00bf63;
     --app-color-phonetics-placeholder: #d9d9d9;
     --app-color-phonetics-card: #1c1c1c;
-    --app-color-practice-design-answer: #00e088;
+    --app-color-practice-design-answer: var(--app-color-answer-default-dark);
     --app-color-practice-sentence-answer: #ffffff;
     --app-color-practice-muted: rgba(255, 255, 255, 0.6);
     --app-color-practice-card: #1b1c22;
@@ -484,8 +485,8 @@
     --app-color-practice-preset-green: #111b16;
     --app-color-practice-preset-blue: #1d2024;
     --app-color-practice-image-mask: #000000;
-    --app-color-answer-default-dark: #ffffff;
-    --app-color-answer-default-light: #000000;
+    --app-color-answer-default-dark: #00e088;
+    --app-color-answer-default-light: #10bb82;
     --app-blend-pk-art: screen;
     --app-color-challenge-start: #8c52ff;
     --app-color-challenge-end: #01f799;
@@ -623,6 +624,7 @@
     --app-color-checkin-glow: #7673ff;
     --app-color-dialog-title-soft: #d9d9d9;
     --app-color-button-muted: rgb(255 255 255 / 20%);
+    --app-color-button-solid-disabled: #58bf8d;
     --app-color-dialog-overlay: rgb(0 0 0 / 50%);
     --app-color-dialog-surface: #0e0e10;
     --app-color-dialog-surface-accent: #111822;
@@ -741,7 +743,7 @@
     --app-color-phonetics-success: var(--app-color-accent-green);
     --app-color-phonetics-placeholder: var(--app-color-surface-raised);
     --app-color-phonetics-card: var(--app-color-surface);
-    --app-color-practice-design-answer: #10bb82;
+    --app-color-practice-design-answer: var(--app-color-answer-default-light);
     --app-color-practice-sentence-answer: var(--app-color-text-primary);
     --app-color-practice-muted: var(--app-color-text-secondary);
     --app-color-practice-card: var(--app-color-surface);
@@ -796,8 +798,8 @@
     --app-color-practice-preset-green: #d1e4d0;
     --app-color-practice-preset-blue: #d5e8f2;
     --app-color-practice-image-mask: #ffffff;
-    --app-color-answer-default-dark: #ffffff;
-    --app-color-answer-default-light: #000000;
+    --app-color-answer-default-dark: #00e088;
+    --app-color-answer-default-light: #10bb82;
     --app-blend-pk-art: normal;
     --app-color-challenge-start: #8c52ff;
     --app-color-challenge-end: #01f799;
@@ -934,6 +936,7 @@
     --app-color-checkin-glow: #7673ff;
     --app-color-dialog-title-soft: var(--app-color-text-primary);
     --app-color-button-muted: rgb(17 24 21 / 12%);
+    --app-color-button-solid-disabled: #a3d4ba;
     --app-color-dialog-overlay: rgb(17 24 21 / 38%);
     --app-color-dialog-surface: #ffffff;
     --app-color-dialog-surface-accent: #f2f7f5;

@@ -3,6 +3,7 @@ import type { ReactElement } from 'react'
 import { getPreviewAppearance } from '../../../features/learning-settings'
 import type { LearningPreferences } from '../../../features/learning-settings'
 import type { PracticeQuestion } from '../model/practice-demo'
+import { PracticeWordPhonetics } from './PracticeWordPhonetics'
 const posLabels = { pronoun: '代词', verb: '动词', noun: '名词', adverb: '副词' }
 const syntaxLabels = {
     subject: '主语',
@@ -71,7 +72,9 @@ export function AnnotatedText({
             {question.tokens.map((token, index) => (
                 <div key={token.id} className="flex min-w-0 flex-col items-center gap-[5px]">
                     {values.showAnswerPhonetics && (
-                        <span className="text-[14px] text-secondary">{token.phonetic}</span>
+                        <span className="text-[14px] text-secondary">
+                            <PracticeWordPhonetics phonetic={token.phonetic} />
+                        </span>
                     )}
                     <span
                         className={
@@ -171,7 +174,7 @@ function SentenceListeningAnnotation({
                             data-listening-layer="phonetic"
                             className="mb-[6px] whitespace-nowrap text-[12px] font-normal leading-[normal] text-practice-muted md:text-[14px]"
                         >
-                            {token.phonetic}
+                            <PracticeWordPhonetics phonetic={token.phonetic} />
                         </span>
                     )}
                     {values.showPartOfSpeech && (

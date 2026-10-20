@@ -16,6 +16,72 @@ export interface WordSlotSelection {
     readonly end: number
 }
 
+export type WordSlotCharacterState = 'correct' | 'incorrect' | 'missing' | 'extra' | 'pending'
+
+export interface WordSlotFeedback {
+    readonly index: number
+    /** 按可见词内的 Unicode 码点排列；原生选区仍使用 UTF-16。未提供的位置待校验。 */
+    readonly states: readonly WordSlotCharacterState[]
+}
+
+export interface WordSlotsFeedback {
+    /** 必须对应当前完整原生输入；修改后由调用方更新保留的错误快照。 */
+    readonly value: string
+    readonly slots: readonly WordSlotFeedback[]
+}
+
+export interface WordSlotCharacterView {
+    readonly value: string
+    readonly typed: boolean
+    readonly state: WordSlotCharacterState
+}
+
+export interface WordSlotTextPosition {
+    readonly index: number
+    readonly offset: number
+}
+
+/** 只映射调用方反馈，不比较答案；缺字占位不向原生输入补字。 */
+export function getWordSlotCharacters(
+    slot: WordSlotView,
+    value: string,
+    feedback: WordSlotsFeedback,
+): readonly WordSlotCharacterView[] {
+    const input = Array.from(slot.value)
+    const target = Array.from(slot.target)
+    const states =
+        feedback.value === value
+            ? feedback.slots.find((entry) => entry.index === slot.index)?.states
+            : undefined
+    return Array.from({ length: Math.max(input.length, target.length) }, (_, index) => {
+        const typed = input[index] !== undefined
+        const requested = states?.[index] ?? 'pending'
+        // 无效位置声明降级为待校验，绝不隐藏真实录入或伪造缺失/多余字符。
+        const state =
+            (requested === 'missing' && typed) ||
+            (requested === 'extra' && (!typed || target[index] !== undefined)) ||
+            ((requested === 'correct' || requested === 'incorrect') && !typed)
+                ? 'pending'
+                : requested
+        return { value: input[index] ?? target[index] ?? '', typed, state }
+    })
+}
+
+/** 拆分文本节点后仍按 UTF-16 累计定位；调用方仅传实际录入的文本，排除缺字占位。 */
+export function getWordSlotTextPosition(
+    texts: readonly string[],
+    caret: number,
+): WordSlotTextPosition | null {
+    let remaining = Number.isFinite(caret) ? Math.max(0, Math.trunc(caret)) : 0
+    for (const [index, text] of texts.entries()) {
+        if (remaining <= text.length) return { index, offset: remaining }
+        remaining -= text.length
+    }
+    const index = texts.length - 1
+    const last = texts[index]
+    return last === undefined ? null : { index, offset: last.length }
+}
+
 interface InputWord {
     readonly value: string
     readonly start: number

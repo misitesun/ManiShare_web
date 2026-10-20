@@ -577,4 +577,4 @@ const isStandalonePanelMotionEntry =
         process.argv.slice(1).some((argument) => resolve(argument) === __filename))
 if (isStandalonePanelMotionEntry) void runStandalonePanelMotionSmoke()
 
-module.exports = { runStandalonePanelMotionSmoke }
+module.exports = { runStandalonePanelMotionSmoke, runPracticePanelMotionChecks }

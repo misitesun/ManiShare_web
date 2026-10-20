@@ -2,6 +2,8 @@
 
 import type { CSSProperties, ReactElement } from 'react'
 import type { PracticePhase, PracticeQuestion } from '../model/practice-demo'
+import type { WordSlotsFeedback } from '../model/word-slot-input'
+import type { WordPhoneticMode } from '../model/word-phonetics'
 import wordAsset from '../assets/word-woman-e23d5f.png'
 import borderAsset from '../assets/word-card-gradient-border.svg'
 import noteAsset from '../assets/word-card-note.svg'
@@ -10,6 +12,7 @@ import addAsset from '../assets/word-card-add.svg'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import { PracticeReadingOverlay } from './PracticeReadingOverlay'
 import type { PracticeReadingView } from './PracticeReadingOverlay'
+import { PracticeWordPhonetics } from './PracticeWordPhonetics'
 
 export interface WordAnswerCardProps {
     readonly question: PracticeQuestion
@@ -21,52 +24,14 @@ export interface WordAnswerCardProps {
     readonly showImage: boolean
     readonly showTranslation: boolean
     readonly showPhonetics: boolean
+    readonly phoneticMode?: WordPhoneticMode
     readonly onNote: () => void
     readonly onNotice: (message: string) => void
     readonly displayFontSize?: number | undefined
     readonly borderStyle?: 'solid' | 'dashed' | undefined
     readonly reading?: PracticeReadingView | undefined
     readonly onSubmit?: ((value: string) => void) | undefined
-}
-
-const phonemes = [
-    { id: 'w', text: 'w' },
-    { id: 'u', text: 'ʊ' },
-    { id: 'm', text: 'm' },
-    { id: 'schwa', text: 'ə' },
-    { id: 'n', text: 'n' },
-] as const
-
-/** 546:31363：只展示已核实的 woman 五音素，不将字符拆分当通用发音解析。 */
-function SpellingPhonetics({ question }: { readonly question: PracticeQuestion }): ReactElement {
-    if (question.english !== 'woman' || question.phonetic !== '/ˈwʊmən/')
-        return <span className="text-[24px] font-normal leading-[normal]">{question.phonetic}</span>
-    return (
-        <span role="img" aria-label={question.phonetic} className="relative block h-9 w-[188px]">
-            <span
-                aria-hidden="true"
-                className="absolute left-0 top-0.5 text-[24px] font-light leading-[normal] text-practice-muted"
-            >
-                /
-            </span>
-            <span aria-hidden="true" className="absolute left-4 top-1 flex gap-1">
-                {phonemes.map((phoneme) => (
-                    <span
-                        key={phoneme.id}
-                        className="flex h-[30px] w-7 items-center justify-center rounded-[4px] bg-practice-phoneme text-[24px] font-normal leading-[normal] text-practice-answer"
-                    >
-                        {phoneme.text}
-                    </span>
-                ))}
-            </span>
-            <span
-                aria-hidden="true"
-                className="absolute left-[176px] top-0.5 text-[24px] font-light leading-[normal] text-practice-muted"
-            >
-                /
-            </span>
-        </span>
-    )
+    readonly feedback?: WordSlotsFeedback | undefined
 }
 
 export function WordAnswerCard({
@@ -79,12 +44,14 @@ export function WordAnswerCard({
     showImage,
     showTranslation,
     showPhonetics,
+    phoneticMode = 'original',
     onNote,
     onNotice,
     displayFontSize,
     borderStyle = 'solid',
     reading,
     onSubmit,
+    feedback,
 }: WordAnswerCardProps): ReactElement {
     const spelling = mode === 'spell'
     const correct = phase === 'correct'
@@ -94,6 +61,14 @@ export function WordAnswerCard({
     const referenceLayout = showImage && displayFontSize === undefined
     const englishStyle: CSSProperties | undefined =
         displayFontSize === undefined ? undefined : { fontSize: displayFontSize }
+    const phoneticsVisible = showPhonetics && phoneticMode !== 'none'
+    const phonetic = (
+        <PracticeWordPhonetics
+            phonetic={question.phonetic}
+            breakdown={question.wordPhonetics}
+            mode={phoneticMode}
+        />
+    )
     const localInput = (
         <PracticeWordSlotsInput
             target={question.english}
@@ -105,6 +80,7 @@ export function WordAnswerCard({
             borderStyle={borderStyle}
             compact
             onSubmit={mode === 'spell' ? onSubmit : undefined}
+            feedback={mode === 'spell' ? feedback : undefined}
         />
     )
 
@@ -147,7 +123,7 @@ export function WordAnswerCard({
                                 : 'flex w-full min-w-0 flex-col items-center gap-2 rounded-xl border border-primary/30 bg-surface p-5 text-center'
                         }
                     >
-                        {showPhonetics && (
+                        {phoneticsVisible && (
                             <p
                                 className={
                                     referenceLayout
@@ -155,7 +131,7 @@ export function WordAnswerCard({
                                         : 'm-0 text-[14px] font-normal leading-[normal] text-practice-muted'
                                 }
                             >
-                                {question.phonetic}
+                                {phonetic}
                             </p>
                         )}
                         <p
@@ -195,7 +171,7 @@ export function WordAnswerCard({
                                 : 'flex w-full min-w-0 flex-col items-center gap-5 text-center'
                         }
                     >
-                        {showPhonetics && (
+                        {phoneticsVisible && (
                             <p
                                 className={
                                     referenceLayout
@@ -203,7 +179,7 @@ export function WordAnswerCard({
                                         : 'm-0 text-center text-[30px] font-normal leading-[normal] text-practice-muted'
                                 }
                             >
-                                {question.phonetic}
+                                {phonetic}
                             </p>
                         )}
                         <div
@@ -250,7 +226,7 @@ export function WordAnswerCard({
                                 : 'flex w-full min-w-0 flex-col items-center gap-8'
                         }
                     >
-                        {editable && showPhonetics && (
+                        {editable && phoneticsVisible && (
                             <p
                                 className={
                                     referenceLayout
@@ -258,7 +234,7 @@ export function WordAnswerCard({
                                         : 'm-0 text-center text-[24px] font-light leading-[normal] text-practice-muted'
                                 }
                             >
-                                {question.phonetic}
+                                {phonetic}
                             </p>
                         )}
                         {editable && (
@@ -349,15 +325,20 @@ export function WordAnswerCard({
                             </p>
                         )}
                     </div>
-                    {showPhonetics && (
+                    {phoneticsVisible && (
                         <div
                             className={
                                 referenceLayout
-                                    ? 'design:absolute design:left-[156px] design:top-[360px]'
-                                    : ''
+                                    ? 'max-w-full design:absolute design:left-1/2 design:top-[360px] design:w-max design:max-w-[calc(100%-32px)] design:-translate-x-1/2'
+                                    : 'max-w-full'
                             }
                         >
-                            <SpellingPhonetics question={question} />
+                            <PracticeWordPhonetics
+                                phonetic={question.phonetic}
+                                breakdown={question.wordPhonetics}
+                                mode={phoneticMode}
+                                density="spelling"
+                            />
                         </div>
                     )}
                     {showTranslation && (

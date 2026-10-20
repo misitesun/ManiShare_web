@@ -1,5 +1,11 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- 单词拼读第三方查词：页面私有`word-dictionary`／`WordDictionaryLink`统一正面搜索与解析背面图标，原生外链打开当前单词的欧路页面；无嵌入、抓取或额外词典API请求。Electron的`dictionary-navigation`只批准可信renderer的欧路词条链接交给系统浏览器，其余新窗口及主窗口外站导航继续拒绝，不新增preload／IPC或依赖。加号“不熟”保存只登记到项目待办，等正式接口接入；本轮未运行测试／构建或外链运行时验收。
+
+- 单词卡解析：`pages/practice`内部`WordPronunciationAnalysis`／`useWordCardFlip`提供同卡Y轴翻面、返回、当前词释义和双语例句，按题目ID切题复位；`word-card-analysis-demo`补足十词各三句，显式中英文高亮、缺项空态及缺音源提示。与CardSwap拖拽分层，稳定后二维显示，支持reduced-motion；仅消费现有主题token，不新增请求、存储、依赖或公共入口。按用户要求未运行测试／构建，视觉与真机待用户查看。
+
+- 单词拼读笔记：`pages/practice`内部`PracticeNotesPanel`／`practice-notes`／`usePracticeNotes`提供本章题目ID唯一的本轮文本笔记，支持列表、保存／编辑／删除／取消和1000原生单位计数。组件与预留接线保留，拼读首图标现为卡内解析，暂不另设笔记入口；记住／排序／重练保留已存内容，关闭丢未存输入；不新增接口、Storage键、路由或依赖。共享`TldDialog`根入口新增可选`placement="right"`（默认center）及`TldDialogPlacement`类型，240ms右滑、可见视口约束、模态隔离和reduced-motion；`TldButton note-action + solid`提供26px PC／40px H5密度，双主题新增`button-solid-disabled`。素材跟随practice，其他笔记本页面不共享本轮状态。已补模型／几何／SSR用例但按本次用户要求未运行测试或构建，PC及移动端效果均待查看。
+
 - 单词拼读卡堆：`pages/practice/ui/CardSwap.tsx`直接挂载用户提供的完整CardSwap组件，保留其卡片实例、order/phase、rAF、速度采样、惯性与补位，不再由外接Hook编排动效。任意方向拖动均只下一题、显式上一题恢复、末题完成，不循环展示已看题目；原上下题按钮/快捷键进入同一组件入口。选择接受后即提交题号并继续运动，支持运动中连续操作；拖动中底栏和快捷键保持可用，interruptDrag保留当前位姿并接续命令，迟到松手不重复推进；末题收尾仍阻断。卡面和原素材按Figma `546:31237`保持500px基准，窄屏流式重排；暂停/浮层/重置/卸载取消运动，reduced-motion直接更新。无新请求、存储、依赖、路由、主题token或Electron能力；来源和许可见模块内记录，平板/H5真机待用户验收。
 
 - 退出练习：`pages/practice/ui/PracticeExitDialog`提供原稿首页/课程插画与继续按钮；继续、X、Esc及遮罩取消退出，保持当前作答，所有动作在既有退场结束后执行。`PracticePageRoute`注入`onExit`，首页走`/`、课程走来源白名单，缺失/非法来源回`/awakening/`。打开时冻结计时/口语演示并暂停媒体且保留位置，取消不自动播放，窗口失焦暂停仍独立生效。共享按钮新增显式`dialog-emphasis`密度，样式新增完整深浅主题的四个`practice-exit-*`token；无新路由、参数、请求、Storage、依赖或Electron bridge。

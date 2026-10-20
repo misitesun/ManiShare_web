@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef } from 'react'
-import type { ReactElement } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { ReactElement, RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { TldButton } from '../../../shared/ui/tld-button'
 import type { LearningPreferences } from '../../../features/learning-settings'
 import type { PracticeQuestion } from '../model/practice-demo'
@@ -16,6 +17,7 @@ export function PracticeAnswerPanel({
     values,
     blocked,
     onClose,
+    portalRoot,
 }: {
     readonly open: boolean
     readonly phonetics: boolean
@@ -23,10 +25,21 @@ export function PracticeAnswerPanel({
     readonly values: LearningPreferences
     readonly blocked: boolean
     readonly onClose: () => void
-}): ReactElement {
+    readonly portalRoot: RefObject<HTMLElement | null>
+}): ReactElement | null {
     const panelRef = useRef<HTMLDivElement>(null)
-    const present = usePracticePanelMotion(panelRef, { open, direction: 'up' })
-    return (
+    const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
+    useEffect((): void => {
+        setPortalTarget(portalRoot.current)
+    }, [portalRoot])
+    const present = usePracticePanelMotion(panelRef, {
+        open,
+        direction: 'up',
+        ready: portalTarget !== null,
+    })
+    if (!portalTarget) return null
+    // 根容器继承练习配色/字体并保留命令作用域；越过背景 isolate，低于 body 模态层60。
+    return createPortal(
         <div
             ref={panelRef}
             data-practice-answer-panel={phonetics ? 'phonetics' : 'answer'}
@@ -35,8 +48,8 @@ export function PracticeAnswerPanel({
             aria-hidden={!open || blocked}
             className={
                 phonetics
-                    ? 'fixed inset-x-0 top-[96px] z-20 mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[720px] overflow-y-auto rounded-2xl bg-surface design:top-[211px]'
-                    : 'fixed inset-x-0 top-[76px] z-20 mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[1000px] overflow-y-auto rounded-2xl border border-strong bg-surface p-4 shadow-xl md:p-6'
+                    ? 'fixed inset-x-0 top-[96px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[720px] overflow-y-auto rounded-2xl bg-surface design:top-[211px]'
+                    : 'fixed inset-x-0 top-[76px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[1000px] overflow-y-auto rounded-2xl border border-strong bg-surface p-4 shadow-xl md:p-6'
             }
         >
             <section aria-label={phonetics ? '音标详情' : '当前题答案'}>
@@ -65,6 +78,7 @@ export function PracticeAnswerPanel({
                     </div>
                 )}
             </section>
-        </div>
+        </div>,
+        portalTarget,
     )
 }

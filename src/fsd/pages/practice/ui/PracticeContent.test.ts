@@ -19,6 +19,7 @@ interface ContentFixtureProps {
     readonly analysis?: boolean
     readonly reading?: boolean
     readonly imageVisible?: boolean
+    readonly wordFeedback?: boolean
 }
 
 function ignoreAction(): void {}
@@ -44,6 +45,7 @@ function ContentFixture({
     analysis = true,
     reading = false,
     imageVisible = true,
+    wordFeedback = false,
 }: ContentFixtureProps): ReactElement {
     const snapshot = useLearningSettingsSnapshot()
     const demo = practiceDemos.find((entry) => entry.family === family)
@@ -57,6 +59,14 @@ function ContentFixture({
         values: snapshot.values,
         imageVisible,
         blocked: false,
+        ...(wordFeedback
+            ? {
+                  wordSpellingFeedback: {
+                      value: 'local answer',
+                      slots: [{ index: 0, states: ['incorrect' as const] }],
+                  },
+              }
+            : {}),
         additionalOptions: {
             copy: false,
             imageVisible: true,
@@ -90,6 +100,22 @@ function renderContent(props: ContentFixtureProps): string {
         createElement(LearningSettingsProvider, null, createElement(ContentFixture, props)),
     )
 }
+
+test('公共反馈仅透传单词拼写卡，默写及其他真实输入消费者保持原入口', (): void => {
+    assert.match(
+        renderContent({ family: 'word', mode: 'spell', phase: 'answering', wordFeedback: true }),
+        /data-word-slot-character="incorrect"/,
+    )
+    for (const [family, mode] of [
+        ['word', 'dictate'],
+        ['sentence', 'translate'],
+        ['picture', 'translate'],
+    ] as const)
+        assert.doesNotMatch(
+            renderContent({ family, mode, phase: 'answering', wordFeedback: true }),
+            /data-word-slot-character=/,
+        )
+})
 
 test('只有句子沉浸听力分派到专用入口，其他模式保留既有组合', (): void => {
     for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
