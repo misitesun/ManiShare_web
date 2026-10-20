@@ -108,7 +108,7 @@ export function SentenceListeningExercise({
                     data-practice-command="practice.oral"
                     disabled={blocked}
                     onClick={onOral}
-                    className="mt-10 h-[46px] w-[234px] max-w-full cursor-pointer rounded-[25px] bg-linear-[127deg] from-brand-start to-brand-end p-px shadow-[var(--app-shadow-sentence-listening-oral)] outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 design:mt-[59px]"
+                    className="mt-10 h-[46px] w-[234px] max-w-full cursor-pointer rounded-[25px] bg-linear-[127deg] from-brand-start to-brand-end p-px outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50 design:mt-[59px]"
                 >
                     <span className="flex size-full items-center justify-center gap-0.5 rounded-[inherit] bg-practice-background px-2 text-[14px] font-medium leading-[normal] tracking-[0.08em] text-practice-text md:px-0 md:text-[16px]">
                         <img
