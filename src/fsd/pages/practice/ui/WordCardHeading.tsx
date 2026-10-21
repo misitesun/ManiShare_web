@@ -12,7 +12,7 @@ interface WordCardHeadingProps {
     readonly placement?: 'card' | 'slot'
 }
 
-/** 拼读与拼写正确态共用的四线单词及朗读入口。 */
+/** 拼读及拼写／默写正确态共用的四线单词与朗读入口。 */
 export function WordCardHeading({
     word,
     referenceLayout,

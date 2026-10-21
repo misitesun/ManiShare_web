@@ -11,6 +11,7 @@ import sentenceAsset from '../assets/reading-scene.png'
 import { PracticeReadingOverlay } from './PracticeReadingOverlay'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import type { PracticeReadingView } from './PracticeReadingOverlay'
+import type { WordSpellingInputController } from '../model/word-spelling-input'
 
 interface SlotStyle extends CSSProperties {
     '--sentence-slot-top': string
@@ -31,6 +32,9 @@ export interface SentenceExerciseProps {
     readonly translationVisible?: boolean
     readonly blocked: boolean
     readonly onInput: (value: string) => void
+    readonly onAnswerSubmit?: ((value: string) => void) | undefined
+    readonly onAnswerController?:
+        ((controller: WordSpellingInputController | null) => void) | undefined
     readonly onBlock: (id: string) => void
     readonly onReveal: () => void
     readonly reading?: PracticeReadingView | undefined
@@ -147,6 +151,8 @@ export function SentenceExercise({
     translationVisible,
     blocked,
     onInput,
+    onAnswerSubmit,
+    onAnswerController,
     onBlock,
     onReveal,
     reading,
@@ -245,6 +251,9 @@ export function SentenceExercise({
                             target={question.english}
                             value={session.input}
                             onChange={onInput}
+                            onSubmit={onAnswerSubmit}
+                            onController={onAnswerController}
+                            ignoreCase={values.ignoreCase}
                             phase={session.phase}
                             blocked={blocked}
                             displayFontSize={

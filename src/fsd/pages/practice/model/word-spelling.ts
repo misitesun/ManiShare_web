@@ -5,7 +5,7 @@ export interface WordSpellingStatistics {
     readonly correct: number
 }
 
-/** 只用于本地单词拼写样例；不扩展为等价答案或正式服务端判题规则。 */
+/** 本地文字练习按题目给定答案做精确演示校验；不推断等价译法或正式服务端判题规则。 */
 export function judgeWordSpelling(
     value: string,
     target: string,

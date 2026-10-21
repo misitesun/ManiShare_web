@@ -2,7 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react'
 import type { RefObject } from 'react'
-import { getTypingInputFeedback, getTypingTarget } from './typing-keyboard'
+import {
+    getTypingInputFeedback,
+    getTypingTarget,
+    getTypingTargetAtPosition,
+} from './typing-keyboard'
 import type { TypingInputFeedback, TypingTarget } from './typing-keyboard'
 
 export interface TypingKeyboardFeedbackSnapshot {
@@ -21,6 +25,7 @@ export interface TypingKeyboardFeedbackOptions {
     readonly inputRef: RefObject<HTMLInputElement | null>
     readonly targetText?: string | undefined
     readonly input: string
+    readonly cursor?: number | undefined
     readonly active: boolean
     readonly sessionKey: string
 }
@@ -199,6 +204,7 @@ export function useTypingKeyboardFeedback({
     inputRef,
     targetText,
     input,
+    cursor,
     active,
     sessionKey,
 }: TypingKeyboardFeedbackOptions): TypingKeyboardFeedback {
@@ -207,6 +213,8 @@ export function useTypingKeyboardFeedback({
         value: idleSnapshot,
     })
     const controllerRef = useRef<TypingKeyboardFeedbackController | null>(null)
+    const committedInput = useRef(input)
+    committedInput.current = input
 
     useEffect(() => {
         const currentElement = inputRef.current
@@ -217,7 +225,7 @@ export function useTypingKeyboardFeedback({
         const ownerWindow = element.ownerDocument.defaultView
         if (!ownerWindow) return
         const controller = createTypingKeyboardFeedbackController({
-            initialInput: element.value,
+            initialInput: committedInput.current,
             targetText,
             onChange: (value): void => setObserved({ sessionKey, value }),
             schedule: (callback, milliseconds): number =>
@@ -228,7 +236,8 @@ export function useTypingKeyboardFeedback({
 
         function onInput(event: Event): void {
             const composing = 'isComposing' in event && event.isComposing === true
-            controller.input(element.value, composing)
+            // 字母覆盖和自动补静态标点后的值以模型提交结果为准，不读瞬时传输缓冲。
+            if (composing) controller.input(committedInput.current, true)
         }
 
         function compositionStart(): void {
@@ -236,7 +245,7 @@ export function useTypingKeyboardFeedback({
         }
 
         function compositionEnd(): void {
-            controller.compositionEnd(element.value)
+            controller.compositionEnd(committedInput.current)
         }
 
         function keydown(event: KeyboardEvent): void {
@@ -248,7 +257,7 @@ export function useTypingKeyboardFeedback({
         }
 
         function release(): void {
-            controller.release(element.value)
+            controller.release(committedInput.current)
         }
 
         element.addEventListener('input', onInput)
@@ -272,12 +281,19 @@ export function useTypingKeyboardFeedback({
     }, [inputRef, targetText, active, sessionKey])
 
     useEffect(() => {
-        controllerRef.current?.synchronize(input)
+        controllerRef.current?.input(input, false)
     }, [input])
 
     const snapshot = active && observed.sessionKey === sessionKey ? observed.value : idleSnapshot
     return {
         ...snapshot,
-        target: active && !snapshot.composing ? getTypingTarget(targetText, input) : null,
+        target:
+            active && !snapshot.composing
+                ? cursor === undefined
+                    ? getTypingTarget(targetText, input)
+                    : targetText === input
+                      ? null
+                      : getTypingTargetAtPosition(targetText, cursor)
+                : null,
     }
 }

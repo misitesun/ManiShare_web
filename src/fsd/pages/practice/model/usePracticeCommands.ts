@@ -22,11 +22,7 @@ export function getPracticeKeydownDecision(
     target: PracticeKeyboardTarget,
     held: boolean,
 ): PracticeKeydownDecision {
-    const answerCommands =
-        target === 'answer-input' &&
-        context.answerInputCommands === true &&
-        context.family === 'word' &&
-        context.mode === 'spell'
+    const answerCommands = target === 'answer-input' && context.answerInputCommands === true
     if (!answerCommands && (held || event.repeat)) return { preventDefault: false, command: null }
     const command = resolvePracticeShortcut({ ...event, repeat: false }, context, target)
     const nativeEdit =
@@ -63,6 +59,35 @@ export function practiceKeyboardTarget(target: EventTarget | null): PracticeKeyb
     )
         return 'native'
     return 'content'
+}
+
+interface PracticeKeydownSource<EventType extends Event> {
+    addEventListener(type: 'keydown', listener: (event: EventType) => void, capture?: boolean): void
+    removeEventListener(
+        type: 'keydown',
+        listener: (event: EventType) => void,
+        capture?: boolean,
+    ): void
+}
+
+/** 作答输入先于React局部光标拦截；Escape先让浮层处理，其余控件维持冒泡，每次只走一侧。 */
+export function subscribePracticeKeydown<EventType extends Event & { readonly key?: string }>(
+    source: PracticeKeydownSource<EventType>,
+    classify: (target: EventTarget | null) => PracticeKeyboardTarget,
+    handle: (event: EventType) => void,
+): () => void {
+    function capture(event: EventType): void {
+        if (event.key !== 'Escape' && classify(event.target) === 'answer-input') handle(event)
+    }
+    function bubble(event: EventType): void {
+        if (event.key === 'Escape' || classify(event.target) !== 'answer-input') handle(event)
+    }
+    source.addEventListener('keydown', capture, true)
+    source.addEventListener('keydown', bubble)
+    return (): void => {
+        source.removeEventListener('keydown', capture, true)
+        source.removeEventListener('keydown', bubble)
+    }
 }
 
 export function usePracticeCommands({
@@ -135,11 +160,15 @@ export function usePracticeCommands({
         function release(): void {
             held.current.clear()
         }
-        window.addEventListener('keydown', keydown)
+        const unsubscribe = subscribePracticeKeydown<KeyboardEvent>(
+            window,
+            practiceKeyboardTarget,
+            keydown,
+        )
         window.addEventListener('keyup', keyup)
         window.addEventListener('blur', release)
         return (): void => {
-            window.removeEventListener('keydown', keydown)
+            unsubscribe()
             window.removeEventListener('keyup', keyup)
             window.removeEventListener('blur', release)
         }

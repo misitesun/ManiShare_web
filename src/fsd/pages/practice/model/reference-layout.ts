@@ -229,7 +229,7 @@ export function getPracticeReference(
     if (family === 'word')
         return {
             ...base,
-            node: phase === 'correct' && mode === 'dictate' ? '2389:5125' : '546:31470',
+            node: '546:31470',
             top: 145,
             textGap: 24,
             translationGap: 25,

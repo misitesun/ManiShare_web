@@ -4,6 +4,7 @@
 - 入口：`TldSelect`、`TldSelectProps`、`TldSelectOption` 从根 `index.ts` 导入；调用方提供 label、value、options、onValueChange，可传前置 icon。`layout="full"`默认由外层控制宽度，`layout="content"`按已选标签、图标及内边距自然撑宽。可成对传open/onOpenChange统一管理多个菜单的展开状态；省略open时仍由组件保存展开状态。
 - 约束：选项 value 唯一，label 为文字；选中值属于调用方，组件保存临时高亮状态，展开可受控。使用 menu/menuitemradio 语义；打开聚焦已选项，方向键循环、Home/End 定位、Enter/Space 选择、Escape 关闭并返回焦点、Tab 关闭并按触发器位置继续原生焦点顺序、点击外部关闭，监听器在关闭和卸载时清理。所有展开/关闭路径均通知onOpenChange，外部改变open直接控制显示，不在渲染或Effect中回写父级。打开时高亮已选项（无有效选中值时取首项），指针划过或键盘聚焦只移动单一高亮层；空选项不产生选择。
 - 扩展：当前用于少量排序/筛选项；搜索、异步选项、多选与表单原生提交不属于当前 API。
+- 2026-10-21触发标准：共用`shared/lib/popover-trigger`。PC／Electron的xl布局且同时具备hover／fine指针时，鼠标悬停展开，进入菜单取消150ms离开关闭；平板／H5及触控点击。Hover不移动焦点；点击／键盘打开仍聚焦选项，选中仍关闭。Root和Portal菜单共用指针边界，Esc在页面命令前关闭菜单，外点／Tab／原生点击和选项导航保持，inert背景不抢Esc。此条覆盖上文“所有打开都聚焦”的旧描述，具体断点与后续实现要求见[开发规范](../../../../../docs/development-standards.md#51-布局策略)。
 - 验证：同目录测试检查受控标签与展开前语义，页面 sort 测试验证排序；运行 test/lint/build。人工检查鼠标和键盘、深浅主题、浮层遮挡；平板/H5真机由用户验收。
 # 动画补充
 

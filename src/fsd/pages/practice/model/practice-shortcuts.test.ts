@@ -35,7 +35,7 @@ function context(changes: Partial<PracticeShortcutContext> = {}): PracticeShortc
     }
 }
 
-test('word:spell显式启用输入命令，其他模式及普通编辑器不扩大范围', (): void => {
+test('所有真实作答模式显式启用输入命令，普通编辑器保持隔离', (): void => {
     const active = context({ mode: 'spell', answerInputCommands: true, panelVisible: true })
     for (const [key, changes, expected] of [
         ['ArrowDown', {}, 'practice.panel.show'],
@@ -70,15 +70,25 @@ test('word:spell显式启用输入命令，其他模式及普通编辑器不扩�
         ),
         null,
     )
-    for (const mode of ['dictate', 'translate', 'typing'] as const)
+    for (const [key, expected] of [
+        ['ArrowDown', 'practice.panel.show'],
+        ['ArrowUp', 'practice.panel.hide'],
+        ['Enter', 'practice.primary'],
+    ] as const)
+        assert.equal(
+            resolvePracticeShortcut(input(key), { ...active, mode: 'dictate' }, 'answer-input'),
+            expected,
+        )
+    for (const mode of ['translate', 'typing', 'meaning', 'guess'] as const)
         assert.equal(
             resolvePracticeShortcut(
                 input('L', { shiftKey: true }),
                 { ...active, mode },
                 'answer-input',
             ),
-            null,
+            'practice.readAloud',
         )
+    assert.equal(resolvePracticeShortcut(input(' '), active, 'content'), 'practice.contextual')
     const custom = { ...active, values: { ...values, nextShortcut: 'Shift + N' } }
     assert.equal(
         resolvePracticeShortcut(input('N', { shiftKey: true }), custom, 'answer-input'),
@@ -411,7 +421,7 @@ test('面板上下键按模式能力和可见状态解析，不依赖答题阶�
             )
 })
 
-test('阅读空格保留滚动，只有单词拼写的内容作用域允许空格提交', (): void => {
+test('阅读保留滚动，所有作答模式的内容空格统一发出编辑意图', (): void => {
     for (const family of ['sentence', 'audio', 'guess', 'text-reader'] as const)
         assert.equal(
             resolvePracticeShortcut(input(' '), context({ family, mode: 'read' }), 'content'),
@@ -420,8 +430,12 @@ test('阅读空格保留滚动，只有单词拼写的内容作用域允许空�
     for (const mode of ['spell', 'dictate', 'translate', 'meaning', 'typing', 'blocks'] as const)
         for (const phase of ['answering', 'incorrect'] as const)
             assert.equal(
-                resolvePracticeShortcut(input(' '), context({ mode, phase }), 'content'),
-                mode === 'spell' ? 'practice.primary' : null,
+                resolvePracticeShortcut(
+                    input(' '),
+                    context({ mode, phase, answerInputCommands: true }),
+                    'content',
+                ),
+                mode === 'blocks' ? null : 'practice.contextual',
             )
     for (const family of ['audio-reader', 'video-reader', 'picture-reader'] as const)
         assert.equal(
@@ -430,7 +444,7 @@ test('阅读空格保留滚动，只有单词拼写的内容作用域允许空�
         )
 })
 
-test('猜词和自查空格先进入揭晓意图，已揭晓后才推进下一题', (): void => {
+test('猜词空格交给输入，自查保留揭晓流程，答案态再推进下一题', (): void => {
     for (const entry of [
         { family: 'guess', mode: 'guess' },
         { family: 'sentence', mode: 'check' },
@@ -446,9 +460,12 @@ test('猜词和自查空格先进入揭晓意图，已揭晓后才推进下一�
                     phase,
                     oralStage: 'idle',
                     quickOral: false,
-                    typingComplete: false,
                 }),
-                phase === 'revealed' || phase === 'correct' ? 'next' : 'reveal',
+                phase === 'revealed' || phase === 'correct'
+                    ? 'next'
+                    : entry.mode === 'guess'
+                      ? 'submit'
+                      : 'reveal',
             )
         }
 })

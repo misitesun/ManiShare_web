@@ -13,7 +13,6 @@ import borderAsset from '../assets/word-card-gradient-border.svg'
 import analysisAsset from '../assets/word-card-note.svg'
 import lookupAsset from '../assets/word-card-lookup.svg'
 import addAsset from '../assets/word-card-add.svg'
-import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import { WordSpellingInput } from './WordSpellingInput'
 import { PracticeReadingOverlay } from './PracticeReadingOverlay'
 import type { PracticeReadingView } from './PracticeReadingOverlay'
@@ -50,13 +49,24 @@ export interface WordAnswerCardProps {
 }
 
 export function WordAnswerCard(props: WordAnswerCardProps): ReactElement {
-    if (props.mode !== 'spell') return <WordAnswerCardFace {...props} />
+    const inputController = useRef<WordSpellingInputController | null>(null)
+    const registerInput = useCallback(
+        (controller: WordSpellingInputController | null): void => {
+            inputController.current = controller
+            props.onSpellingController?.(controller)
+        },
+        [props.onSpellingController],
+    )
+    const focusInput = useCallback((): void => inputController.current?.focus(), [])
+    if (props.mode !== 'spell')
+        return <WordAnswerCardFace {...props} onSpellingController={registerInput} />
     const transition = props.questionTransition
     return (
         <WordSpellingQuestionFlip
             questionKey={`${props.question.id}:${props.questionRevision ?? 0}`}
             direction={transition?.direction ?? null}
             blocked={props.blocked}
+            onReady={focusInput}
             previous={
                 transition
                     ? {
@@ -77,17 +87,12 @@ export function WordAnswerCard(props: WordAnswerCardProps): ReactElement {
                     : null
             }
         >
-            <WordSpellingCard {...props} />
+            <WordSpellingCard {...props} onSpellingController={registerInput} />
         </WordSpellingQuestionFlip>
     )
 }
 
 interface WordAnswerCardFaceProps extends WordAnswerCardProps {
-    readonly spellingControls?: {
-        readonly register: (controller: WordSpellingInputController | null) => void
-        readonly selectSegment: (id: string) => void
-        readonly pulse: (id: string) => void
-    }
     readonly analysis?: {
         readonly id: string
         readonly open: boolean
@@ -98,42 +103,11 @@ interface WordAnswerCardFaceProps extends WordAnswerCardProps {
 /** 正面始终挂载，翻面保留拼写槽位和模式内编辑状态。 */
 function WordSpellingCard(props: WordAnswerCardProps): ReactElement {
     const [analysisOpen, setAnalysisOpen] = useState(false)
-    const [pulse, setPulse] = useState({ id: '', revision: 0 })
     const analysisId = useId()
     const rootRef = useRef<HTMLDivElement>(null)
     const rotorRef = useRef<HTMLDivElement>(null)
     const frontRef = useRef<HTMLDivElement>(null)
     const backRef = useRef<HTMLDivElement>(null)
-    const inputController = useRef<WordSpellingInputController | null>(null)
-    const onSpellingController = props.onSpellingController
-    const register = useCallback(
-        (controller: WordSpellingInputController | null): void => {
-            inputController.current = controller
-            onSpellingController?.(controller)
-        },
-        [onSpellingController],
-    )
-    const pulseSegment = useCallback((id: string): void => {
-        setPulse((previous) => ({ id, revision: previous.revision + 1 }))
-    }, [])
-    useGSAP(
-        (): void => {
-            if (!pulse.id || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-            const elements = Array.from(
-                rootRef.current?.querySelectorAll<HTMLElement>('[data-spelling-pulse-segment]') ??
-                    [],
-            ).filter((element) => element.dataset.spellingPulseSegment === pulse.id)
-            if (!elements.length) return
-            gsap.timeline()
-                .to(elements, { opacity: 1, duration: 0.405 })
-                .to(elements, { opacity: 0, duration: 0.495 })
-        },
-        {
-            scope: rootRef,
-            dependencies: [pulse, props.phoneticMode, analysisOpen],
-            revertOnUpdate: true,
-        },
-    )
     useWordCardFlip(rootRef, {
         open: analysisOpen,
         disabled: props.blocked,
@@ -172,12 +146,6 @@ function WordSpellingCard(props: WordAnswerCardProps): ReactElement {
                     >
                         <WordAnswerCardFace
                             {...props}
-                            spellingControls={{
-                                register,
-                                selectSegment: (id): void =>
-                                    inputController.current?.selectSegment(id),
-                                pulse: pulseSegment,
-                            }}
                             analysis={{
                                 id: analysisId,
                                 open: analysisOpen,
@@ -224,25 +192,61 @@ function WordAnswerCardFace({
     onNotice,
     onPlay,
     displayFontSize,
-    borderStyle = 'solid',
     reading,
     onSubmit,
-    spellingControls,
+    onSpellingController,
     analysis,
 }: WordAnswerCardFaceProps): ReactElement {
+    const rootRef = useRef<HTMLElement>(null)
+    const inputController = useRef<WordSpellingInputController | null>(null)
+    const [pulse, setPulse] = useState({ id: '', revision: 0 })
     const spelling = mode === 'spell'
     const correct = phase === 'correct'
     const revealed = phase === 'revealed'
     const editable = phase === 'answering' || phase === 'incorrect'
-    const visibleImage = showImage && !(mode === 'dictate' && correct)
+    const visibleImage = showImage
     const referenceLayout = showImage && displayFontSize === undefined
     const englishStyle: CSSProperties | undefined =
         displayFontSize === undefined ? undefined : { fontSize: displayFontSize }
     const phoneticsVisible = showPhonetics && phoneticMode !== 'none'
     const spellingLayout = useMemo(
-        () => createWordSpellingLayout(question.english, phoneticMode, question.wordPhonetics),
-        [question.english, question.wordPhonetics, phoneticMode],
+        () =>
+            spelling
+                ? createWordSpellingLayout(question.english, phoneticMode, question.wordPhonetics)
+                : createWordSpellingLayout(question.english, 'syllables'),
+        [question.english, question.wordPhonetics, phoneticMode, spelling],
     )
+    const registerInput = useCallback(
+        (controller: WordSpellingInputController | null): void => {
+            inputController.current = controller
+            onSpellingController?.(controller)
+        },
+        [onSpellingController],
+    )
+    const pulseSegment = useCallback((id: string): void => {
+        setPulse((previous) => ({ id, revision: previous.revision + 1 }))
+    }, [])
+    useGSAP(
+        (): void => {
+            if (!pulse.id || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+            const elements = Array.from(
+                rootRef.current?.querySelectorAll<HTMLElement>('[data-spelling-pulse-segment]') ??
+                    [],
+            ).filter((element) => element.dataset.spellingPulseSegment === pulse.id)
+            if (!elements.length) return
+            gsap.timeline()
+                .to(elements, { opacity: 1, duration: 0.405 })
+                .to(elements, { opacity: 0, duration: 0.495 })
+        },
+        {
+            scope: rootRef,
+            dependencies: [pulse, phoneticMode, analysis?.open],
+            revertOnUpdate: true,
+        },
+    )
+    function selectSegment(id: string): void {
+        inputController.current?.selectSegment(id)
+    }
     const phonetic = (
         <PracticeWordPhonetics
             phonetic={question.phonetic}
@@ -250,43 +254,30 @@ function WordAnswerCardFace({
             mode={phoneticMode}
         />
     )
-    const localInput =
-        spelling && spellingControls ? (
-            <WordSpellingInput
-                layout={spellingLayout}
-                initialValue={input}
-                blocked={blocked || !editable || (analysis?.open ?? false)}
-                ignoreCase={ignoreCase}
-                showWordHint={showWordHint}
-                displayFontSize={displayFontSize}
-                onChange={onInput}
-                onSubmit={onSubmit}
-                onController={spellingControls.register}
-                onSegmentPulse={spellingControls.pulse}
-            />
-        ) : (
-            <PracticeWordSlotsInput
-                target={question.english}
-                value={input}
-                phase={phase}
-                blocked={blocked}
-                onChange={onInput}
-                displayFontSize={displayFontSize}
-                borderStyle={borderStyle}
-                compact
-            />
-        )
+    const localInput = (
+        <WordSpellingInput
+            layout={spellingLayout}
+            initialValue={input}
+            blocked={blocked || !editable || (analysis?.open ?? false)}
+            ignoreCase={ignoreCase}
+            showWordHint={showWordHint}
+            displayFontSize={displayFontSize}
+            onChange={onInput}
+            onSubmit={onSubmit}
+            onController={registerInput}
+            onSegmentPulse={pulseSegment}
+        />
+    )
 
     if (!spelling)
         return (
             <section
+                ref={rootRef}
                 aria-label="单词默写"
-                data-reference-node={correct ? '2389:5125' : revealed ? '1609:7642' : '546:31470'}
+                data-reference-node={revealed ? '1609:7642' : '546:31470'}
                 className={
                     referenceLayout
-                        ? correct
-                            ? 'relative mx-auto w-full max-w-[430px] min-w-0 design:h-[320px]'
-                            : 'relative mx-auto w-full max-w-[430px] min-w-0 design:h-[510px]'
+                        ? 'relative mx-auto w-full max-w-[430px] min-w-0 design:h-[510px]'
                         : 'relative mx-auto flex w-full max-w-[430px] min-w-0 flex-col items-center gap-8 py-8'
                 }
             >
@@ -356,115 +347,69 @@ function WordAnswerCardFace({
                         )}
                     </aside>
                 )}
-                {correct ? (
-                    <div
-                        className={
-                            referenceLayout
-                                ? 'flex min-w-0 flex-col items-center gap-5 py-8 design:contents'
-                                : 'flex w-full min-w-0 flex-col items-center gap-5 text-center'
-                        }
-                    >
-                        {phoneticsVisible && (
-                            <p
-                                className={
-                                    referenceLayout
-                                        ? 'm-0 text-center text-[30px] font-normal leading-[normal] text-practice-muted design:absolute design:left-[147px] design:top-[140px] design:min-h-[42px] design:w-[134px]'
-                                        : 'm-0 text-center text-[30px] font-normal leading-[normal] text-practice-muted'
-                                }
-                            >
-                                {phonetic}
-                            </p>
-                        )}
+                <div
+                    className={
+                        referenceLayout
+                            ? 'flex min-w-0 flex-col items-center gap-8 pb-8 pt-16 design:contents'
+                            : 'flex w-full min-w-0 flex-col items-center gap-8'
+                    }
+                >
+                    {(editable || correct) && (
                         <div
+                            data-word-dictation-word-slot
                             className={
                                 referenceLayout
-                                    ? 'text-center design:absolute design:left-[146px] design:top-[202px] design:w-[137px]'
-                                    : 'max-w-full text-center'
+                                    ? 'flex min-h-[98px] w-full min-w-0 items-center justify-center design:absolute design:inset-x-4 design:top-[316px] design:h-[98px] design:w-auto'
+                                    : 'flex min-h-[98px] w-full min-w-0 items-center justify-center'
                             }
                         >
-                            <p
-                                data-practice-english
-                                className="m-0 break-words text-[40px] font-normal leading-[normal] text-practice-answer"
-                                style={englishStyle}
-                            >
-                                {question.english}
-                            </p>
-                            <span
-                                aria-hidden="true"
-                                className={
-                                    referenceLayout
-                                        ? 'mx-auto mt-[11px] block h-[3px] w-full bg-practice-answer design:absolute design:left-0 design:top-[51px] design:mt-0'
-                                        : 'mx-auto mt-[11px] block h-[3px] w-full bg-practice-answer'
-                                }
-                            />
+                            {correct ? (
+                                <WordCardHeading
+                                    word={question.english}
+                                    referenceLayout={false}
+                                    placement="slot"
+                                    displayFontSize={displayFontSize}
+                                    disabled={blocked}
+                                    onPlay={
+                                        onPlay ??
+                                        ((): void => onNotice('单词音源未接入，暂不能朗读。'))
+                                    }
+                                />
+                            ) : (
+                                localInput
+                            )}
                         </div>
-                        {showTranslation && (
-                            <p
-                                data-practice-translation
-                                className={
-                                    referenceLayout
-                                        ? 'm-0 max-w-full break-words text-center text-[24px] font-medium leading-[normal] text-practice-text design:absolute design:left-[85px] design:top-[286px] design:min-h-[34px] design:w-[261px]'
-                                        : 'm-0 max-w-full break-words text-center text-[24px] font-medium leading-[normal] text-practice-text'
-                                }
-                            >
-                                {question.translation}
-                            </p>
-                        )}
-                    </div>
-                ) : (
-                    <div
-                        className={
-                            referenceLayout
-                                ? 'flex min-w-0 flex-col items-center gap-8 pb-8 pt-16 design:contents'
-                                : 'flex w-full min-w-0 flex-col items-center gap-8'
-                        }
-                    >
-                        {editable && phoneticsVisible && (
-                            <p
-                                className={
-                                    referenceLayout
-                                        ? 'm-0 text-center text-[24px] font-light leading-[normal] text-practice-muted design:absolute design:inset-x-0 design:top-[330px]'
-                                        : 'm-0 text-center text-[24px] font-light leading-[normal] text-practice-muted'
-                                }
-                            >
-                                {phonetic}
-                            </p>
-                        )}
-                        {editable && (
-                            <div
-                                className={
-                                    referenceLayout
-                                        ? 'w-full min-w-0 design:absolute design:inset-x-4 design:top-[390px] design:w-auto design:-translate-y-full'
-                                        : 'mt-10'
-                                }
-                            >
-                                {localInput}
-                            </div>
-                        )}
-                        {showTranslation && (
-                            <p
-                                data-practice-translation
-                                className={
-                                    referenceLayout
-                                        ? 'm-0 max-w-full break-words text-center text-[24px] font-medium leading-[normal] text-practice-text design:absolute design:left-[84px] design:top-[476px] design:min-h-[34px] design:w-[261px]'
-                                        : 'm-0 max-w-full break-words text-center text-[24px] font-medium leading-[normal] text-practice-text'
-                                }
-                            >
-                                {question.translation}
-                            </p>
-                        )}
-                    </div>
-                )}
-                {phase === 'incorrect' && (
-                    <p role="status" className="mt-5 text-center text-caption text-danger">
-                        答错状态演示，可继续编辑；当前不执行判题。
-                    </p>
-                )}
+                    )}
+                    {(editable || correct) && phoneticsVisible && (
+                        <p
+                            className={
+                                referenceLayout
+                                    ? 'm-0 text-center text-[24px] font-light leading-[normal] text-practice-muted design:absolute design:inset-x-0 design:top-[418px]'
+                                    : 'm-0 text-center text-[24px] font-light leading-[normal] text-practice-muted'
+                            }
+                        >
+                            {phonetic}
+                        </p>
+                    )}
+                    {showTranslation && (
+                        <p
+                            data-practice-translation
+                            className={
+                                referenceLayout
+                                    ? 'm-0 max-w-full break-words text-center text-[24px] font-medium leading-[normal] text-practice-text design:absolute design:left-[84px] design:top-[476px] design:min-h-[34px] design:w-[261px]'
+                                    : 'm-0 max-w-full break-words text-center text-[24px] font-medium leading-[normal] text-practice-text'
+                            }
+                        >
+                            {question.translation}
+                        </p>
+                    )}
+                </div>
             </section>
         )
 
     return (
         <section
+            ref={rootRef}
             aria-label="单词拼写"
             data-reference-node="546:31334"
             className="relative mx-auto w-full max-w-[500px] min-w-0"
@@ -567,7 +512,7 @@ function WordAnswerCardFace({
                                 density="spelling"
                                 onSegmentSelect={
                                     spellingLayout.split && spellingLayout.mapped && editable
-                                        ? spellingControls?.selectSegment
+                                        ? selectSegment
                                         : undefined
                                 }
                                 disabled={blocked || (analysis?.open ?? false)}

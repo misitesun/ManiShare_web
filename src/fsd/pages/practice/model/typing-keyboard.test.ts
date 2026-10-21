@@ -4,11 +4,21 @@ import {
     getTypingInputChange,
     getTypingInputFeedback,
     getTypingTarget,
+    getTypingTargetAtPosition,
     mapTypingCharacter,
     typingKeyboardGeometry,
     typingKeyboardKeys,
     typingKeyboardRows,
 } from './typing-keyboard'
+
+test('受控作答键盘跟随编辑位置，回改已有字母时不按全文长度猜位置', (): void => {
+    assert.equal(getTypingTargetAtPosition('apple', 0)?.character, 'a')
+    assert.equal(getTypingTargetAtPosition('apple', 1)?.character, 'p')
+    assert.equal(getTypingTargetAtPosition('apple', 3)?.character, 'l')
+    for (const position of [-1, 0.5, 5, Number.NaN])
+        assert.equal(getTypingTargetAtPosition('apple', position), null)
+    assert.equal(getTypingTargetAtPosition(undefined, 0), null)
+})
 
 test('完整 ANSI 五行具有唯一键标识、稳定几何且每行无重叠或越界', (): void => {
     assert.equal(typingKeyboardRows.length, 5)

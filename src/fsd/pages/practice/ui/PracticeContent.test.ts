@@ -125,14 +125,23 @@ test('单词拼写的默写和抄写控制输入提示，已有输入保留，�
         /data-spelling-letter="empty" class="invisible relative inline-block leading-none text-practice-muted"/,
     )
     assert.match(recalling, /<input[^>]*value="w"/)
-    assert.doesNotMatch(
-        renderContent({
-            ...props,
-            mode: 'dictate',
-            wordOptions: { ...createWordToolbarOptions('dictate'), copy: true },
-        }),
-        /data-word-spelling-input|data-word-slot-hint/,
+    const dictation = renderContent({
+        ...props,
+        mode: 'dictate',
+        wordOptions: { ...createWordToolbarOptions('dictate'), copy: true },
+    })
+    assert.match(dictation, /data-spelling-mode="segments"/)
+    assert.match(
+        dictation,
+        /data-spelling-letter="empty" class="relative inline-block leading-none text-practice-muted"/,
     )
+    const dictationRecall = renderContent({
+        ...props,
+        mode: 'dictate',
+        wordOptions: { ...createWordToolbarOptions('dictate'), copy: false },
+    })
+    assert.match(dictationRecall, /data-spelling-letter="empty" class="invisible/)
+    assert.doesNotMatch(dictation, /data-word-slot-hint/)
     assert.doesNotMatch(
         renderContent({ family: 'sentence', mode: 'translate', phase: 'answering', input: 'w' }),
         /data-word-spelling-input|data-word-slot-hint/,
@@ -154,20 +163,32 @@ test('单词拼写四档音标使用局部选择，输入和答案的全局显�
         }
 })
 
-test('逐字输入器仅接入单词拼写，默写及其他真实输入消费者保持原入口', (): void => {
-    assert.match(
-        renderContent({ family: 'word', mode: 'spell', phase: 'answering' }),
-        /data-word-spelling-input="true"/,
-    )
+test('全部真实文本输入分支共用推进器，只有单词卡保留逐字视觉分组', (): void => {
     for (const [family, mode] of [
+        ['word', 'spell'],
         ['word', 'dictate'],
+        ['word', 'meaning'],
+        ['word', 'typing'],
         ['sentence', 'translate'],
+        ['sentence', 'typing'],
         ['picture', 'translate'],
-    ] as const)
-        assert.doesNotMatch(
-            renderContent({ family, mode, phase: 'answering' }),
-            /data-word-spelling-input|data-spelling-position=/,
+        ['picture', 'typing'],
+        ['audio', 'translate'],
+        ['video', 'translate'],
+        ['guess', 'spell'],
+        ['guess', 'guess'],
+        ['typing', 'typing'],
+    ] as const) {
+        const html = renderContent({ family, mode, phase: 'answering' })
+        assert.equal(
+            (html.match(/<input[^>]*data-practice-answer-input/g) ?? []).length,
+            1,
+            `${family}:${mode}`,
         )
+        assert.match(html, /data-practice-controlled-answer="true"/)
+        if (family !== 'word' || (mode !== 'spell' && mode !== 'dictate'))
+            assert.match(html, /data-word-slot-input="true"/)
+    }
 })
 
 test('切换拆分时输入字母保持一致，音标定位仅在已映射的可编辑拼写题面启用', (): void => {
@@ -220,13 +241,13 @@ test('只有句子沉浸听力分派到专用入口，其他模式保留既有�
 
 test('显式题态夹具验证中译英输入与揭晓，生产页不再依赖演示工具切换题态', (): void => {
     for (const phase of ['answering', 'incorrect'] as const) {
-        const html = renderContent({ family: 'sentence', mode: 'translate', phase })
-        assert.match(html, /value="local answer"/)
+        const html = renderContent({ family: 'sentence', mode: 'translate', phase, input: 'We re' })
+        assert.match(html, /value="Were"/)
         assert.doesNotMatch(html, /data-practice-english/)
     }
     for (const phase of ['revealed', 'correct'] as const)
         assert.match(
-            renderContent({ family: 'sentence', mode: 'translate', phase }),
+            renderContent({ family: 'sentence', mode: 'translate', phase, input: 'We re' }),
             /data-practice-english/,
         )
 })
@@ -266,14 +287,14 @@ test('切读遮罩位于各族题图，卡堆仅当前卡展示，隐藏图片�
     }
 })
 
-test('默写答对态隐藏题图与编辑框，未答及答错态保留可编辑输入', (): void => {
+test('默写答对态保留题图并移除编辑框，未答及答错态保留可编辑输入', (): void => {
     for (const phase of ['answering', 'incorrect'] as const) {
-        const html = renderContent({ family: 'word', mode: 'dictate', phase })
+        const html = renderContent({ family: 'word', mode: 'dictate', phase, input: 'wo' })
         assert.match(html, /data-practice-media/)
-        assert.match(html, /value="local answer"/)
+        assert.match(html, /value="wo"/)
     }
     const correct = renderContent({ family: 'word', mode: 'dictate', phase: 'correct' })
-    assert.doesNotMatch(correct, /data-practice-media/)
+    assert.match(correct, /data-practice-media/)
     assert.doesNotMatch(correct, /aria-label="练习答案"/)
     assert.match(correct, /data-practice-english/)
 })

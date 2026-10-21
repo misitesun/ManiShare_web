@@ -9,6 +9,7 @@ interface WordSpellingQuestionFlipProps {
     readonly questionKey: string
     readonly direction: WordSpellingQuestionDirection | null
     readonly blocked: boolean
+    readonly onReady?: (() => void) | undefined
     readonly previous: { readonly key: string; readonly card: ReactElement } | null
     readonly children: ReactElement
 }
@@ -18,6 +19,7 @@ export function WordSpellingQuestionFlip({
     questionKey,
     direction,
     blocked,
+    onReady,
     previous,
     children,
 }: WordSpellingQuestionFlipProps): ReactElement {
@@ -28,7 +30,10 @@ export function WordSpellingQuestionFlip({
     const incomingRef = useRef<HTMLDivElement>(null)
     const outgoing =
         direction && completedKey !== questionKey && previous?.key !== questionKey ? previous : null
-    const complete = useCallback((): void => setCompletedKey(questionKey), [questionKey])
+    const complete = useCallback((): void => {
+        setCompletedKey(questionKey)
+        onReady?.()
+    }, [questionKey, onReady])
     useWordSpellingQuestionMotion(rootRef, {
         questionKey,
         direction,

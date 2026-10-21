@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef } from 'react'
 import * as React from 'react'
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { usePopoverTrigger } from '../../lib/popover-trigger'
 import { TldMovingHighlight } from '../tld-moving-highlight'
 import { getSelectMenuGeometry } from './select-menu-position'
 import type { SelectMenuGeometry } from './select-menu-position'
@@ -63,6 +64,12 @@ export function TldSelect({
         },
         [controlledOpen, menuPosition, onOpenChange],
     )
+    const popover = usePopoverTrigger({
+        open,
+        onOpenChange: updateOpen,
+        rootRef,
+        panelRef: menuRef,
+    })
 
     useEffect(() => {
         if (menuPosition === 'portal') setPortalTarget(document.body)
@@ -118,11 +125,11 @@ export function TldSelect({
     }, [menuPosition, open, portalTarget, options, updateOpen])
 
     useEffect(() => {
-        if (!shown) return
+        if (!shown || !popover.shouldFocusOnOpen()) return
         const menu = menuRef.current
         const selectedItem = menu?.querySelector<HTMLButtonElement>('[aria-checked="true"]')
         ;(selectedItem ?? menu?.querySelector<HTMLButtonElement>('button'))?.focus()
-    }, [shown])
+    }, [shown, popover.shouldFocusOnOpen])
 
     useEffect(() => {
         if (!open) return
@@ -145,13 +152,36 @@ export function TldSelect({
                 }
             }
         }
+        function escape(event: globalThis.KeyboardEvent): void {
+            if (
+                event.key !== 'Escape' ||
+                event.isComposing ||
+                event.keyCode === 229 ||
+                event.defaultPrevented
+            )
+                return
+            if (rootRef.current?.closest('[inert],[aria-hidden="true"]')) return
+            event.preventDefault()
+            event.stopPropagation()
+            const target = event.target
+            const inside =
+                target instanceof Node &&
+                (rootRef.current?.contains(target) || menuRef.current?.contains(target))
+            updateOpen(false)
+            if (inside) triggerRef.current?.focus({ preventScroll: true })
+        }
         document.addEventListener('pointerdown', onPointerDown)
-        return (): void => document.removeEventListener('pointerdown', onPointerDown)
+        document.addEventListener('keydown', escape, true)
+        return (): void => {
+            document.removeEventListener('pointerdown', onPointerDown)
+            document.removeEventListener('keydown', escape, true)
+        }
     }, [open, size, updateOpen])
 
     function onKeyDown(event: KeyboardEvent<HTMLDivElement>): void {
         if (event.key === 'Escape' && open) {
             event.preventDefault()
+            event.stopPropagation()
             updateOpen(false)
             triggerRef.current?.focus()
             return
@@ -165,7 +195,7 @@ export function TldSelect({
         event.preventDefault()
         if (!open) {
             setActiveOptionValue(initialActiveValue)
-            updateOpen(true)
+            popover.openByKeyboard()
             return
         }
         const buttons = Array.from(
@@ -186,6 +216,8 @@ export function TldSelect({
             ref={menuRef}
             id={`${id}-menu`}
             role="menu"
+            onPointerEnter={popover.onPointerEnter}
+            onPointerLeave={popover.onPointerLeave}
             inert={!shown}
             aria-hidden={!shown}
             aria-labelledby={`${id}-trigger`}
@@ -252,6 +284,8 @@ export function TldSelect({
     return (
         <div
             ref={rootRef}
+            onPointerEnter={popover.onPointerEnter}
+            onPointerLeave={popover.onPointerLeave}
             className={
                 layout === 'content' ? 'relative inline-flex w-max shrink-0' : 'relative w-full'
             }
@@ -290,7 +324,7 @@ export function TldSelect({
                         return
                     }
                     setActiveOptionValue(initialActiveValue)
-                    updateOpen(true)
+                    popover.openByKeyboard()
                 }}
             >
                 <span className="flex min-w-0 items-center gap-1">

@@ -285,24 +285,43 @@ const wordPronunciationQuestions: readonly PracticeQuestion[] = [
     }),
 )
 
+const wordSeedQuestions: readonly PracticeQuestion[] = [
+    {
+        id: 'woman',
+        english: 'woman',
+        translation: 'n.妇女；女性；成年女子',
+        phonetic: '/ˈwʊmən/',
+        tokens: [],
+    },
+    {
+        id: 'woman-review',
+        english: 'woman',
+        translation: 'n.妇女；女性；成年女子',
+        phonetic: '/ˈwʊmən/',
+        tokens: [],
+    },
+].map(withDemoWordPhonetics)
+
+/** 拼写与默写复用十二道本地题；其他单词模式保留原两道占位题。 */
+const wordAnswerQuestions: readonly PracticeQuestion[] = [
+    ...wordSeedQuestions,
+    ...wordPronunciationQuestions.filter((question) => question.id !== 'woman'),
+    {
+        id: 'school',
+        english: 'school',
+        translation: 'n.学校',
+        phonetic: '/skuːl/',
+        tokens: [],
+    },
+].map(withDemoWordPhonetics)
+
 export function getDemoQuestions(
     family: PracticeFamily,
     mode?: PracticeMode,
 ): readonly PracticeQuestion[] {
     if (family === 'word' && (mode === undefined || mode === 'pronounce'))
         return wordPronunciationQuestions
-    if (family === 'word' && mode === 'spell')
-        return [
-            ...getDemoQuestions('word', 'dictate'),
-            ...wordPronunciationQuestions.filter((question) => question.id !== 'woman'),
-            {
-                id: 'school',
-                english: 'school',
-                translation: 'n.学校',
-                phonetic: '/skuːl/',
-                tokens: [],
-            },
-        ].map(withDemoWordPhonetics)
+    if (family === 'word' && (mode === 'spell' || mode === 'dictate')) return wordAnswerQuestions
     if (family === 'phonetics')
         return [
             {
@@ -320,23 +339,7 @@ export function getDemoQuestions(
                 tokens: [],
             },
         ].map(withDemoWordPhonetics)
-    if (family === 'word' || family === 'guess')
-        return [
-            {
-                id: 'woman',
-                english: 'woman',
-                translation: 'n.妇女；女性；成年女子',
-                phonetic: '/ˈwʊmən/',
-                tokens: [],
-            },
-            {
-                id: 'woman-review',
-                english: 'woman',
-                translation: 'n.妇女；女性；成年女子',
-                phonetic: '/ˈwʊmən/',
-                tokens: [],
-            },
-        ].map(withDemoWordPhonetics)
+    if (family === 'word' || family === 'guess') return wordSeedQuestions
     if (family === 'picture') {
         const pictureQuestion =
             mode === 'listen'
@@ -413,7 +416,7 @@ export type PracticeSessionAction =
     | { readonly type: 'reset' }
     | { readonly type: 'finish' }
     | {
-          readonly type: 'submit-spelling'
+          readonly type: 'submit-spelling' | 'submit-answer'
           readonly value: string
           readonly target: string
           readonly ignoreCase: boolean
@@ -437,7 +440,7 @@ export function reducePracticeSession(
                 state.phase === 'revealed' || state.phase === 'correct' ? 'answering' : 'revealed',
         }
     if (action.type === 'reset') return initialPracticeSession
-    if (action.type === 'submit-spelling') {
+    if (action.type === 'submit-spelling' || action.type === 'submit-answer') {
         if (state.finished || state.phase === 'correct' || state.phase === 'revealed') return state
         const phase = judgeWordSpelling(action.value, action.target, action.ignoreCase)
         if (phase === 'empty') return state
@@ -445,10 +448,13 @@ export function reducePracticeSession(
             ...state,
             input: action.value,
             phase,
-            spellingStatistics: {
-                submissions: state.spellingStatistics.submissions + 1,
-                correct: state.spellingStatistics.correct + (phase === 'correct' ? 1 : 0),
-            },
+            spellingStatistics:
+                action.type === 'submit-answer'
+                    ? state.spellingStatistics
+                    : {
+                          submissions: state.spellingStatistics.submissions + 1,
+                          correct: state.spellingStatistics.correct + (phase === 'correct' ? 1 : 0),
+                      },
         }
     }
     if (action.type === 'input') return { ...state, input: action.value }

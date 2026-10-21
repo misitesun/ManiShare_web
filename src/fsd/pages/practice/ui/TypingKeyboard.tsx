@@ -13,6 +13,7 @@ interface TypingKeyboardProps {
     readonly inputRef: RefObject<HTMLInputElement | null>
     readonly targetText?: string | undefined
     readonly input: string
+    readonly cursor?: number | undefined
     readonly active: boolean
     readonly sessionKey: string
 }
@@ -201,11 +202,19 @@ export function TypingKeyboard({
     inputRef,
     targetText,
     input,
+    cursor,
     active,
     sessionKey,
 }: TypingKeyboardProps): ReactElement {
     const gradientId = useId().replaceAll(':', '')
-    const state = useTypingKeyboardFeedback({ inputRef, targetText, input, active, sessionKey })
+    const state = useTypingKeyboardFeedback({
+        inputRef,
+        targetText,
+        input,
+        cursor,
+        active,
+        sessionKey,
+    })
     const { target, feedback } = state
     const isLetter = target?.key.code.startsWith('Key') ?? false
     const shiftCode = target

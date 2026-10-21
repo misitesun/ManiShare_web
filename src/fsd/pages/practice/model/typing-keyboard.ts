@@ -220,6 +220,18 @@ export function getTypingTarget(
     return target ? { ...target, index } : null
 }
 
+/** 固定字母输入时跟随模型位置，不能根据已输入总长度猜测编辑位置。 */
+export function getTypingTargetAtPosition(
+    targetText: string | undefined,
+    position: number,
+): TypingTarget | null {
+    if (!Number.isInteger(position) || position < 0) return null
+    const character = Array.from(targetText ?? '')[position]
+    if (character === undefined) return null
+    const target = mapTypingCharacter(character)
+    return target ? { ...target, index: position } : null
+}
+
 export interface TypingInputChange {
     readonly index: number
     readonly inserted: string

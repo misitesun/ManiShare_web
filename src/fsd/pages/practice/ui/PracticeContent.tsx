@@ -1,5 +1,5 @@
 'use client'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { getPreviewAppearance } from '../../../features/learning-settings'
 import type { LearningPreferences } from '../../../features/learning-settings'
@@ -12,7 +12,8 @@ import type {
 } from '../model/practice-demo'
 import { getPracticeReference } from '../model/reference-layout'
 import { practiceTechnicalMediaSources } from '../model/technical-media-samples'
-import { isPracticeAnswerVisible } from '../model/practice-visibility'
+import { hasPracticeAnswerInput, isPracticeAnswerVisible } from '../model/practice-visibility'
+import { getWordSpellingLetters } from '../model/word-spelling-input'
 import type { WordToolbarOptions } from '../model/word-toolbar-options'
 import type { WordSpellingInputController } from '../model/word-spelling-input'
 import type { WordSpellingQuestionTransition } from '../model/word-spelling-question-motion'
@@ -73,8 +74,8 @@ export interface PracticeContentProps {
     readonly audioOptions?: AudioToolbarOptions
     readonly additionalOptions?: AdditionalToolbarOptions
     readonly onInput: (value: string) => void
-    readonly onWordSpellingSubmit?: ((value: string) => void) | undefined
-    readonly onWordSpellingController?:
+    readonly onAnswerSubmit?: ((value: string) => void) | undefined
+    readonly onAnswerController?:
         ((controller: WordSpellingInputController | null) => void) | undefined
     readonly spellingQuestionRevision?: number | undefined
     readonly spellingQuestionTransition?: WordSpellingQuestionTransition | null | undefined
@@ -121,8 +122,8 @@ export function PracticeContent({
     audioOptions,
     additionalOptions,
     onInput,
-    onWordSpellingSubmit,
-    onWordSpellingController,
+    onAnswerSubmit,
+    onAnswerController,
     spellingQuestionRevision,
     spellingQuestionTransition,
     onBlock,
@@ -150,6 +151,7 @@ export function PracticeContent({
     onRememberFeedbackComplete = ignoreCardAction,
 }: PracticeContentProps): ReactElement {
     const typingInputRef = useRef<HTMLInputElement>(null)
+    const [answerCursor, setAnswerCursor] = useState(0)
     const appearance = getPreviewAppearance(values)
     const localOptions = demo.family === 'word' ? wordOptions : undefined
     const sentenceTranslation =
@@ -165,9 +167,7 @@ export function PracticeContent({
         localOptions && (mode === 'dictate' || mode === 'meaning')
             ? localOptions.phoneticsVisible
             : values.showPhonetics
-    const effectiveImage =
-        imageVisible &&
-        !(demo.family === 'word' && mode === 'dictate' && session.phase === 'correct')
+    const effectiveImage = imageVisible
     const reference = getPracticeReference(demo.family, mode, session.phase)
     const reader = demo.family.endsWith('-reader')
     const audioTranslation =
@@ -178,7 +178,7 @@ export function PracticeContent({
         additionalOptions && isAdditionalToolbarFamily(demo.family)
             ? getAdditionalToolbarTranslationOverride(demo.family, mode, additionalOptions)
             : undefined
-    const inputMode = ['spell', 'dictate', 'translate', 'meaning', 'guess', 'typing'].includes(mode)
+    const inputMode = hasPracticeAnswerInput(mode)
     const answerVisible = isPracticeAnswerVisible(session.phase)
     const annotated =
         mode === 'listen' ||
@@ -241,6 +241,8 @@ export function PracticeContent({
                 blocked={blocked}
                 reading={reading}
                 onInput={onInput}
+                onAnswerSubmit={onAnswerSubmit}
+                onAnswerController={onAnswerController}
                 onBlock={onBlock}
                 onReveal={onReveal}
             />
@@ -356,7 +358,8 @@ export function PracticeContent({
     if (demo.family === 'word' && (mode === 'spell' || mode === 'dictate'))
         return (
             <div
-                className="px-4 pb-8 pt-16 design:pt-[var(--practice-reference-top)]"
+                data-word-input-question
+                className="shrink-0 px-4 pt-16 design:pt-[var(--practice-reference-top)]"
                 style={style}
             >
                 <WordAnswerCard
@@ -365,8 +368,8 @@ export function PracticeContent({
                     phase={session.phase}
                     input={session.input}
                     onInput={onInput}
-                    onSubmit={onWordSpellingSubmit}
-                    onSpellingController={onWordSpellingController}
+                    onSubmit={onAnswerSubmit}
+                    onSpellingController={onAnswerController}
                     onPlay={onReadAloud}
                     questionRevision={spellingQuestionRevision}
                     questionTransition={spellingQuestionTransition}
@@ -375,7 +378,7 @@ export function PracticeContent({
                     reading={reading}
                     showTranslation={showTranslation}
                     phoneticMode={localOptions?.phonetics ?? 'original'}
-                    showWordHint={mode === 'spell' && localOptions?.copy === true}
+                    showWordHint={localOptions?.copy === true}
                     ignoreCase={values.ignoreCase}
                     showPhonetics={
                         mode === 'spell'
@@ -501,6 +504,11 @@ export function PracticeContent({
                                 phase={session.phase}
                                 blocked={blocked}
                                 onChange={onInput}
+                                onSubmit={onAnswerSubmit}
+                                onController={onAnswerController}
+                                onCursorChange={setAnswerCursor}
+                                ignoreCase={values.ignoreCase}
+                                alphabet={mode === 'typing' ? 'typing' : 'text'}
                                 displayFontSize={
                                     values.fontSize === '默认' ? undefined : appearance.fontSize
                                 }
@@ -594,8 +602,16 @@ export function PracticeContent({
                         width={reference.keyboardWidth}
                         height={reference.keyboardHeight}
                         inputRef={typingInputRef}
-                        targetText={mode === 'typing' ? question.english : undefined}
-                        input={session.input}
+                        targetText={
+                            mode === 'typing'
+                                ? getWordSpellingLetters(question.english, 'typing').join('')
+                                : undefined
+                        }
+                        input={getWordSpellingLetters(
+                            session.input,
+                            mode === 'typing' ? 'typing' : 'text',
+                        ).join('')}
+                        cursor={answerCursor}
                         active={
                             !blocked &&
                             !answerVisible &&

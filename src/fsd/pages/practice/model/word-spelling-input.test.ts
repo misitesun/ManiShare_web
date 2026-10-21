@@ -1,19 +1,42 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getDemoQuestions, initialPracticeSession, reducePracticeSession } from './practice-demo'
+import {
+    getDemoQuestions,
+    initialPracticeSession,
+    practiceDemos,
+    reducePracticeSession,
+} from './practice-demo'
 import { getDemoWordPhonetics } from './word-phonetics-demo'
+import { hasPracticeAnswerInput } from './practice-visibility'
 import type { WordPhoneticBreakdown } from './word-phonetics'
 import {
     createWordSpellingInputState,
     createWordSpellingLayout,
     deleteWordSpellingInput,
     getWordSpellingLetters,
+    getWordSpellingEntryCursor,
+    getWordSpellingEditablePositions,
+    getPracticeAnswerKeyAction,
+    spaceWordSpellingInput,
+    clearWordSpellingInputSelection,
+    resetEmptyWordSpellingCursor,
     isWordSpellingLetter,
     moveWordSpellingCursor,
     serializeWordSpellingInput,
     submitWordSpellingInput,
     typeWordSpellingInput,
 } from './word-spelling-input'
+
+test('聚焦保留模型光标，空输入或过期空位只回到允许的编辑位置', (): void => {
+    const layout = createWordSpellingLayout('apple', 'original')
+    const empty = createWordSpellingInputState(layout)
+    assert.equal(getWordSpellingEntryCursor(empty), 0)
+    assert.equal(getWordSpellingEntryCursor({ ...empty, cursor: 4 }), 0)
+    const partial = typeWordSpellingInput(empty, 'app')
+    assert.equal(getWordSpellingEntryCursor(partial), 3)
+    assert.equal(getWordSpellingEntryCursor({ ...partial, cursor: 0 }), 0)
+    assert.equal(getWordSpellingEntryCursor({ ...partial, cursor: 4 }), 0)
+})
 
 test('十二道模拟拼写题的两种拆分均有完整字母映射，不按IPA字符猜字母', (): void => {
     for (const question of getDemoQuestions('word', 'spell'))
@@ -68,19 +91,124 @@ test('缺失、过期或覆盖不完整的字母映射回退整词，不错误�
     }
 })
 
-test('未填满的空格只导航，字母模式逐位循环，分段模式跳下一段首字母', (): void => {
+test('空值锁首位；apple输入app时，空格只在已填三位和首空位循环，Enter不导航', (): void => {
+    for (const mode of ['original', 'syllables', 'phonics', 'none'] as const) {
+        const layout = createWordSpellingLayout('apple', mode)
+        const empty = createWordSpellingInputState(layout)
+        assert.equal(spaceWordSpellingInput(empty, layout, true).state.cursor, 0)
+        assert.equal(deleteWordSpellingInput({ ...empty, cursor: 4 }).cursor, 0)
+        let state = typeWordSpellingInput(empty, 'app')
+        assert.equal(state.cursor, 3)
+        assert.deepEqual(getWordSpellingEditablePositions(state), [0, 1, 2, 3])
+        const entered = state.letters
+        for (const cursor of [0, 1, 2, 3, 0]) {
+            const result = spaceWordSpellingInput(state, layout, true)
+            assert.equal(result.value, null)
+            state = result.state
+            assert.equal(state.cursor, cursor)
+            assert.equal(state.letters, entered)
+            assert.equal(state.attempts, 0)
+            assert.equal(submitWordSpellingInput(state, layout, true).state, state)
+        }
+        state = typeWordSpellingInput(state, 'A')
+        assert.equal(state.cursor, 1)
+        assert.deepEqual(state.letters, ['A', 'p', 'p', '', ''])
+    }
+})
+
+test('删除留空后只允许已填位及首空位；空位再删除只退到前面已有字母', (): void => {
+    const layout = createWordSpellingLayout('apple', 'syllables')
+    const partial = typeWordSpellingInput(createWordSpellingInputState(layout), 'app')
+    const deleted = deleteWordSpellingInput({ ...partial, cursor: 1 })
+    assert.deepEqual(deleted.letters, ['a', '', 'p', '', ''])
+    assert.equal(deleted.cursor, 1)
+    assert.deepEqual(getWordSpellingEditablePositions(deleted), [0, 1, 2])
+    assert.equal(moveWordSpellingCursor(deleted, layout).cursor, 2)
+    assert.equal(moveWordSpellingCursor({ ...deleted, cursor: 2 }, layout).cursor, 0)
+    assert.equal(deleteWordSpellingInput(deleted).cursor, 0)
+    assert.equal(
+        deleteWordSpellingInput({ ...deleted, cursor: 0, letters: ['', '', 'p', '', ''] }).cursor,
+        0,
+    )
+})
+
+test('定位键及其修饰组合禁止原生定位；IME、已消费命令与全文编辑组合让行', (): void => {
+    const event = {
+        key: '',
+        ctrlKey: false,
+        altKey: false,
+        metaKey: false,
+        shiftKey: false,
+        isComposing: false,
+        keyCode: 0,
+        defaultPrevented: false,
+    }
+    for (const key of ['ArrowLeft', 'ArrowRight', 'Home', 'End'])
+        for (const modifier of [
+            {},
+            { shiftKey: true },
+            { ctrlKey: true },
+            { metaKey: true },
+            { altKey: true },
+        ])
+            assert.equal(
+                getPracticeAnswerKeyAction({ ...event, ...modifier, key }),
+                'block-position',
+            )
+    assert.equal(getPracticeAnswerKeyAction({ ...event, key: ' ' }), 'space')
+    assert.equal(getPracticeAnswerKeyAction({ ...event, key: 'Enter' }), 'submit')
+    for (const key of ['ArrowLeft', ' ', 'Enter', 'Backspace']) {
+        assert.equal(getPracticeAnswerKeyAction({ ...event, key, isComposing: true }), 'native')
+        assert.equal(getPracticeAnswerKeyAction({ ...event, key, keyCode: 229 }), 'native')
+        assert.equal(
+            getPracticeAnswerKeyAction({ ...event, key, defaultPrevented: true }),
+            'native',
+        )
+    }
+    for (const key of ['a', 'c', 'v', 'x'])
+        assert.equal(getPracticeAnswerKeyAction({ ...event, key, ctrlKey: true }), 'native')
+    assert.equal(getPracticeAnswerKeyAction({ ...event, key: 'z', metaKey: true }), 'undo')
+    assert.equal(
+        getPracticeAnswerKeyAction({ ...event, key: 'z', metaKey: true, shiftKey: true }),
+        'redo',
+    )
+})
+
+test('全错后改前两位，再编辑已处理位置也继续下一错位，不会因全文已填满卡住', (): void => {
     const breakdown = getDemoWordPhonetics('woman', '/ˈwʊmən/')
-    const plain = createWordSpellingLayout('woman', 'original', breakdown)
-    const initial = createWordSpellingInputState(plain)
-    const moved = submitWordSpellingInput(initial, plain, true)
-    assert.equal(moved.value, null)
-    assert.equal(moved.state.cursor, 1)
-    assert.equal(moved.state.attempts, 0)
-    assert.equal(moveWordSpellingCursor(initial, plain, -1).cursor, 4)
-    const split = createWordSpellingLayout('woman', 'syllables', breakdown)
-    assert.equal(submitWordSpellingInput(initial, split, true).state.cursor, 2)
-    assert.equal(moveWordSpellingCursor({ ...initial, cursor: 3 }, split).cursor, 0)
-    assert.equal(moveWordSpellingCursor(initial, split, -1).cursor, 2)
+    for (const layout of [
+        createWordSpellingLayout('woman', 'original', breakdown),
+        createWordSpellingLayout('woman', 'syllables', breakdown),
+        createWordSpellingLayout('woman', 'phonics', breakdown),
+        createWordSpellingLayout('woman', 'syllables'),
+    ]) {
+        const submitted = submitWordSpellingInput(
+            createWordSpellingInputState(layout, 'xxxxx'),
+            layout,
+            true,
+        )
+        assert.deepEqual(submitted.state.wrong, [0, 1, 2, 3, 4])
+        const corrected = typeWordSpellingInput(submitted.state, 'wo')
+        assert.equal(corrected.cursor, 2)
+        assert.deepEqual(corrected.wrong, [2, 3, 4])
+        for (const cursor of [0, 1])
+            for (const deleteFirst of [false, true]) {
+                const revisiting = { ...corrected, cursor }
+                const before = deleteFirst ? deleteWordSpellingInput(revisiting) : revisiting
+                const next = typeWordSpellingInput(before, cursor === 0 ? 'w' : 'o')
+                assert.equal(next.cursor, 2)
+                assert.deepEqual(next.wrong, [2, 3, 4])
+                assert.equal(serializeWordSpellingInput(layout, next), 'woxxx')
+                const finished = typeWordSpellingInput(next, 'man')
+                assert.deepEqual(finished.wrong, [])
+                assert.equal(finished.completed, false)
+                assert.equal(finished.attempts, 1)
+                const checked = submitWordSpellingInput(finished, layout, true)
+                assert.equal(checked.value, 'woman')
+                assert.equal(checked.state.completed, true)
+                assert.equal(checked.state.attempts, 2)
+            }
+    }
 })
 
 test('填满才校验，仅错位标红；纠错覆盖并定位下一错位，正确后不能重复提交', (): void => {
@@ -118,7 +246,7 @@ test('清除红色只表示该位已修改，重新输入错误字母后仍须�
     assert.equal(retried.state.attempts, 2)
 })
 
-test('删除先清当前位并保持定位，空位再次删除才向前循环，不移动其他字母', (): void => {
+test('删除先清当前位并保持定位，空位再次删除才向前定位，不移动其他字母', (): void => {
     const layout = createWordSpellingLayout('cat', 'original')
     const state = { ...createWordSpellingInputState(layout, 'cut'), cursor: 1, wrong: [1] }
     const cleared = deleteWordSpellingInput(state)
@@ -126,8 +254,53 @@ test('删除先清当前位并保持定位，空位再次删除才向前循环�
     assert.deepEqual(cleared.wrong, [1])
     assert.equal(cleared.cursor, 1)
     assert.equal(deleteWordSpellingInput(cleared).cursor, 0)
-    assert.equal(deleteWordSpellingInput(createWordSpellingInputState(layout)).cursor, 2)
+    assert.equal(deleteWordSpellingInput(createWordSpellingInputState(layout)).cursor, 0)
     assert.equal(submitWordSpellingInput(cleared, layout, true).value, null)
+})
+
+test('整词清空重回首位，选区删除或覆盖错误字母仍按同一模型跳下一错位', (): void => {
+    for (const layout of [
+        createWordSpellingLayout('woman', 'syllables', getDemoWordPhonetics('woman', '/ˈwʊmən/')),
+        createWordSpellingLayout('woman', 'syllables'),
+    ]) {
+        const submitted = submitWordSpellingInput(
+            createWordSpellingInputState(layout, 'wdmdn'),
+            layout,
+            true,
+        ).state
+        const cleared = clearWordSpellingInputSelection(submitted, 1, 2)
+        assert.deepEqual(cleared.wrong, [1, 3])
+        const first = typeWordSpellingInput(cleared, 'o')
+        assert.equal(first.cursor, 3)
+        assert.deepEqual(first.wrong, [3])
+        const fixed = typeWordSpellingInput(first, 'a')
+        assert.equal(submitWordSpellingInput(fixed, layout, true).state.completed, true)
+        const replaced = typeWordSpellingInput(
+            clearWordSpellingInputSelection(submitted, 0, 3),
+            'wom',
+            'selection',
+        )
+        assert.deepEqual(replaced.letters, ['w', 'o', 'm', 'd', 'n'])
+        assert.deepEqual(replaced.wrong, [3])
+        assert.equal(replaced.cursor, 3)
+        assert.equal(
+            submitWordSpellingInput(typeWordSpellingInput(replaced, 'a'), layout, true).state
+                .completed,
+            true,
+        )
+        const empty = clearWordSpellingInputSelection(submitted, 0, 5)
+        assert.equal(empty.cursor, 0)
+        assert.deepEqual(empty.letters, ['', '', '', '', ''])
+        assert.deepEqual(empty.wrong, [])
+        assert.equal(
+            submitWordSpellingInput(typeWordSpellingInput(empty, 'woman'), layout, true).state
+                .completed,
+            true,
+        )
+        const last = { ...empty, letters: ['', '', '', '', 'n'], cursor: 4 }
+        assert.equal(deleteWordSpellingInput(last).cursor, 0)
+        assert.equal(resetEmptyWordSpellingCursor({ ...empty, cursor: 4 }).cursor, 0)
+    }
 })
 
 test('先删除再输入与直接覆盖都跳过正确字母，逐个处理待纠错位置后才能重新提交', (): void => {
@@ -244,4 +417,106 @@ test('实际校验才进入页面统计；跳格和纠错导航不计提交，�
     }
     assert.deepEqual(session.spellingStatistics, { submissions: 2, correct: 1 })
     assert.equal(session.phase, 'correct')
+})
+
+test('所有现有文字作答模式使用相同空格范围、全错覆盖、自动跳错和重新校验', (): void => {
+    for (const demo of practiceDemos)
+        for (const mode of demo.modes.filter(hasPracticeAnswerInput)) {
+            const question = getDemoQuestions(demo.family, mode)[0]
+            assert.ok(question, `${demo.family}:${mode}`)
+            const alphabet =
+                demo.family === 'word' && (mode === 'spell' || mode === 'dictate')
+                    ? 'latin'
+                    : mode === 'typing'
+                      ? 'typing'
+                      : 'text'
+            const layout = createWordSpellingLayout(
+                question.english,
+                'syllables',
+                undefined,
+                alphabet,
+            )
+            assert.ok(layout.answer.length > 2)
+            let state = typeWordSpellingInput(
+                createWordSpellingInputState(layout),
+                layout.answer.map((letter) => (letter.toLowerCase() === 'x' ? 'z' : 'x')).join(''),
+                'cursor',
+                alphabet,
+            )
+            state = spaceWordSpellingInput(state, layout, true).state
+            assert.deepEqual(
+                state.wrong,
+                layout.answer.map((_, index) => index),
+            )
+            assert.equal(state.cursor, 0)
+            assert.equal(spaceWordSpellingInput(state, layout, true).state.cursor, 1)
+            state = typeWordSpellingInput(
+                state,
+                layout.answer.slice(0, 2).join(''),
+                'cursor',
+                alphabet,
+            )
+            assert.equal(state.cursor, 2)
+            assert.equal(getWordSpellingEntryCursor(state), 2)
+            state = typeWordSpellingInput(
+                state,
+                layout.answer.slice(2).join(''),
+                'cursor',
+                alphabet,
+            )
+            assert.deepEqual(state.wrong, [])
+            assert.equal(state.completed, false)
+            const result = spaceWordSpellingInput(state, layout, true)
+            assert.equal(result.state.completed, true)
+            assert.equal(result.state.attempts, 2)
+            assert.equal(result.value, question.english)
+        }
+})
+
+test('文字与数字共享推进，UTF16全文删除不拆坏Unicode码点', (): void => {
+    const layout = createWordSpellingLayout('Hi 中文 𝒜2!', 'syllables', undefined, 'text')
+    let state = typeWordSpellingInput(
+        createWordSpellingInputState(layout),
+        'Hi中文𝒜2',
+        'cursor',
+        'text',
+    )
+    assert.equal(serializeWordSpellingInput(layout, state), 'Hi 中文 𝒜2!')
+    assert.equal(submitWordSpellingInput(state, layout, false).state.completed, true)
+    state = clearWordSpellingInputSelection(state, 4, 6)
+    assert.equal(state.letters[4], '')
+    assert.equal(state.letters[5], '2')
+    assert.equal(state.cursor, 4)
+})
+
+test('指法保留标点录入；普通文字模式提供静态标点，二者光标导航规则相同', (): void => {
+    const target = 'Hi, there!'
+    const layout = createWordSpellingLayout(target, 'syllables', undefined, 'typing')
+    let state = typeWordSpellingInput(
+        createWordSpellingInputState(layout),
+        'Hi',
+        'cursor',
+        'typing',
+    )
+    assert.equal(state.cursor, 2)
+    assert.equal(layout.answer[state.cursor], ',')
+    assert.equal(submitWordSpellingInput(state, layout, false).value, null)
+    state = typeWordSpellingInput(state, ',there!', 'cursor', 'typing')
+    assert.equal(submitWordSpellingInput(state, layout, false).value, target)
+    assert.equal(createWordSpellingInputState(layout, target).letters.join(''), 'Hi,there!')
+    const text = createWordSpellingLayout(target, 'syllables', undefined, 'text')
+    assert.equal(text.answer.join(''), 'Hithere')
+})
+
+test('连续纠错粘贴在待改位完成时停止，不反复覆盖最后一个正确位置', (): void => {
+    const layout = createWordSpellingLayout('apple', 'original')
+    const state = submitWordSpellingInput(
+        createWordSpellingInputState(layout, 'xxple'),
+        layout,
+        true,
+    ).state
+    const edited = typeWordSpellingInput(state, 'apple')
+    assert.equal(edited.letters.join(''), 'apple')
+    assert.deepEqual(edited.wrong, [])
+    assert.equal(edited.completed, false)
 })

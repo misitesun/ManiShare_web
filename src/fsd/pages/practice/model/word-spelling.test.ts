@@ -7,9 +7,10 @@ import {
 } from './word-spelling'
 import { getDemoQuestions, initialPracticeSession, reducePracticeSession } from './practice-demo'
 
-test('拼写模拟题保留原两条并新增十个不同单词，不扩展默写或其他模式', (): void => {
-    const original = getDemoQuestions('word', 'dictate')
+test('拼写保留十二题基线，默写增加十题，其他模式保留原题量', (): void => {
+    const original = getDemoQuestions('word', 'meaning')
     const questions = getDemoQuestions('word', 'spell')
+    const dictation = getDemoQuestions('word', 'dictate')
     assert.equal(questions.length, 12)
     assert.deepEqual(questions.slice(0, 2), original)
     assert.equal(new Set(questions.map((question) => question.id)).size, 12)
@@ -24,6 +25,11 @@ test('拼写模拟题保留原两条并新增十个不同单词，不扩展默�
     )
     assert.equal(getDemoQuestions('word', 'pronounce').length, 10)
     assert.equal(original.length, 2)
+    assert.equal(getDemoQuestions('guess', 'guess').length, 2)
+    assert.equal(dictation.length, 12)
+    assert.deepEqual(dictation.slice(0, 2), original)
+    assert.equal(new Set(dictation.map((question) => question.id)).size, 12)
+    assert.equal(new Set(dictation.slice(2).map((question) => question.english)).size, 10)
 })
 
 test('本地拼写仅忽略首尾空白并遵守大小写设置，空提交不判错', (): void => {
@@ -114,4 +120,36 @@ test('揭晓和结束不推导正确结果，准确率由本轮提交量计算�
         )
     assert.equal(getWordSpellingAccuracy({ submissions: 0, correct: 0 }), 0)
     assert.equal(getWordSpellingAccuracy({ submissions: 3, correct: 2 }), 67)
+})
+
+test('通用输入使用给定答案做本地校验，正确态去重且不改写拼写统计', (): void => {
+    const initial = {
+        ...initialPracticeSession,
+        spellingStatistics: { submissions: 3, correct: 1 },
+    }
+    const incorrect = reducePracticeSession(initial, {
+        type: 'submit-answer',
+        value: 'wx read',
+        target: 'we read',
+        ignoreCase: true,
+    })
+    assert.equal(incorrect.phase, 'incorrect')
+    assert.equal(incorrect.spellingStatistics, initial.spellingStatistics)
+    const correct = reducePracticeSession(incorrect, {
+        type: 'submit-answer',
+        value: 'We read',
+        target: 'we read',
+        ignoreCase: true,
+    })
+    assert.equal(correct.phase, 'correct')
+    assert.equal(correct.spellingStatistics, initial.spellingStatistics)
+    assert.equal(
+        reducePracticeSession(correct, {
+            type: 'submit-answer',
+            value: 'We read',
+            target: 'we read',
+            ignoreCase: true,
+        }),
+        correct,
+    )
 })

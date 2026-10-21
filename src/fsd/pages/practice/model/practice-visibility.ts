@@ -1,5 +1,10 @@
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
 
+/** 仅真实文本作答模式；词块、纯展示和笔记编辑不属于此输入契约。 */
+export function hasPracticeAnswerInput(mode: PracticeMode): boolean {
+    return ['spell', 'dictate', 'translate', 'meaning', 'guess', 'typing'].includes(mode)
+}
+
 /** 答错仍是可编辑阶段；演示状态不推导正式判题结果。 */
 export function isPracticeAnswerVisible(phase: PracticePhase): boolean {
     return phase === 'revealed' || phase === 'correct'

@@ -70,6 +70,7 @@ Skill 编排任务，但不替代本文件、详细文档、lint、测试或 CI�
 - 当前主题固定注册 `dark` 与 `light`，默认 dark。主题应用和持久化只经 `shared/theme`；新增主题必须补齐完整 token，当前阶段只需中文名称，其他语言在翻译工作重新开启后补齐。
 - 当前产品统一只进行中文开发：界面固定zh-CN，移除语言切换入口，不读取或恢复旧英文偏好，不加载英文词典，不进行多语言处理。新文案直接使用中文，不新增i18n key、占位翻译或中英文同步要求。shared/i18n只为已有t()消费者加载中文兼容词典；历史英文资源不参与运行、维护或翻译验收。
 - 基础无障碍属于框架质量要求：优先语义 HTML、可见焦点、可访问名称、键盘可操作性和 reduced-motion。当前不承诺完整 WCAG 审计；新增第三方 a11y 库或专项验收仍需明确任务。
+- 设置类下拉／选项浮层统一使用 `shared/lib/popover-trigger`：PC／Electron的xl布局（≥1280px）且具备精细指针和hover能力时，鼠标悬停展开；平板、H5及触控指针点击展开，保留键盘操作。Hover不抢输入焦点；练习设置修改后的输入归焦不能因此关闭选项浮层，单选菜单选中后关闭。具体规则见[开发规范](docs/development-standards.md#51-布局策略)与[浮层触发说明](src/fsd/shared/lib/popover-trigger/README.md)，后续新增或修改的同类控件按此执行。
 - 所有真实可操作内容，包括按钮、链接、开关、展开项、可点击卡片和图标入口，必须显式使用 Tailwind `cursor-pointer`。纯展示或禁用内容不得用 pointer 光标伪装为可操作。
 - `pnpm run lint:source-contracts` 阻断 FSD 反向依赖、跨模块深层导入、renderer 的 Node/Electron 导入、直接 `fetch`、动态 Tailwind class、原始颜色和额外组件样式文件；不得通过改写检查脚本绕过真实违规。
 

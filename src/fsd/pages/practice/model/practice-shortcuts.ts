@@ -3,7 +3,11 @@ import type { ShortcutInput, ShortcutPreferences } from '../../../features/learn
 import type { PracticeCommand } from './practice-command-types'
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
 import { getPracticeCommandBindings } from './practice-bindings'
-import { canShowQuickOral, isPracticeAnswerVisible } from './practice-visibility'
+import {
+    canShowQuickOral,
+    hasPracticeAnswerInput,
+    isPracticeAnswerVisible,
+} from './practice-visibility'
 import { supportsPracticeKnowledge, supportsPracticePanel } from './practice-footer'
 import type { OralDemoStage } from './oral-demo'
 
@@ -19,7 +23,7 @@ export interface PracticeShortcutContext {
     readonly scope: 'question' | 'oral' | 'finish' | 'blocked'
     readonly ready: boolean
     readonly values: ShortcutPreferences
-    /** 仅 word:spell 的作答输入显式启用；普通编辑器始终保留原生行为。 */
+    /** 全部真实练习作答输入显式启用；普通编辑器保留原生行为。 */
     readonly answerInputCommands?: boolean
 }
 export interface PracticeKeyInput extends ShortcutInput {
@@ -69,9 +73,14 @@ export function resolvePracticeShortcut(
     )
         return null
     const { values, family, mode, phase } = context
-    const answerCommands =
-        context.answerInputCommands === true && family === 'word' && mode === 'spell'
+    const answerCommands = context.answerInputCommands === true && hasPracticeAnswerInput(mode)
     const plain = !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey
+    if (
+        target === 'answer-input' &&
+        plain &&
+        (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
+    )
+        return null
     // 原生控件的 Enter / 空格 / 方向键由控件激活一次，不由全局再执行。
     if (
         target === 'native' &&
@@ -145,8 +154,8 @@ export function resolvePracticeShortcut(
     if (matches(event, 'practice.primary', values)) return 'practice.primary'
     if (matches(event, 'practice.contextual', values)) {
         if (target === 'answer-input') return null
-        if (family === 'word' && mode === 'spell' && !isPracticeAnswerVisible(phase))
-            return 'practice.primary'
+        if (answerCommands && hasPracticeAnswerInput(mode) && !isPracticeAnswerVisible(phase))
+            return 'practice.contextual'
         // 阅读保留滚动；词块空格只由当前聚焦的真实词块按钮处理。
         if (family === 'text-reader' || (mode === 'read' && !family.endsWith('-reader')))
             return null

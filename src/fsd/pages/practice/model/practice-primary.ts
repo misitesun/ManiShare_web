@@ -1,16 +1,9 @@
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
 import type { OralDemoStage } from './oral-demo'
-import { isPracticeAnswerVisible } from './practice-visibility'
+import { hasPracticeAnswerInput, isPracticeAnswerVisible } from './practice-visibility'
 
 export type PracticePrimaryAction =
-    | 'next'
-    | 'submit'
-    | 'reveal'
-    | 'oral-start'
-    | 'oral-stop'
-    | 'oral-complete'
-    | 'typing-incomplete'
-    | 'none'
+    'next' | 'submit' | 'reveal' | 'oral-start' | 'oral-stop' | 'oral-complete' | 'none'
 
 export function resolvePracticePrimary({
     family,
@@ -18,14 +11,12 @@ export function resolvePracticePrimary({
     phase,
     oralStage,
     quickOral,
-    typingComplete,
 }: {
     readonly family: PracticeFamily
     readonly mode: PracticeMode
     readonly phase: PracticePhase
     readonly oralStage: OralDemoStage
     readonly quickOral: boolean
-    readonly typingComplete: boolean
 }): PracticePrimaryAction {
     if (quickOral || mode === 'oral') {
         if (oralStage === 'idle') return 'oral-start'
@@ -34,7 +25,7 @@ export function resolvePracticePrimary({
         return 'none'
     }
     if (isPracticeAnswerVisible(phase)) return 'next'
-    if (mode === 'typing') return typingComplete ? 'next' : 'typing-incomplete'
+    if (hasPracticeAnswerInput(mode)) return 'submit'
     if (mode === 'check' || (family === 'guess' && mode === 'guess')) return 'reveal'
     if (['spell', 'dictate', 'translate', 'blocks', 'meaning'].includes(mode)) return 'submit'
     return 'next'

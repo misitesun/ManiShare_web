@@ -13,7 +13,6 @@ function resolve(
         phase: 'answering',
         oralStage: 'idle',
         quickOral: false,
-        typingComplete: false,
         ...changes,
     })
 }
@@ -27,16 +26,15 @@ test('输入和拼块主动作只提交当前题，答错后仍提交，不直�
                 phase,
                 oralStage: 'idle' as const,
                 quickOral: false,
-                typingComplete: false,
             })
             assert.equal(resolvePracticePrimary(context), 'submit')
             assert.equal(context.phase, phase)
         }
 })
 
-test('猜词和自查未揭晓先揭晓，已有答案时统一推进，不把揭晓视为答对', (): void => {
+test('猜词输入交给通用校验，自查保留揭晓，已有答案时统一推进', (): void => {
     for (const phase of ['answering', 'incorrect'] as const) {
-        assert.equal(resolve({ family: 'guess', mode: 'guess', phase }), 'reveal')
+        assert.equal(resolve({ family: 'guess', mode: 'guess', phase }), 'submit')
         assert.equal(resolve({ family: 'sentence', mode: 'check', phase }), 'reveal')
     }
     for (const phase of ['revealed', 'correct'] as const)
@@ -44,13 +42,11 @@ test('猜词和自查未揭晓先揭晓，已有答案时统一推进，不把�
             assert.equal(resolve({ mode, phase }), 'next')
 })
 
-test('指法未完成只提示继续，完成后才确认推进，不在绑定层创造完成算法', (): void => {
+test('指法统一交给作答控制器校验，只有进入正确题态后才推进', (): void => {
     for (const family of ['word', 'sentence', 'audio', 'video', 'picture', 'typing'] as const) {
-        assert.equal(
-            resolve({ family, mode: 'typing', typingComplete: false }),
-            'typing-incomplete',
-        )
-        assert.equal(resolve({ family, mode: 'typing', typingComplete: true }), 'next')
+        assert.equal(resolve({ family, mode: 'typing', phase: 'answering' }), 'submit')
+        assert.equal(resolve({ family, mode: 'typing', phase: 'incorrect' }), 'submit')
+        assert.equal(resolve({ family, mode: 'typing', phase: 'correct' }), 'next')
     }
 })
 
@@ -98,14 +94,12 @@ test('主流程解析不改变调用者提供的题态或口语阶段', (): void
         readonly phase: PracticePhase
         readonly oralStage: OralDemoStage
         readonly quickOral: boolean
-        readonly typingComplete: boolean
     } = Object.freeze({
         family: 'word',
         mode: 'oral',
         phase: 'correct',
         oralStage: 'result',
         quickOral: true,
-        typingComplete: false,
     })
     assert.equal(resolvePracticePrimary(context), 'oral-complete')
     assert.equal(context.phase, 'correct')

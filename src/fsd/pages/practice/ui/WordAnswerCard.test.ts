@@ -6,6 +6,7 @@ import { getDemoQuestions } from '../model/practice-demo'
 import type { PracticePhase } from '../model/practice-demo'
 import { getWordDictionaryUrl } from '../model/word-dictionary'
 import type { WordSpellingQuestionDirection } from '../model/word-spelling-question-motion'
+import type { WordPhoneticMode } from '../model/word-phonetics'
 import { WordAnswerCard } from './WordAnswerCard'
 
 function rejectAction(): never {
@@ -17,6 +18,7 @@ function renderCard(
     blocked = false,
     direction: WordSpellingQuestionDirection | null = null,
     phase: PracticePhase = 'answering',
+    phoneticMode: WordPhoneticMode = 'original',
 ): string {
     const question = getDemoQuestions('word', mode)[0]
     const previous = getDemoQuestions('word', mode)[1]
@@ -27,7 +29,8 @@ function renderCard(
             question,
             mode,
             phase,
-            input: mode === 'spell' ? 'wo' : '保留的输入',
+            input: 'wo',
+            phoneticMode,
             onInput: rejectAction,
             onSubmit: rejectAction,
             onNotice: rejectAction,
@@ -107,14 +110,50 @@ test('拼写两态共用占位，隐藏的编辑器或朗读入口不进入交�
     }
 })
 
-test('默写保留原题面与原生输入，不挂载拼写翻面或辅助图标', (): void => {
+test('默写保留独立题面并复用字母位输入，不挂载拼写翻面或辅助图标', (): void => {
     const html = renderCard('dictate')
     assert.match(html, /aria-label="单词默写"/)
-    assert.match(html, /value="保留的输入"/)
+    assert.match(html, /value="wo"/)
+    assert.match(html, /data-word-spelling-input="true"/)
     assert.doesNotMatch(
         html,
         /data-word-card-flip|data-word-analysis-trigger|data-word-dictionary-link|data-word-spelling-question-direction/,
     )
+})
+
+test('默写四档音标共用整词连续横线，输入始终保留完整五个字母位', (): void => {
+    for (const mode of ['original', 'syllables', 'phonics', 'none'] as const) {
+        const html = renderCard('dictate', false, null, 'answering', mode)
+        assert.match(html, /data-spelling-mode="segments"/)
+        assert.doesNotMatch(html, /data-spelling-word-underline/)
+        assert.match(html, /left-0 h-1 w-full/)
+        assert.equal((html.match(/data-spelling-position="\d+"/g) ?? []).length, 5)
+        assert.equal((html.match(/data-word-spelling-segment=/g) ?? []).length, 1)
+        assert.doesNotMatch(html, /min-w-\[min\(200px/)
+    }
+})
+
+test('默写正确态保留图片与同一单词槽，展示四条虚线与朗读按钮，阻断时朗读不可用', (): void => {
+    for (const blocked of [false, true]) {
+        const html = renderCard('dictate', blocked, null, 'correct')
+        assert.equal((html.match(/data-word-card-guideline=/g) ?? []).length, 4)
+        assert.match(html, /data-practice-media/)
+        assert.match(html, /data-word-dictation-word-slot="true"/)
+        assert.match(html, /design:h-\[510px\]/)
+        assert.doesNotMatch(html, /data-practice-answer-input|data-spelling-word-underline/)
+        const play = html.match(/<button\b[^>]*aria-label="朗读当前单词"[^>]*>/)?.[0] ?? ''
+        assert.ok(play)
+        assert.equal(play.includes('disabled=""'), blocked)
+    }
+})
+
+test('默写未答、答错与正确共用图片区和单词占位，不展示旧演示判题文案', (): void => {
+    for (const phase of ['answering', 'incorrect', 'correct'] as const) {
+        const html = renderCard('dictate', false, null, phase)
+        assert.match(html, /data-practice-media/)
+        assert.match(html, /data-word-dictation-word-slot="true"/)
+        assert.doesNotMatch(html, /当前不执行判题|design:h-\[320px\]/)
+    }
 })
 
 test('拼写切题在解析外层保留旧题作为离场面，旧面禁止交互、新题仍可作答', (): void => {

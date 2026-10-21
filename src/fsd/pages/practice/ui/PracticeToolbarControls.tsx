@@ -3,6 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactElement, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { usePopoverTrigger } from '../../../shared/lib/popover-trigger'
 import type { PracticeFamily } from '../model/practice-demo'
 import clockAsset from '../assets/word-toolbar-clock.svg'
 import optionsAsset from '../assets/word-toolbar-options.svg'
@@ -70,6 +71,9 @@ export function PracticeToolbarOptions({
     })
     const id = useId()
     const positioned = position !== null
+    const onOpenChangeRef = useRef(onOpenChange)
+    onOpenChangeRef.current = onOpenChange
+    const popover = usePopoverTrigger({ open, onOpenChange, rootRef, panelRef })
 
     useEffect(() => {
         if (portal) setPortalTarget(document.body)
@@ -125,14 +129,15 @@ export function PracticeToolbarOptions({
 
     useEffect(() => {
         if (!open || (portal && !positioned)) return
-        panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+        if (popover.shouldFocusOnOpen())
+            panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
         function closeOutside(event: PointerEvent): void {
             if (
                 event.target instanceof Node &&
                 !rootRef.current?.contains(event.target) &&
                 !panelRef.current?.contains(event.target)
             ) {
-                onOpenChange(false)
+                onOpenChangeRef.current(false)
                 if (
                     !(event.target instanceof Element) ||
                     !event.target.closest(
@@ -144,13 +149,42 @@ export function PracticeToolbarOptions({
                 }
             }
         }
+        function escape(event: KeyboardEvent): void {
+            if (
+                event.key !== 'Escape' ||
+                event.isComposing ||
+                event.keyCode === 229 ||
+                event.defaultPrevented
+            )
+                return
+            if (rootRef.current?.closest('[inert]')) return
+            const target = event.target
+            const inOptions =
+                target instanceof Node &&
+                Boolean(rootRef.current?.contains(target) || panelRef.current?.contains(target))
+            const inAnswer =
+                target instanceof Element &&
+                target.matches('[data-practice-answer-input]') &&
+                rootRef.current?.closest('[data-practice-phase]')?.contains(target)
+            if (!inOptions && !inAnswer) return
+            event.preventDefault()
+            event.stopPropagation()
+            onOpenChangeRef.current(false)
+            if (inOptions) triggerRef.current?.focus({ preventScroll: true })
+        }
         document.addEventListener('pointerdown', closeOutside)
-        return (): void => document.removeEventListener('pointerdown', closeOutside)
-    }, [open, onOpenChange, portal, positioned])
+        document.addEventListener('keydown', escape, true)
+        return (): void => {
+            document.removeEventListener('pointerdown', closeOutside)
+            document.removeEventListener('keydown', escape, true)
+        }
+    }, [open, portal, positioned, popover.shouldFocusOnOpen])
 
     const panel = present && (
         <div
             ref={floatingRef}
+            onPointerEnter={popover.onPointerEnter}
+            onPointerLeave={popover.onPointerLeave}
             data-practice-options-position={portal ? 'portal' : 'inline'}
             className={
                 portal
@@ -207,8 +241,16 @@ export function PracticeToolbarOptions({
     return (
         <div
             ref={rootRef}
+            onPointerEnter={popover.onPointerEnter}
+            onPointerLeave={popover.onPointerLeave}
             className="relative shrink-0"
             onBlur={(event): void => {
+                const next = event.relatedTarget
+                const sameAnswer =
+                    next instanceof Element &&
+                    next.matches('[data-practice-answer-input]') &&
+                    event.currentTarget.closest('[data-practice-phase]')?.contains(next)
+                if (sameAnswer) return
                 if (
                     !event.currentTarget.contains(event.relatedTarget) &&
                     !panelRef.current?.contains(event.relatedTarget)
@@ -245,7 +287,7 @@ export function PracticeToolbarOptions({
                 aria-expanded={open}
                 aria-controls={open ? id : undefined}
                 className="flex size-10 cursor-pointer items-center justify-center rounded-[4px] bg-practice-control-surface outline-offset-2 focus-visible:outline-2 focus-visible:outline-focus xl:size-[26px]"
-                onClick={(): void => onOpenChange(!open)}
+                onClick={popover.toggle}
             >
                 <img
                     src={optionsAsset.src}
