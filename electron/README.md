@@ -1,7 +1,7 @@
 # Electron 桌面薄壳
 
 - 职责：为相同 Next production 静态导出提供窗口、englishlearning 自定义协议和具名 preload/IPC。
-- 入口：main.ts、preload.cts；renderer-contract.ts 负责文件解析、MIME、缓存、CSP manifest 和信任 URL；media-byte-range.ts 负责本地 WAV / MP4 的单区间响应与按需字节读取。
+- 入口：main.ts、preload.cts；renderer-contract.ts 负责文件解析、MIME、缓存、CSP manifest 和信任 URL；media-byte-range.ts 负责本地 WAV／MP3／MP4 的单区间响应与按需字节读取。
 - 约束：contextIsolation/sandbox 开启、nodeIntegration 关闭；renderer 不能导入 Node/Electron。标准且 secure 协议仅信任 englishlearning://app，无其他 host/port/credentials；开发只信任 runner 创建的 127.0.0.1 HTTP origin。will-navigate、will-redirect 与新窗口受限，IPC 校验 senderFrame。
 - 扩展：新增桌面能力使用具名 preload API、参数校验和 sender 校验，不暴露任意 IPC/文件执行。
 - 验证：desktop:build 编译 production+main；单元测试验证解析/安全边界，production runtime smoke 验证实际水合/CSP/RSC/导航。
@@ -14,7 +14,7 @@ CSP script-src self 加逐HTML SHA-256；启动校验manifest与HTML内容一致
 
 ## 本地媒体进度定位
 
-WAV / MP4 分别使用 `audio/wav` / `video/mp4`。只有成功解析的这两类文件的 GET / HEAD 进入 `media-byte-range.ts`；Electron 协议与 Web 静态预览共用相同规则，无 Range 为 200，合法单区间为 206，支持显式结束、开放结束和后缀。响应的 `Accept-Ranges: bytes`、`Content-Range`、`Content-Length` 与实际字节对应；非法、多段及不可满足区间为 416 / `bytes */total` / 长度 0。HEAD 保留对应状态和长度头但无文件体。
+WAV／MP3／MP4分别使用`audio/wav`／`audio/mpeg`／`video/mp4`。只有成功解析的这三类文件的GET／HEAD进入`media-byte-range.ts`；Electron协议与Web静态预览共用相同规则，无Range为200，合法单区间为206，支持显式结束、开放结束和后缀。响应的`Accept-Ranges: bytes`、`Content-Range`、`Content-Length`与实际字节对应；非法、多段及不可满足区间为416／`bytes */total`／长度0。HEAD保留对应状态和长度头但无文件体。MP3是2026-10-20练习音效新增范围，已补源码断言，按用户要求未运行本轮测试或构建，真实解码与各端试听待验收。
 
 该分支在路径 / 真实路径和资源404检查之后执行，不改变 HTML 完整性、RSC、既有页面 HEAD、导航限制、CSP 或 bridge。生产 CDN / 静态服务器也必须提供正确 MIME 和范围响应，不能只保证下载与顺序播放；能播放但不能定位进度是未通过基础播放器验收。
 

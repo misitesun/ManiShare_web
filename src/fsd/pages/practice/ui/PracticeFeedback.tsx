@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useSyncExternalStore } from 'react'
-import { getLearningAnimation } from '../../../features/learning-settings'
+import { getLearningAnimation, learningSoundAssets } from '../../../features/learning-settings'
 import type { LearningPreferences } from '../../../features/learning-settings'
 import { createLottiePlayback } from '../../../shared/lib/animation'
+import type { SoundAudio } from '../../../shared/lib/sound-player'
 import {
     createPracticeFeedbackSoundController,
     getPracticeFeedbackAnimation,
@@ -11,9 +12,9 @@ import {
 } from '../model/practice-feedback'
 import type {
     PracticeAnimationKind,
-    PracticeFeedbackAudio,
     PracticeFeedbackEvent,
     PracticeFeedbackSoundAssets,
+    PracticeFeedbackSoundController,
 } from '../model/practice-feedback'
 
 export interface PracticeFeedbackProps {
@@ -22,11 +23,10 @@ export interface PracticeFeedbackProps {
     active?: boolean
     soundAssets?: PracticeFeedbackSoundAssets
     onStatusChange?: (message: string) => void
+    onSoundController?: (controller: PracticeFeedbackSoundController | null) => void
 }
 
-const emptySoundAssets: PracticeFeedbackSoundAssets = {}
-
-function createFeedbackAudio(): PracticeFeedbackAudio {
+function createFeedbackAudio(): SoundAudio {
     return new Audio()
 }
 
@@ -47,8 +47,9 @@ export function PracticeFeedback({
     values,
     event,
     active = true,
-    soundAssets = emptySoundAssets,
+    soundAssets = learningSoundAssets,
     onStatusChange,
+    onSoundController,
 }: PracticeFeedbackProps): null {
     const lastAnimationEventRef = useRef(-1)
     const lastSoundEventRef = useRef(-1)
@@ -64,9 +65,30 @@ export function PracticeFeedback({
         () => initialPracticeFeedbackSoundSnapshot,
     )
 
-    useEffect(() => (): void => controller.stop(), [controller])
     useEffect(() => {
-        controller.setActive(active)
+        onSoundController?.(controller)
+        return (): void => {
+            onSoundController?.(null)
+            controller.stop()
+        }
+    }, [controller, onSoundController])
+    useEffect(() => {
+        function restore(): void {
+            controller.setActive(active && document.visibilityState === 'visible')
+        }
+        function stop(): void {
+            controller.setActive(false)
+        }
+        restore()
+        document.addEventListener('visibilitychange', restore)
+        window.addEventListener('blur', stop)
+        window.addEventListener('focus', restore)
+        return (): void => {
+            document.removeEventListener('visibilitychange', restore)
+            window.removeEventListener('blur', stop)
+            window.removeEventListener('focus', restore)
+            controller.stop()
+        }
     }, [active, controller])
     useEffect(() => {
         controller.updatePreferences(values)
@@ -79,8 +101,9 @@ export function PracticeFeedback({
         }
     }, [active, controller, event, values])
     useEffect(() => {
-        onStatusChange?.(sound.message)
-    }, [onStatusChange, sound.message])
+        if (sound.phase === 'missing' || sound.phase === 'blocked' || sound.phase === 'failed')
+            onStatusChange?.(sound.message)
+    }, [onStatusChange, sound.phase, sound.message])
 
     useEffect(() => {
         if (

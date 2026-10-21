@@ -1,5 +1,36 @@
 # 练习页
 
+- 2026-10-21：用户确认单词拼写静态 UI 完成，作为单词拼读之后的第二个完成模式，代码归档并推送后从此基线开发下个模式。代码定位、静态能力和接口／验证边界见[完成快照](../../../../docs/checkpoints/2026-10-21-word-spelling-static-ui.md)；录音、评分及回放仍为全模拟，本次不运行测试或构建。
+
+- 单词拼写的答对后口语入口已装配 `features/oral-assessment` 四阶段通用弹窗。页面注入当前题目／轮次、V键、暂停、设置声纹与提示音；录音、评分、回放全部模拟。其他模式继续原演示。公共入口、取消规则与设计尺寸见[组件说明](../../features/oral-assessment/README.md)，源码审阅见[开发记录](../../../../docs/practice-oral-assessment-development.md)。本轮不执行测试、构建或项目浏览器验证，效果待用户查看。
+
+- 2026-10-21拼写单词槽稳定与音标溢出：`WordAnswerCard`的编辑器与正确态`WordCardHeading placement="slot"`叠放在同一Grid槽，默认预留98px；两态均参与占位，长词／自选字号在流式布局提前按较大内容占位，提交仅切换可见层。隐藏层同时`invisible`／`aria-hidden`／`inert`，隐藏输入及朗读按钮禁用，题内编辑器保留至切题／重练，判题与快捷键仍沿原门控。音标／释义跨题态统一锚点379／434，窄屏共用36px音标槽与19px间隔。`PracticeWordPhonetics density="spelling"`移除片段组自动滚动，改为片段换行并将24px音标设为单倍行高，防止30px片段按钮内部溢出生成竖滚动条；其他密度保留原行为。详情见[单词记录](../../../../docs/practice-word-games-development.md#2026-10-21-拼写单词区域稳定与音标滚动条修正)；补隐藏层交互／读屏回归用例但未执行，仅格式化与差异检查，未运行测试、构建或浏览器验收，PC／平板／H5及Electron效果待用户查看。
+
+- 2026-10-20拼写输入间距修正：未答／答错态移除`WordAnswerCard`旧64px上内距，`WordSpellingInput`用字号相对计算将图片下缘至第一行横线顶部固定为62px（大于50px字号自然撑高）；设计断点从卡内281px图片下缘定位，替换按整个组件高度倒推的旧锚点。窄屏补齐输入至音标7px、36px音标槽、至释义21px和底部12px的流式间距，答对／揭晓和输入行为保持。依据与边界见[单词记录](../../../../docs/practice-word-games-development.md#2026-10-20-拼写输入区间距按横线基准修正)；仅格式化和差异核对，未测试、构建或浏览器验收，PC／平板／H5及Electron实际效果待用户查看。
+
+- 2026-10-20拼写正确态单词行：`WordCardHeading`从`WordPronunciationCard`提取同一组四条虚线、绿色单词及32px圆形朗读按钮，拼读与`WordAnswerCard`拼写correct态共同消费。保留原32px／md38px、600字重、0.08em字距及字号偏好，1920基准单词行沿拼读卡内y=305，正确态音标／释义顺延到379／434；输入态、答错与揭晓保持原分支。按钮由`PracticeContent.onReadAloud`接既有朗读动作，阻断与旧题离场面禁用，未补课程音源或请求。正确态不再使用单条绿色下划线，统计、口语门控、解析和手动答案保持。仅格式化和差异核对，未运行测试、构建或浏览器验收，PC／平板／H5及Electron效果待用户查看。
+
+- 2026-10-20拼写结果区纠正：移除`WordSpellingCard`卡下的错误文字，`submitWordSpelling`完整校验后清除旧提示，不再向共用底部消息区写自定义正确／错误文案；缺音源／拒播等实际通知保持。错误字母标红、纠错、音效和统计不变。`PracticePage`仅拼写main使用纵向Flex，`WordSpellingResult`以`mt-auto`和最小上内距对齐内容区底部，保留三项常显和46px口语占位；Figma `546:31334`重新核实统计385×68@(767,896)、口语234×46@(843,813)，统计底边距底栏区域16px。高窗口释放卡下空白，窄屏／短窗口仍流式滚动；旧卡下错误提示记录由本条覆盖。仅格式化和差异核对，未测试、构建或运行时验收，PC／平板／H5及Electron待用户查看。
+
+- 2026-10-20共用交互音效：`PracticeFeedback`默认消费学习设置根入口`learningSoundAssets`，`createPracticeFeedbackSoundController`通过`shared/lib/sound-player`分离打字与结果声，去重、50ms输入限流、结果优先和生命周期清理统一处理；操作调用栈同步请求play，React同ID消费不补响。拼写仅有效编辑与完整校验发声，拼读的实际切题／再来／记住／完成复用原动作；旧卡与占位掌握／不熟不伪造反馈。原口语演示开始和固定优秀结果使用recordStart／EXCELLENT资源，不新增评分或录音。只向页面报告缺项、拒播和失败，正常声音状态不覆盖作答文案。设置试听与默认落幕／旧值迁移由feature拥有，37份资源与未执行验证见[素材清单](../../../../docs/practice-feedback-assets.md)。本轮未测试、构建或试听，各端待用户验收。
+
+- 2026-10-20拼写切题对齐解析（当前）：`WordSpellingQuestionFlip`保留前后两题作为卡牌两面，`useWordSpellingQuestionMotion`和解析的`useWordCardFlip`共用私有`word-card-flip-motion`（1000px透视／600ms／`power2.inOut`），下一题向右180°、上一题向左180°。`PracticePage`传离场快照和题内修订号，经`PracticeContent`交给`WordAnswerCard`；外壳跨题保留，新题输入／解析按新key重置。旧面仅在动画中保留，禁用提交、控制器、朗读及交互／读屏，完成后卸载；连续切题取消旧运动，重练、阻断及reduced-motion直接归正。替代下方650ms缩放回摆的旧动画及`spellingQuestionDirection`接线；统计常显、口语门控和答对不展开答案保持。只格式化与差异核对，未执行测试、构建或运行时验收，各端效果待用户查看，详见[单词记录](../../../../docs/practice-word-games-development.md#2026-10-20-拼写切题对齐解析翻面)。
+
+- 2026-10-20拼写答案显隐：`PracticePage.submitWordSpelling`答对后不再主动展开答案，保留页面聚焦以继续接收快捷键；↓展开／↑收起和现有点击命令保持，统计、黄晶及口语入口沿原正确态规则。已更新原运行时脚本预期，本轮只格式化和差异核对，未运行测试或构建，各端效果待用户查看。下方旧自动展开记录以此条为准。
+
+- 2026-10-20拼写纠错补线：用户确认“直接覆盖”和“先Backspace删除再输入”须自动跳到下一错误位。`WordSpellingInputState.wrong`保留最近提交后尚待填回的位置，`deleteWordSpellingInput`不再提前移除待改身份，`typeWordSpellingInput`填入后才清该位并寻找下一待改位置，必要时循环至前方。UI只对其中有真实输入的字母标红，空位仍遵守默写隐藏／抄写灰色提示；全部位置改过后空格／回车才重新校验。`wdmdn`的第2→4位及`wdddn`的第2→3→4位已补模型回归用例，四档音标共用；只格式化和差异核对，未运行测试、构建或浏览器验收。记录见[单词记录](../../../../docs/practice-word-games-development.md#2026-10-20-删除错字后的自动纠错定位)。
+
+- 2026-10-20拼写切题与统计（当前）：`PracticePage.move`按实际目标题号经`word-spelling-question-motion`判定方向，`PracticeContent.spellingQuestionDirection`→`WordAnswerCard.questionDirection`接私有`useWordSpellingQuestionMotion`。沿新版哇学社`Translate.vue`的650ms、1200px透视、0.92→1.02→1缩放和轻微回摆，下一题向右、上一题镜像向左；外壳切题与内层解析翻面分别控制。切题原key释放旧动画／输入，连续切题不排队，首屏／同题／设置变化／重练不触发；阻断及reduced-motion直接归正，卸载清理订阅／timeline，动画期间可继续输入。`WordSpellingResult`不再按正确态整体隐藏，三项本轮统计始终显示；仅口语按钮沿原正确态和设置门控，保留46px空槽避免位置跳动，答错提示移到卡下留白。其他模式、颜色与统计规则保持原入口。详情与未执行验证见[单词记录](../../../../docs/practice-word-games-development.md#2026-10-20-拼写切题双向翻转与统计常显)；本轮只格式化／源码／差异检查，不测试、不构建、不操作浏览器或开发服务，各端效果待用户查看。下方旧“回答中／答错／揭晓均隐藏统计”的记载仅为历史。
+
+- 2026-10-20拼写逐字输入与音标联动（当前）：用户确认采用新版哇学社的固定字母位与纠错流程，`word:spell`现由私有`WordSpellingInput`／`word-spelling-input`拥有字母、逻辑光标和错位。原始／无音标逐字短线，音节／自然拼读按显式`segment.spelling`把输入横线同步分组；本地12题补齐两套字母映射，缺失或过期映射回退整词，不从IPA猜字母。填满才校验，仅错位标红并定位首错，逐位修改跳下一错；未填满／待改错位时空格只导航，删除先清当前位置再向前定位。默写隐藏空位字形、抄写显示灰色提示，已输入／活动线沿设计绿，错误沿`danger`。
+- 接线：`WordAnswerCard`仅拼写分支接新输入；`PracticePage`→`PracticeContent.onWordSpellingController`→卡面注册统一控制器，Enter／空格／底栏同源，只有完整校验进入原会话统计、口语及黄晶。`PracticeWordPhonetics.onSegmentSelect`只在映射有效的可编辑拼写态启用定位与900ms片段高亮，默认消费者仍静态。切换提示／音标、翻面保留字母和错位，切题／重练重置；字母位采用模式内撤销／重做，真实input承接IME／剪贴板，不宣称保持公共输入的OS原生编辑历史。默写、句子及其他模式仍用`PracticeWordSlotsInput`。源码／测试文件与兼容边界见[本轮记录](../../../../docs/practice-word-games-development.md#2026-10-20-拼写逐字输入与音标联动)；仅格式化、源码及差异核对，未运行测试、lint、类型检查、构建或浏览器操作，各端效果待用户验收。下列旧整词拼写、公共反馈透传说明保留为历史，不作为当前拼写输入依据。
+
+- 2026-10-20拼写设置与输入关联补线：参考用户提供的新哇学社`/Users/sly/Downloads/新哇学社/waxueshe-client-web-main`的`WordSwitch.vue`、`Phonetic/InputMode.vue`和`InputAnswer`。`wordOptions.copy`仅在`word:spell`透传为`WordAnswerCard.showWordHint`→`PracticeWordSlotsInput.showWordHint`，false默写隐藏提示，true抄写显示尚未录入的灰色字母；默认false，默写及其他真实输入消费者保持原行为。提示层独立于原生input和反馈，按码点派生剩余字符，测宽保留真实输入大小写，输入层不重挂、不回填、不移动原生选区。切换沿原局部缓存保存copy值。
+- 拼写四档音标直接控制正面展示：`original`对应新版`wordReadMode=0`完整默认音标，`syllables`对应1音标拆解，`phonics`对应2自然拼读，`none`对应3隐藏；继续消费现有显式模拟分组、缺组回退完整IPA，保留当前标签／顺序和绿色主题。拼写不再被全局`showPhonetics/showAnswerPhonetics`覆盖，其他模式的全局门控保持。没有新增音源、预加载、接口、资源或存储键；已补提示、反馈、Unicode及设置透传用例但按用户要求不执行测试／构建，效果和真机兼容待用户查看。
+
+- 2026-10-20单词拼写四项精修：`WordAnswerCard`仅拼写分支增加解析翻面，复用`useWordCardFlip`／`WordPronunciationAnalysis`及当前题本地例句；正面输入在翻面期间不卸载，返回／Esc翻回，原题号／重练key复位。文档、查词、不熟三图标与拼读同素材、PC32px槽／14px边距间距，H5触控40px；`WordDictionaryLink spelling`只扩展该入口的触控密度，拼读与默写保持原入口。笔记组件保留，不另设入口；无例句显示原空态，不熟仍提示未保存。
+- 拼写正确态口语继续由`canShowQuickOral`和`practice.oral`管理点击／V键及设置开关；`WordSpellingResult`改用句子模式原28px麦克风、234×46渐变胶囊。`WordSpellingCrystals`仅拼写工具栏右侧显示原稿24px黄晶和本轮数值，`getWordSpellingCrystals`按有效正确提交数×10派生，切题保留、重复提交不累加、重练／换模式清零，无账户或存储写入。默认原始音标排首位；无效／缺失缓存回默认，合法用户选择继续保留。颜色由完整dark/light的`practice-crystal`提供，其他原配色保持。设计基准及验证范围见[单词记录](../../../../docs/practice-word-games-development.md#2026-10-20-单词拼写四项精修)；本轮仅格式化和差异检查，未运行测试、lint、类型检查、构建或浏览器验收，PC／平板／H5及Electron效果待用户查看。
+
 - 2026-10-20完成检查点：用户已确认`word:pronounce`单词拼读静态 UI 对接完成，并授权推送 Git、记录当前代码。实现范围、保留组件、待接音源／不熟列表接口与本轮未执行验证见[代码快照](../../../../docs/checkpoints/2026-10-20-word-pronunciation-static-ui.md)；其他模式不因本次归档标为完成。
 
 - 2026-10-20查词与不熟语义：拼读正面放大镜和背面单词旁图标共用`WordDictionaryLink`／`word-dictionary`，原生`target="_blank"`打开当前英文的欧路词条，正文编码为单个路径段、空词／无效字符不导航，禁用卡不进入Tab序列；`noopener noreferrer`隔离opener及referrer。Web为新标签，Electron由主进程词条白名单交给系统浏览器；无预取或词典API请求。右下加号已标为“不熟”并提示当前未保存，真实接口接入归`docs/todo.md`的`PRACTICE-UNFAMILIAR-LIST`，后续与底栏不熟共用业务动作；不修改再来／记住队列。其他单词模式的原查词占位不在本次范围。已补地址／禁用与宿主边界用例，本轮按要求仅格式化和差异检查，未执行测试、lint、类型检查、构建或浏览器／Electron实测，PC／平板／H5外链效果待用户查看。
@@ -114,4 +145,4 @@
 - 沉浸听力本轮验证：668项测试、format/lint、生产构建275份业务HTML及Electron构建通过；生产Web/Electron专项通过基准双主题、真实125%/150%/200%缩放、颜色／亮度分层、独立显隐、原生笔记／口语和默认消费者回归，业务／权限／资源／控制台异常均为0。PC基准与缩放图已人工查看。normal成分行盒实测22.5px，中文前间距按52.5px校准；不是将文字框高当行高。390/768仅自动几何，平板/H5视觉及真机仍待用户验收，未宣称全站runtime:smoke通过。
 
 - word:spell公共依赖（2026-10-20）：答案Portal挂在练习根容器，层级55高于工具栏30／非模态菜单50，低于模态60；开合不修改输入、选区或题态。仅word:spell显式开启输入聚焦命令，命中拦截且长按只执行一次，保留IME／229／原生编辑／普通编辑器隔离及其他模式策略。
-- 公共PracticeWordSlotsInput新增可选feedback，结构为完整value＋按槽index的码点states（correct／incorrect／missing／extra／pending）；不传保持原行为。缺字只显示占位错误线、多字保留原文；Range跨文本节点累计UTF-16并排除缺字占位，保留原生编辑和手动滚动。PracticeContent.wordSpellingFeedback→WordAnswerCard.feedback→公共输入仅在spell透传。比较、提交快照、局部纠错及真实数据接线仍待实现，契约与调用方式见[本轮公共说明](../../../../docs/practice-page-development.md#wordspell-公共依赖契约2026-10-20)。本轮678项测试、format／lint／生产build／Electron主进程编译及相关生产Web／Electron公共专项、8消费者回归通过；答案／草稿动画子检查双端通过。旧面板总专项在学习内容关闭按钮历史选择器处失败，未记为通过。PC基准、双主题及真实缩放图已查看；平板／H5视觉和真机待用户验收。未提交／推送。
+- 公共输入反馈历史：`PracticeWordSlotsInput`保留可选feedback，结构为完整value＋按槽index的码点states（correct／incorrect／missing／extra／pending）；不传保持原行为。缺字只显示占位错误线、多字保留原文；Range跨文本节点累计UTF-16并排除缺字占位，保留原生编辑和手动滚动。原`PracticeContent.wordSpellingFeedback→WordAnswerCard.feedback`透传现已由拼写私有状态机替代，公共feedback本身保留。历史契约与验证见[公共说明](../../../../docs/practice-page-development.md#wordspell-公共依赖契约2026-10-20)：当时678项测试、format／lint／生产build／Electron主进程编译及相关生产Web／Electron公共专项、8消费者回归通过；答案／草稿动画子检查双端通过，旧面板总专项在学习内容关闭按钮历史选择器处失败。这些结果不覆盖本轮逐字拼写实现，平板／H5视觉和真机待用户验收。

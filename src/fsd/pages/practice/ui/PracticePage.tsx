@@ -4,6 +4,7 @@ import type { CSSProperties, ReactElement } from 'react'
 import Link from 'next/link'
 import {
     LearningSettingsEditor,
+    LearningAudioWave,
     PracticeBackgroundSurface,
     getPreviewAppearance,
     useLearningSettingsSnapshot,
@@ -11,6 +12,8 @@ import {
     shortcutError,
 } from '../../../features/learning-settings'
 import type { SettingsTab } from '../../../features/learning-settings'
+import { OralAssessmentDialog, useOralAssessmentDemo } from '../../../features/oral-assessment'
+import type { OralAssessmentTarget } from '../../../features/oral-assessment'
 import { TldButton } from '../../../shared/ui/tld-button'
 import { TldDialog, TldDialogMotionProvider } from '../../../shared/ui/tld-dialog'
 import { notification } from '../../../shared/notification'
@@ -32,13 +35,19 @@ import type {
     PracticeRouteResult,
     ResolvedPracticeView,
 } from '../model/practice-demo'
-import type { PracticeFeedbackEvent } from '../model/practice-feedback'
+import type {
+    PracticeFeedbackEvent,
+    PracticeFeedbackSoundController,
+} from '../model/practice-feedback'
 import { practiceMediaSource, stopPracticeMedia } from '../model/media-controller'
 import type { PracticeMediaController } from '../model/media-controller'
 import { canShowQuickOral, isPracticeAnswerVisible } from '../model/practice-visibility'
 import { PracticeContent } from './PracticeContent'
 import { WordSpellingResult } from './WordSpellingResult'
-import { judgeWordSpelling } from '../model/word-spelling'
+import { getWordSpellingCrystals, judgeWordSpelling } from '../model/word-spelling'
+import type { WordSpellingInputController } from '../model/word-spelling-input'
+import { getWordSpellingQuestionDirection } from '../model/word-spelling-question-motion'
+import type { WordSpellingQuestionTransition } from '../model/word-spelling-question-motion'
 import { WordPracticeToolbar } from './WordPracticeToolbar'
 import { isWordToolbarMode } from '../model/word-toolbar-options'
 import type { WordToolbarOptions } from '../model/word-toolbar-options'
@@ -246,6 +255,9 @@ function PracticeSession({
     const appearance = getPreviewAppearance(values)
     const sourceQuestions = getDemoQuestions(demo.family, mode)
     const isWordPronunciation = demo.family === 'word' && mode === 'pronounce'
+    const isWordSpelling = demo.family === 'word' && mode === 'spell'
+    const [spellingQuestionTransition, setSpellingQuestionTransition] =
+        useState<WordSpellingQuestionTransition | null>(null)
     const [answerSession, dispatch] = useReducer(reducePracticeSession, initialPracticeSession)
     const [wordRemember, setWordRemember] = useState(() =>
         createWordRememberSession(sourceQuestions.map((item) => item.id)),
@@ -291,6 +303,20 @@ function PracticeSession({
     const [panelVisible, setPanelVisible] = useState(demo.family === 'phonetics')
     const rootRef = useRef<HTMLDivElement>(null)
     const wordDeck = useRef<WordPronunciationDeckController | null>(null)
+    const spellingInput = useRef<WordSpellingInputController | null>(null)
+    const feedbackSound = useRef<PracticeFeedbackSoundController | null>(null)
+    const registerFeedbackSound = useCallback(
+        (controller: PracticeFeedbackSoundController | null): void => {
+            feedbackSound.current = controller
+        },
+        [],
+    )
+    const registerSpellingInput = useCallback(
+        (controller: WordSpellingInputController | null): void => {
+            spellingInput.current = controller
+        },
+        [],
+    )
     const [wordDeckBusy, setWordDeckBusy] = useState(false)
     const registerWordDeck = useCallback(
         (controller: WordPronunciationDeckController | null): void => {
@@ -310,7 +336,7 @@ function PracticeSession({
         timer.pause()
         mediaController.current?.pause()
         readingAudio.pause()
-        oral.pause()
+        activeOral.pause()
         setEvent(undefined)
         setPauseClosing(false)
     }, rootRef)
@@ -318,7 +344,26 @@ function PracticeSession({
         blocked: pause.paused || (overlay !== null && overlay !== 'oral'),
         isPaused: pause.isPaused,
         onNotice: setMessage,
+        onFeedback: (kind): void => {
+            if (isWordSpelling || isWordPronunciation)
+                emit(kind, kind === 'evaluationComplete' ? 'EXCELLENT' : undefined)
+        },
     })
+    const spellingOralQuestion = sourceQuestions[session.index] ?? sourceQuestions[0]
+    const spellingOralTarget: OralAssessmentTarget = {
+        id: `spell:${spellingOralQuestion?.id ?? 'empty'}:${resetRevision}`,
+        text: spellingOralQuestion?.english ?? '',
+        translation: spellingOralQuestion?.translation ?? '',
+        kind: 'word',
+    }
+    const spellingOral = useOralAssessmentDemo({
+        active: isWordSpelling && overlay === 'oral',
+        blocked: pause.paused || (overlay !== null && overlay !== 'oral'),
+        isPaused: pause.isPaused,
+        target: spellingOralTarget,
+        onFeedback: (kind, rating): void => emit(kind, rating),
+    })
+    const activeOral = isWordSpelling ? spellingOral : oral
     const [event, setEvent] = useState<PracticeFeedbackEvent>()
     const eventSequence = useRef(0)
     const questions = isWordPronunciation
@@ -434,7 +479,7 @@ function PracticeSession({
         index: session.index,
         total: questions.length,
         values,
-        oralStage: oral.stage,
+        oralStage: activeOral.stage,
         panelVisible,
     })
     const shortcutConflicts = shortcutFields.flatMap((field) => {
@@ -447,7 +492,7 @@ function PracticeSession({
             family: demo.family,
             mode,
             phase: session.phase,
-            oralStage: oral.stage,
+            oralStage: activeOral.stage,
             hasTarget: Boolean(question?.english.trim()),
             showEvaluation: values.showEvaluation,
             panelVisible,
@@ -473,21 +518,32 @@ function PracticeSession({
                 本地示例暂无题目。<TldButton onClick={onCatalog}>重新选择</TldButton>
             </main>
         )
-    function emit(kind: PracticeFeedbackEvent['kind']): void {
+    function emit(
+        kind: PracticeFeedbackEvent['kind'],
+        rating?: PracticeFeedbackEvent['rating'],
+    ): void {
         eventSequence.current += 1
-        setEvent({ id: eventSequence.current, kind })
+        const nextEvent: PracticeFeedbackEvent = {
+            id: eventSequence.current,
+            kind,
+            ...(rating ? { rating } : {}),
+        }
+        // 在用户操作调用栈内请求播放；React事件消费仍保留并按ID去重。
+        feedbackSound.current?.consume(nextEvent, values)
+        setEvent(nextEvent)
     }
     function open(next: Overlay): void {
+        feedbackSound.current?.stop()
         cancelRemember()
         wordDeck.current?.cancel()
         if (next === 'exit') {
             timer.pause()
             mediaController.current?.pause()
             readingAudio.pause()
-            oral.pause()
+            activeOral.pause()
         } else stopPracticeMedia()
         setEvent(undefined)
-        if (next === 'oral') oral.reset()
+        if (next === 'oral') activeOral.reset()
         setOverlay(next)
     }
     function requestExit(action: PracticeExitAction): void {
@@ -495,10 +551,23 @@ function PracticeSession({
     }
     function move(delta: number): void {
         if (pendingRemember.current !== null) return
-        if (Math.min(questions.length - 1, Math.max(0, session.index + delta)) === session.index)
-            return
+        const nextIndex = Math.min(questions.length - 1, Math.max(0, session.index + delta))
+        if (nextIndex === session.index) return
+        if (isWordSpelling && question) {
+            const direction = getWordSpellingQuestionDirection(session.index, nextIndex)
+            if (direction)
+                setSpellingQuestionTransition({
+                    direction,
+                    previous: {
+                        key: `${question.id}:${resetRevision}`,
+                        question,
+                        phase: session.phase,
+                        input: session.input,
+                    },
+                })
+        }
         stopPracticeMedia()
-        oral.reset()
+        activeOral.reset()
         setPanelVisible(demo.family === 'phonetics')
         setResetRevision((revision) => revision + 1)
         setMessage('')
@@ -509,7 +578,9 @@ function PracticeSession({
         emit('questionChange')
     }
     function reset(): void {
+        feedbackSound.current?.stop()
         cancelRemember()
+        setSpellingQuestionTransition(null)
         wordDeck.current?.reset()
         stopPracticeMedia()
         timer.reset()
@@ -522,7 +593,7 @@ function PracticeSession({
             ),
         )
         if (isWordPronunciation) setWordOrderRevision((revision) => revision + 1)
-        oral.reset()
+        activeOral.reset()
         setPanelVisible(demo.family === 'phonetics')
         setMessage('')
         setResetRevision((revision) => revision + 1)
@@ -535,7 +606,7 @@ function PracticeSession({
             cancelRemember()
             wordDeck.current?.cancel()
             stopPracticeMedia()
-            oral.reset()
+            activeOral.reset()
             dispatch({ type: 'reset' })
             setPanelVisible(false)
             setMessage('')
@@ -570,7 +641,7 @@ function PracticeSession({
     }
     function finishSession(): void {
         stopPracticeMedia()
-        oral.reset()
+        activeOral.reset()
         setPanelVisible(false)
         setMessage('')
         dispatch({ type: 'finish' })
@@ -589,12 +660,13 @@ function PracticeSession({
             return
         wordDeck.current?.cancel()
         stopPracticeMedia()
-        oral.reset()
+        activeOral.reset()
         setEvent(undefined)
         setMessage('')
         const action: WordRememberAction = { questionId: question.id }
         pendingRemember.current = { action, stage: 'feedback' }
         setRememberAction(action)
+        emit('wordRemember')
     }
     function retryCurrentWord(): void {
         if (!isWordPronunciation) {
@@ -611,6 +683,7 @@ function PracticeSession({
             return
         if (questions.length <= 1) {
             dispatch({ type: 'phase', phase: 'answering' })
+            emit('wordRetry')
             return
         }
         const updated = retryWord(wordRemember, question.id)
@@ -618,12 +691,12 @@ function PracticeSession({
         const started = wordDeck.current?.requeue((): void => {
             setWordRemember(updated)
             dispatch({ type: 'reset' })
-            oral.reset()
+            activeOral.reset()
             setMessage('')
             setResetRevision((revision) => revision + 1)
-            emit('questionChange')
         })
         if (!started) return
+        emit('wordRetry')
     }
     function completeRememberFeedback(): void {
         const action = rememberAction
@@ -673,21 +746,22 @@ function PracticeSession({
             family: demo.family,
             mode,
             phase: session.phase,
-            oralStage: oral.stage,
+            oralStage: activeOral.stage,
             quickOral: overlay === 'oral',
             typingComplete: session.input === question.english,
         })
         if (action === 'next') next()
-        else if (action === 'oral-start') oral.start()
-        else if (action === 'oral-stop') oral.stopAndEvaluate()
+        else if (action === 'oral-start') activeOral.start()
+        else if (action === 'oral-stop') activeOral.stopAndEvaluate()
         else if (action === 'oral-complete') {
-            oral.reset()
+            activeOral.reset()
+            if (isWordSpelling) feedbackSound.current?.stop()
             setOverlay(null)
         } else if (action === 'reveal') dispatch({ type: 'phase', phase: 'revealed' })
         else if (action === 'typing-incomplete') setMessage('请先按示例完成输入，再确认。')
         else if (action === 'submit') {
             if (demo.family === 'word' && mode === 'spell') {
-                submitWordSpelling(session.input)
+                spellingInput.current?.submit()
                 return
             }
             if (
@@ -714,9 +788,8 @@ function PracticeSession({
             target: question.english,
             ignoreCase: values.ignoreCase,
         })
-        setMessage(judgment === 'correct' ? '拼写正确。' : '拼写不正确，请修改后重新提交。')
+        setMessage('')
         if (judgment === 'correct') {
-            setPanelVisible(true)
             rootRef.current?.focus({ preventScroll: true })
         }
         emit(judgment)
@@ -751,7 +824,7 @@ function PracticeSession({
         }
         if (command === 'practice.contextual') {
             if (overlay === 'oral' || mode === 'oral') {
-                if (oral.stage === 'result') oral.replay()
+                if (activeOral.stage === 'result') activeOral.replay()
                 else primary()
             } else if (mode === 'check' || (demo.family === 'guess' && mode === 'guess')) primary()
             else if (isPracticeAnswerVisible(session.phase) || demo.family === 'picture-reader')
@@ -767,7 +840,7 @@ function PracticeSession({
         }
         if (command === 'practice.oral') {
             if (overlay === 'oral' || mode === 'oral') {
-                if (oral.stage === 'result') oral.rerecord()
+                if (activeOral.stage === 'result') activeOral.rerecord()
                 else primary()
             } else if (
                 canShowQuickOral(
@@ -837,7 +910,7 @@ function PracticeSession({
             style={style}
             data-practice-phase={session.phase}
             data-practice-index={session.index}
-            data-practice-oral-stage={oral.stage}
+            data-practice-oral-stage={activeOral.stage}
             data-practice-paused={pause.paused}
             data-practice-pause-enabled={PRACTICE_PAUSE_ENABLED}
         >
@@ -936,7 +1009,11 @@ function PracticeSession({
                     <main
                         aria-label="练习内容"
                         data-toolbar-ready={toolbarPreferences.ready}
-                        className="relative min-w-0 flex-1"
+                        className={
+                            isWordSpelling
+                                ? 'relative flex min-w-0 flex-1 flex-col'
+                                : 'relative min-w-0 flex-1'
+                        }
                     >
                         <PracticeTimerContext.Provider value={timer}>
                             <fieldset
@@ -949,6 +1026,9 @@ function PracticeSession({
                                     <WordPracticeToolbar
                                         mode={wordMode}
                                         values={wordOptions}
+                                        crystals={getWordSpellingCrystals(
+                                            session.spellingStatistics,
+                                        )}
                                         onChange={updateWordOptions}
                                         onNotice={setMessage}
                                     />
@@ -992,7 +1072,9 @@ function PracticeSession({
                             key={
                                 demo.family === 'word' && mode === 'pronounce'
                                     ? `word-pronunciation:${wordOrderRevision}`
-                                    : `${question.id}:${resetRevision}`
+                                    : isWordSpelling
+                                      ? 'word-spelling'
+                                      : `${question.id}:${resetRevision}`
                             }
                             demo={demo}
                             mode={mode}
@@ -1032,8 +1114,14 @@ function PracticeSession({
                                 if (direction === 'next') advanceQuestion()
                                 else move(-1)
                             }}
-                            onInput={(value): void => dispatch({ type: 'input', value })}
+                            onInput={(value): void => {
+                                dispatch({ type: 'input', value })
+                                if (isWordSpelling) emit('typing')
+                            }}
                             onWordSpellingSubmit={submitWordSpelling}
+                            onWordSpellingController={registerSpellingInput}
+                            spellingQuestionRevision={resetRevision}
+                            spellingQuestionTransition={spellingQuestionTransition}
                             onBlock={(id): void => dispatch({ type: 'block', id })}
                             onNote={(id): void => {
                                 setNoteTarget(id)
@@ -1061,21 +1149,19 @@ function PracticeSession({
                             onReadAloud={readAloud}
                             reading={readingView}
                         />
-                        {demo.family === 'word' &&
-                            mode === 'spell' &&
-                            session.phase === 'correct' && (
-                                <WordSpellingResult
-                                    statistics={session.spellingStatistics}
-                                    oralEnabled={canShowQuickOral(
-                                        demo.family,
-                                        mode,
-                                        session.phase,
-                                        Boolean(question.english.trim()),
-                                        values.showEvaluation,
-                                    )}
-                                    onOral={(): void => executeCommand('practice.oral')}
-                                />
-                            )}
+                        {isWordSpelling && (
+                            <WordSpellingResult
+                                statistics={session.spellingStatistics}
+                                oralEnabled={canShowQuickOral(
+                                    demo.family,
+                                    mode,
+                                    session.phase,
+                                    Boolean(question.english.trim()),
+                                    values.showEvaluation,
+                                )}
+                                onOral={(): void => executeCommand('practice.oral')}
+                            />
+                        )}
                         {!(demo.family === 'word' && mode === 'spell') &&
                             !(demo.family === 'sentence' && mode === 'listen') &&
                             canShowQuickOral(
@@ -1134,7 +1220,10 @@ function PracticeSession({
                 <PracticeFeedback
                     values={values}
                     {...(event ? { event } : {})}
-                    active={!pause.paused && (!blocked || overlay === 'finish')}
+                    active={
+                        !pause.paused && (!blocked || overlay === 'finish' || overlay === 'oral')
+                    }
+                    onSoundController={registerFeedbackSound}
                     onStatusChange={setMessage}
                 />
             </PracticeBackgroundSurface>
@@ -1142,7 +1231,7 @@ function PracticeSession({
                 open={overlay === 'settings'}
                 onOpenChange={(value): void => {
                     if (!value) {
-                        if (overlay === 'oral') oral.reset()
+                        if (overlay === 'oral') activeOral.reset()
                         if (overlay === 'finish') onCatalog()
                         setOverlay(null)
                     }
@@ -1169,7 +1258,7 @@ function PracticeSession({
                     }
                     onOpenChange={(value): void => {
                         if (!value) {
-                            if (overlay === 'oral') oral.reset()
+                            if (overlay === 'oral') activeOral.reset()
                             setOverlay(null)
                         }
                     }}
@@ -1240,13 +1329,14 @@ function PracticeSession({
                     overlay !== 'report' &&
                     overlay !== 'finish' &&
                     overlay !== 'exit' &&
+                    !(overlay === 'oral' && isWordSpelling) &&
                     !(overlay === 'note' && isWordPronunciation) &&
                     !(overlay === 'content' && usesPracticeContentDialog(demo.family)) &&
                     !(overlay === 'mode' && isSelectablePracticeFamily(demo.family))
                 }
                 onOpenChange={(value): void => {
                     if (!value) {
-                        if (overlay === 'oral') oral.reset()
+                        if (overlay === 'oral') activeOral.reset()
                         setOverlay(null)
                     }
                 }}
@@ -1336,19 +1426,40 @@ function PracticeSession({
                         <TldButton onClick={reset}>确认重置</TldButton>
                     </div>
                 )}
-                {overlay === 'oral' && (
+                {overlay === 'oral' && !isWordSpelling && (
                     <OralDemoPanel
                         waveStyle={values.recordingWave}
                         controller={oral}
                         text={question.english}
                         translation={question.translation}
                         onClose={(): void => {
-                            oral.reset()
+                            activeOral.reset()
                             setOverlay(null)
                         }}
                     />
                 )}
             </TldDialog>
+            <OralAssessmentDialog
+                open={isWordSpelling && overlay === 'oral'}
+                target={spellingOralTarget}
+                controller={spellingOral}
+                onOpenChange={(value): void => {
+                    if (!value) {
+                        spellingOral.reset()
+                        feedbackSound.current?.stop()
+                        setOverlay(null)
+                    }
+                }}
+                wave={
+                    <LearningAudioWave
+                        style={spellingOral.playing ? values.readingWave : values.recordingWave}
+                        active={
+                            !spellingOral.blocked &&
+                            (spellingOral.stage === 'recording' || spellingOral.playing)
+                        }
+                    />
+                }
+            />
             <PracticePauseDialog
                 open={pause.paused && !pauseClosing}
                 onContinue={(): void => {

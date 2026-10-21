@@ -3,6 +3,8 @@ export type WordPhoneticMode = 'original' | 'syllables' | 'phonics' | 'none'
 export interface WordPhoneticSegment {
     readonly id: string
     readonly ipa: string
+    /** 发音对应的显式字母片段；缺失时输入区回退整词，不从IPA猜字母。 */
+    readonly spelling?: string
 }
 
 export interface WordPhoneticGroup {

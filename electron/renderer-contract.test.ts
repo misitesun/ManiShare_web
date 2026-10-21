@@ -27,6 +27,7 @@ test('static resolver separates directory pages, query-bearing RSC and missing r
             '_next/static/hash.js',
             'favicon.svg',
             'technical-tone.wav',
+            'typing.mp3',
             'technical-video.mp4',
         ])
             writeFileSync(join(root, file), file)
@@ -38,6 +39,10 @@ test('static resolver separates directory pages, query-bearing RSC and missing r
             resolveRendererFile(root, 'englishlearning://app/technical-video.mp4').contentType,
             'video/mp4',
         )
+        const sound = resolveRendererFile(root, 'englishlearning://app/typing.mp3')
+        assert.equal(sound.contentType, 'audio/mpeg')
+        assert.equal(sound.status, 200)
+        assert.equal(supportsMediaByteRanges(sound.contentType), true)
         for (const route of ['/notes/', '/notes'])
             assert.equal(
                 resolveRendererFile(root, 'englishlearning://app' + route).key,

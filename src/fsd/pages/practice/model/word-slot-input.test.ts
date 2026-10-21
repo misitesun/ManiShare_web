@@ -5,6 +5,7 @@ import {
     getWordSlotCharacters,
     getWordSlotTextPosition,
     getWordSlotPlaceholder,
+    getWordSlotHint,
     getWordSlotSelection,
     getWordSlotView,
     getWordSlotVisibleCaret,
@@ -279,6 +280,17 @@ test('占位测宽使用已输入小写与目标剩余部分，长词和超长�
     assert.equal(getWordSlotPlaceholder(longWord, 'SUPER'), longWord.toLowerCase())
     assert.equal(getWordSlotView('Hi', longWord)[0]?.value, longWord)
     assert.equal(getWordSlotPlaceholder('', 'UNCHANGED'), 'unchanged')
+})
+
+test('抄写提示只派生剩余字符，错误和超长原值不回填，Unicode字符保持完整', (): void => {
+    assert.equal(getWordSlotHint('Apple', ''), 'apple')
+    assert.equal(getWordSlotHint('Apple', 'AP'), 'ple')
+    assert.equal(getWordSlotHint('Apple', 'xx'), 'ple')
+    assert.equal(getWordSlotHint('Apple', 'APPLES'), '')
+    assert.equal(getWordSlotHint('', 'UNCHANGED'), '')
+    assert.equal(getWordSlotHint('😀Cat', '😀'), 'cat')
+    assert.equal(getWordSlotHint('😀Cat', 'x'), 'cat')
+    assert.equal(getWordSlotHint('İ', 'İ'), '')
 })
 
 test('原生选区定位按单个空白分词，粘贴、替换后的值直接派生而不归一化', (): void => {

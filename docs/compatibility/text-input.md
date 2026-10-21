@@ -1,5 +1,7 @@
 # 练习文本输入与原生编辑历史
 
+- **2026-10-20当前例外：单词拼写。** 用户确认按新版哇学社的固定字母位与纠错流程重做`word:spell`，其入口现为`WordSpellingInput`／`word-spelling-input`。以下整词编辑和原生Undo契约继续约束`PracticeWordSlotsInput`及其他消费者；历史拼写的末词提交／公共feedback透传记录不再代表当前拼写输入。新输入仍用真实input接收原生键盘、剪贴板和组合缓冲，组合期间不判题或移动选区，结束后只接收ASCII字母；不使用全局字符兜底、execCommand或合成输入事件。字母位与逻辑光标由模式模型拥有，真实缓冲只含已填字母，字母更新后会在非组合期把原生光标移到缓冲末尾；此行为有意区别于下方整词原生编辑路径。Ctrl／Command+Z、Y／Shift+Z使用最多100次模式内历史恢复字母／错位／逻辑光标，不回滚会话已计提交，不冒称与OS原生Undo等价。切换提示／音标及翻面保留字母，切题／重练释放模型；其他模式不引入此例外。仅补模型和SSR用例、定向格式化／差异核对，未运行测试、构建或浏览器操作；真实IME、软键盘、剪贴板、Web／Electron及PC／平板／H5仍待用户验收。详见[单词实施记录](../practice-word-games-development.md#2026-10-20-拼写逐字输入与音标联动)。
+
 - 适用范围：`pages/practice` 的整词可视槽、真实答案 input、词槽点击和原生撤销/输入法；不是通用富文本编辑器或判题策略。
 - 已确认现象：2026-10-19 Electron 43 的隔离原生输入探针中，先原生录入 `brush` 再通过 `input.value='brush '` 补定位空格，Undo 无法撤回原有录入。原生录入路径能够正常撤回。因此“完整值未丢失”不能替代编辑历史验收；React 受控值在原生事件之外被程序改写也须避免。
 - 唯一入口：`src/fsd/pages/practice/ui/PracticeWordSlotsInput.tsx` 接收完整原生字符串；`model/word-slot-input.ts` 只派生词槽、测宽占位和 UTF-16 选区。`TypingKeyboard`只读原生输入与物理按键，不生成文字。

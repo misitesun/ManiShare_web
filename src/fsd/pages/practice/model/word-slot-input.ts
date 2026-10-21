@@ -176,6 +176,11 @@ export function getWordSlotPlaceholder(target: string, value: string): string {
     return value.toLowerCase() + target.toLowerCase().slice(value.length)
 }
 
+/** 抄写仅提示尚未录入的目标字符；不校正原值，也不把提示写入原生输入。 */
+export function getWordSlotHint(target: string, value: string): string {
+    return Array.from(target).slice(Array.from(value).length).join('').toLowerCase()
+}
+
 /** 显示层只剥离实际出现的目标标点，原生 UTF-16 选区映射回可见词内位置。 */
 export function getWordSlotVisibleCaret(value: string, caret: number, slot: WordSlotView): number {
     const nativeWord = value.slice(slot.start, slot.end)

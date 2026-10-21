@@ -1,5 +1,10 @@
 # Tailwind 与全局主题
 
+- 口语评测提示新增 `oral-action`：dark 对齐原稿 `#00DE77`，light 使用可读绿色。仅表示录音操作提示；弹窗底色、边框、正文和分数沿用已有语义 token，业务组件不写原始色值。
+- 口语按钮扩散层使用 `oral-record`／`oral-play`，取原 PNG 中心的 `#00DE77`／`#0090DE`；两个主题均保持图形原色，区别于辅助文字的 `oral-action`。只影响口语按钮，默认不显示外圈，录音／播放中才显示水波；没有新增全局 keyframe 或改变其他消费者。
+
+- 单词拼写右上角本轮黄晶使用新增`practice-crystal`语义色：dark按Figma `1608:7632`取#FFBF1F，light复用当前主题深黄`warning`（#AD7100），仅`pages/practice/ui/WordSpellingCrystals`消费。不随练习正文／答题色改变，不修改其他主题色或账户余额；本轮未执行浏览器配色验收。
+
 - 练习笔记侧栏复用`dialog-border`五层渐变、`dialog-surface/accent`、`foreground/hint`及`accent-green`；编辑框为绿色70%描边。新增`button-solid-disabled`：dark来自Figma空输入态的#58BF8D，light以#A3D4BA配合现有深绿按钮适配，仅`TldButton note-action + solid`显式消费。笔记控件不消费练习答题色偏好，dark/light均完整注册；未运行本轮测试、构建或PC视觉验收。
 
 - 退出练习使用`practice-exit-home/course`及对应`-border`四个语义色。dark来自Figma `546:32006/32007` 的两卡填充/描边，light以品牌色与现有surface混合适配。仅退出弹窗显式消费，图片与箭头使用原稿本地素材，白色圆形箭头槽复用media-foreground，不改变其他练习或主题默认值。

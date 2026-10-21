@@ -9,6 +9,30 @@ import { notification } from '../../../shared/notification'
 import { defaultPreferences } from './preferences'
 import { restoreLearningPreferences, useLearningPreferences } from './useLearningPreferences'
 
+test('历史完成音色仅迁移至落幕并回写一次，保留音量和其他设置', (context): void => {
+    let cached: unknown = {
+        version: 1,
+        values: {
+            completionTone: '章节完成音效1',
+            completionVolume: 47,
+            typingTone: '跳音',
+            correctSound: false,
+        },
+    }
+    context.mock.method(storage, 'get', (): unknown => cached)
+    const write = context.mock.method(storage, 'set', (_key: string, value: unknown): void => {
+        cached = value
+    })
+    const restored = restoreLearningPreferences()
+    assert.equal(restored.values.completionTone, '落幕（默认）')
+    assert.equal(restored.values.completionVolume, 47)
+    assert.equal(restored.values.typingTone, '跳音')
+    assert.equal(restored.values.correctSound, false)
+    assert.equal(restored.saveError, false)
+    assert.deepEqual(restoreLearningPreferences(), restored)
+    assert.equal(write.mock.callCount(), 1)
+})
+
 test('SSR首帧使用确定Shift默认，不读写缓存或弹存储错误', (context): void => {
     const get = context.mock.method(storage, 'get', (): never => assert.fail('SSR不得读取缓存'))
     const set = context.mock.method(storage, 'set', (): never => assert.fail('SSR不得写入缓存'))

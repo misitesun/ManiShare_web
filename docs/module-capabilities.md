@@ -1,5 +1,9 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- 通用模拟口语评测：`features/oral-assessment` 对外提供四阶段弹窗、目标／结果契约与可取消控制器，首个消费者为单词拼写答对后入口。页面注入设置声纹和现有提示音，不横向依赖其他 feature；不采集麦克风、不请求评分、不生成录音。Figma资源和属性已读取，状态用例已补但未执行；PC、平板、H5待用户验收。见[源码与范围记录](practice-oral-assessment-development.md)。
+
+- 练习共用音效：`features/learning-settings`持有37份原始本地声音及公开注册表／设置试听，`shared/lib/sound-player`提供按需创建、可复用短音效、代次隔离和清理；练习通过feature根入口消费，设置不反向导入page。四组音色／音量与切题／评价开关沿原v1偏好，已删除旧完成音色并迁移到默认落幕。首批完整接线为单词拼读／拼写，公共切题／完成事件沿同一入口可复用。MP3经现有Web／Electron resolver返回audio/mpeg及单区间，不新增IPC、权限、依赖或外部请求。回归用例已补但按用户要求未执行测试、构建或试听，细节见[素材记录](practice-feedback-assets.md)。
+
 - 单词拼读第三方查词：页面私有`word-dictionary`／`WordDictionaryLink`统一正面搜索与解析背面图标，原生外链打开当前单词的欧路页面；无嵌入、抓取或额外词典API请求。Electron的`dictionary-navigation`只批准可信renderer的欧路词条链接交给系统浏览器，其余新窗口及主窗口外站导航继续拒绝，不新增preload／IPC或依赖。加号“不熟”保存只登记到项目待办，等正式接口接入；本轮未运行测试／构建或外链运行时验收。
 
 - 单词卡解析：`pages/practice`内部`WordPronunciationAnalysis`／`useWordCardFlip`提供同卡Y轴翻面、返回、当前词释义和双语例句，按题目ID切题复位；`word-card-analysis-demo`补足十词各三句，显式中英文高亮、缺项空态及缺音源提示。与CardSwap拖拽分层，稳定后二维显示，支持reduced-motion；仅消费现有主题token，不新增请求、存储、依赖或公共入口。按用户要求未运行测试／构建，视觉与真机待用户查看。

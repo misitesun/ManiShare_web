@@ -10,6 +10,8 @@ import {
 import { getDemoQuestions, initialPracticeSession, practiceDemos } from '../model/practice-demo'
 import type { PracticeFamily, PracticeMode, PracticePhase } from '../model/practice-demo'
 import type { OralDemoController } from '../model/useOralDemo'
+import { createWordToolbarOptions } from '../model/word-toolbar-options'
+import type { WordToolbarOptions } from '../model/word-toolbar-options'
 import { PracticeContent } from './PracticeContent'
 
 interface ContentFixtureProps {
@@ -19,7 +21,9 @@ interface ContentFixtureProps {
     readonly analysis?: boolean
     readonly reading?: boolean
     readonly imageVisible?: boolean
-    readonly wordFeedback?: boolean
+    readonly wordOptions?: WordToolbarOptions
+    readonly phoneticsEnabled?: boolean
+    readonly input?: string
 }
 
 function ignoreAction(): void {}
@@ -45,7 +49,9 @@ function ContentFixture({
     analysis = true,
     reading = false,
     imageVisible = true,
-    wordFeedback = false,
+    wordOptions,
+    phoneticsEnabled,
+    input = 'local answer',
 }: ContentFixtureProps): ReactElement {
     const snapshot = useLearningSettingsSnapshot()
     const demo = practiceDemos.find((entry) => entry.family === family)
@@ -55,18 +61,16 @@ function ContentFixture({
         demo,
         mode,
         question,
-        session: { ...initialPracticeSession, phase, input: 'local answer' },
-        values: snapshot.values,
+        session: { ...initialPracticeSession, phase, input },
+        values: {
+            ...snapshot.values,
+            ...(phoneticsEnabled === undefined
+                ? {}
+                : { showPhonetics: phoneticsEnabled, showAnswerPhonetics: phoneticsEnabled }),
+        },
+        ...(wordOptions ? { wordOptions } : {}),
         imageVisible,
         blocked: false,
-        ...(wordFeedback
-            ? {
-                  wordSpellingFeedback: {
-                      value: 'local answer',
-                      slots: [{ index: 0, states: ['incorrect' as const] }],
-                  },
-              }
-            : {}),
         additionalOptions: {
             copy: false,
             imageVisible: true,
@@ -101,10 +105,59 @@ function renderContent(props: ContentFixtureProps): string {
     )
 }
 
-test('公共反馈仅透传单词拼写卡，默写及其他真实输入消费者保持原入口', (): void => {
+test('单词拼写的默写和抄写控制输入提示，已有输入保留，其他模式不启用该提示', (): void => {
+    const options = createWordToolbarOptions('spell')
+    const props: ContentFixtureProps = {
+        family: 'word',
+        mode: 'spell',
+        phase: 'answering',
+        input: 'w',
+    }
+    const copying = renderContent({ ...props, wordOptions: { ...options, copy: true } })
     assert.match(
-        renderContent({ family: 'word', mode: 'spell', phase: 'answering', wordFeedback: true }),
-        /data-word-slot-character="incorrect"/,
+        copying,
+        /data-spelling-letter="empty" class="relative inline-block leading-none text-practice-muted"/,
+    )
+    assert.match(copying, /<input[^>]*value="w"/)
+    const recalling = renderContent({ ...props, wordOptions: { ...options, copy: false } })
+    assert.match(
+        recalling,
+        /data-spelling-letter="empty" class="invisible relative inline-block leading-none text-practice-muted"/,
+    )
+    assert.match(recalling, /<input[^>]*value="w"/)
+    assert.doesNotMatch(
+        renderContent({
+            ...props,
+            mode: 'dictate',
+            wordOptions: { ...createWordToolbarOptions('dictate'), copy: true },
+        }),
+        /data-word-spelling-input|data-word-slot-hint/,
+    )
+    assert.doesNotMatch(
+        renderContent({ family: 'sentence', mode: 'translate', phase: 'answering', input: 'w' }),
+        /data-word-spelling-input|data-word-slot-hint/,
+    )
+})
+
+test('单词拼写四档音标使用局部选择，输入和答案的全局显隐不再覆盖工具栏', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+        for (const phonetics of ['original', 'syllables', 'phonics', 'none'] as const) {
+            const html = renderContent({
+                family: 'word',
+                mode: 'spell',
+                phase,
+                phoneticsEnabled: false,
+                wordOptions: { ...createWordToolbarOptions('spell'), phonetics },
+            })
+            if (phonetics === 'none') assert.doesNotMatch(html, /data-word-phonetics=/)
+            else assert.ok(html.includes(`data-word-phonetics="${phonetics}"`))
+        }
+})
+
+test('逐字输入器仅接入单词拼写，默写及其他真实输入消费者保持原入口', (): void => {
+    assert.match(
+        renderContent({ family: 'word', mode: 'spell', phase: 'answering' }),
+        /data-word-spelling-input="true"/,
     )
     for (const [family, mode] of [
         ['word', 'dictate'],
@@ -112,9 +165,36 @@ test('公共反馈仅透传单词拼写卡，默写及其他真实输入消费�
         ['picture', 'translate'],
     ] as const)
         assert.doesNotMatch(
-            renderContent({ family, mode, phase: 'answering', wordFeedback: true }),
-            /data-word-slot-character=/,
+            renderContent({ family, mode, phase: 'answering' }),
+            /data-word-spelling-input|data-spelling-position=/,
         )
+})
+
+test('切换拆分时输入字母保持一致，音标定位仅在已映射的可编辑拼写题面启用', (): void => {
+    const options = createWordToolbarOptions('spell')
+    for (const phonetics of ['original', 'none', 'syllables', 'phonics'] as const) {
+        const html = renderContent({
+            family: 'word',
+            mode: 'spell',
+            phase: 'answering',
+            input: 'wo',
+            wordOptions: { ...options, phonetics },
+        })
+        assert.match(html, /<input[^>]*value="wo"/)
+        assert.equal((html.match(/data-spelling-position="\d+"/g) ?? []).length, 5)
+        if (phonetics === 'syllables' || phonetics === 'phonics')
+            assert.match(html, /aria-label="定位 woman 中的 /)
+        else assert.doesNotMatch(html, /aria-label="定位 woman 中的 /)
+    }
+    assert.doesNotMatch(
+        renderContent({
+            family: 'word',
+            mode: 'spell',
+            phase: 'correct',
+            wordOptions: { ...options, phonetics: 'phonics' },
+        }),
+        /aria-label="定位 woman 中的 /,
+    )
 })
 
 test('只有句子沉浸听力分派到专用入口，其他模式保留既有组合', (): void => {

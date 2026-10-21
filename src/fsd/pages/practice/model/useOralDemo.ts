@@ -8,6 +8,7 @@ interface UseOralDemoOptions {
     readonly blocked: boolean
     readonly isPaused?: () => boolean
     readonly onNotice: (message: string) => void
+    readonly onFeedback?: (kind: 'recordStart' | 'evaluationComplete') => void
 }
 
 export interface OralDemoController {
@@ -29,6 +30,7 @@ export function useOralDemo({
     blocked,
     isPaused,
     onNotice,
+    onFeedback,
 }: UseOralDemoOptions): OralDemoController {
     const [state, dispatch] = useReducer(reduceOralDemo, initialOralDemoState)
     const cancelTimer = useRef<() => void>(() => undefined)
@@ -49,7 +51,10 @@ export function useOralDemo({
     const pause = useCallback((): void => cancelTimer.current(), [])
 
     function start(): void {
-        if (!blocked) dispatch('start')
+        if (!blocked && state.stage === 'idle') {
+            dispatch('start')
+            onFeedback?.('recordStart')
+        }
     }
 
     function stopAndEvaluate(): void {
@@ -57,7 +62,10 @@ export function useOralDemo({
     }
 
     function rerecord(): void {
-        if (!blocked) dispatch('rerecord')
+        if (!blocked && (state.stage === 'result' || state.stage === 'error')) {
+            dispatch('rerecord')
+            onFeedback?.('recordStart')
+        }
     }
 
     const reset = useCallback((): void => {
@@ -65,7 +73,10 @@ export function useOralDemo({
     }, [])
 
     function showResult(): void {
-        if (!blocked) dispatch('showResult')
+        if (!blocked && state.stage === 'evaluating') {
+            dispatch('showResult')
+            onFeedback?.('evaluationComplete')
+        }
     }
 
     function showError(): void {

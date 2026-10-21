@@ -1,5 +1,7 @@
 # 架构约定
 
+- 练习短音效由`features/learning-settings`持有原始素材、音色注册表和设置试听，经根入口给练习消费；`shared/lib/sound-player`只提供通用HTMLAudio播放／复用／释放，不读业务偏好。页面拥有事件、优先级及与题态／浮层的协调，设置不得反向导入页面控制器。不建立全局音源收纳目录，不以短提示音替代课程朗读或评分。
+
 - 单词/句子内容弹窗留在`pages/practice`，直接消费`PracticeQuestion`并调用既有切题动作；英文/双语是学习材料显示方案，不属于界面语言或i18n。显示状态仅保留在弹窗本轮打开期间。共享层仅增加显式glass分段外观及`segment-outline`双主题描边，原分段默认值和其他内容族不变。
 
 - 完整设置归属 `features/learning-settings`，负责七 Tab 编辑、偏好校验、预览、背景图和持久化；app 的 `AppProviders` 在主题 Provider 内只挂载一个 `LearningSettingsProvider`。`pages/settings` 仅将 `/settings/?tab=` 适配为受控编辑器，`pages/practice` 使用同一编辑器的局部 Tab 弹窗和同源快照，页面之间不横向导入。存储键及 v1 合法历史值保持，主题仍经 `shared/theme`。

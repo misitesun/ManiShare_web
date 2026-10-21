@@ -15,9 +15,11 @@ test('快捷口语按目标、设置、模式与阶段门控', (): void => {
     assert.equal(canShowQuickOral('sentence', 'listen', 'answering', true, true), true)
     assert.equal(canShowQuickOral('sentence', 'read', 'answering', true, true), true)
     for (const mode of ['spell', 'dictate', 'typing'] as const) {
+        assert.equal(canShowQuickOral('word', mode, 'answering', true, true), false)
         assert.equal(canShowQuickOral('word', mode, 'revealed', true, true), false)
         assert.equal(canShowQuickOral('word', mode, 'incorrect', true, true), false)
         assert.equal(canShowQuickOral('word', mode, 'correct', true, true), true)
+        assert.equal(canShowQuickOral('word', mode, 'correct', true, false), false)
     }
     for (const mode of ['translate', 'blocks', 'check', 'meaning', 'guess'] as const) {
         assert.equal(canShowQuickOral('sentence', mode, 'answering', true, true), false)

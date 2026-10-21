@@ -7,14 +7,18 @@ interface PracticeWordPhoneticsProps {
     readonly breakdown?: WordPhoneticBreakdown | undefined
     readonly mode?: WordPhoneticMode | undefined
     readonly density?: 'pronunciation' | 'spelling' | 'inherit'
+    readonly onSegmentSelect?: ((id: string) => void) | undefined
+    readonly disabled?: boolean
 }
 
-/** 练习页共用音标展示；只读题目分组，不判题、不拆字、不创建声音或输入状态。 */
+/** 练习页共用音标展示；拼写可注入定位事件，组件自身不拆字、不判题或创建声音。 */
 export function PracticeWordPhonetics({
     phonetic,
     breakdown,
     mode = 'original',
     density = 'inherit',
+    onSegmentSelect,
+    disabled = false,
 }: PracticeWordPhoneticsProps): ReactElement | null {
     const display = resolveWordPhoneticDisplay(phonetic, mode, breakdown)
     if (!display) return null
@@ -44,7 +48,7 @@ export function PracticeWordPhonetics({
     return (
         <span
             data-word-phonetics={mode}
-            role="img"
+            role={onSegmentSelect ? 'group' : 'img'}
             aria-label={display.phonetic}
             className={
                 density === 'inherit'
@@ -56,13 +60,17 @@ export function PracticeWordPhonetics({
                 /
             </span>
             <span
-                aria-hidden="true"
+                aria-hidden={onSegmentSelect ? undefined : true}
                 className="flex min-w-0 flex-wrap items-center justify-center gap-x-3 gap-y-1"
             >
                 {display.groups.map((group) => (
                     <span
                         key={group.id}
-                        className="inline-flex max-w-full items-center gap-1 overflow-x-auto"
+                        className={
+                            density === 'spelling'
+                                ? 'inline-flex min-w-0 max-w-full flex-wrap items-center justify-center gap-1'
+                                : 'inline-flex max-w-full items-center gap-1 overflow-x-auto'
+                        }
                     >
                         {group.segments.map((segment) => (
                             <span
@@ -70,13 +78,29 @@ export function PracticeWordPhonetics({
                                 data-word-phonetic-segment
                                 className={
                                     density === 'pronunciation'
-                                        ? 'inline-flex h-[30px] min-w-5 shrink-0 items-center justify-center rounded-[4px] bg-practice-phoneme px-[3px] text-[18px] font-normal leading-[normal] text-practice-answer'
+                                        ? 'relative inline-flex h-[30px] min-w-5 shrink-0 items-center justify-center rounded-[4px] bg-practice-phoneme px-[3px] text-[18px] font-normal leading-[normal] text-practice-answer'
                                         : density === 'spelling'
-                                          ? 'inline-flex h-[30px] min-w-7 shrink-0 items-center justify-center rounded-[4px] bg-practice-phoneme px-1 text-[24px] font-normal leading-[normal] text-practice-answer'
-                                          : 'inline-flex min-h-[1.5em] shrink-0 items-center justify-center rounded-[4px] bg-practice-phoneme px-1 font-normal text-practice-answer'
+                                          ? 'relative inline-flex h-[30px] min-w-7 shrink-0 items-center justify-center rounded-[4px] bg-practice-phoneme px-1 text-[24px] font-normal leading-none text-practice-answer'
+                                          : 'relative inline-flex min-h-[1.5em] shrink-0 items-center justify-center rounded-[4px] bg-practice-phoneme px-1 font-normal text-practice-answer'
                                 }
                             >
-                                {segment.ipa}
+                                {onSegmentSelect ? (
+                                    <button
+                                        type="button"
+                                        disabled={disabled}
+                                        aria-label={`定位 ${group.word} 中的 ${segment.spelling ?? segment.ipa}`}
+                                        onClick={(): void => onSegmentSelect(segment.id)}
+                                        className="flex h-full min-w-full cursor-pointer items-center justify-center rounded-[4px] border-0 bg-transparent p-0 outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default"
+                                    >
+                                        <span
+                                            data-spelling-pulse-segment={segment.id}
+                                            className="pointer-events-none absolute inset-0 rounded-[4px] bg-practice-control-accent/25 opacity-0"
+                                        />
+                                        <span className="relative">{segment.ipa}</span>
+                                    </button>
+                                ) : (
+                                    segment.ipa
+                                )}
                             </span>
                         ))}
                     </span>

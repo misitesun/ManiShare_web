@@ -43,7 +43,7 @@ test('六种单词模式按截图提供初次进入时的设置状态', (): void
     assert.equal(spell.copy, false)
     assert.equal(spell.translationVisible, true)
     assert.equal(spell.cutReading, true)
-    assert.equal(spell.phonetics, 'syllables')
+    assert.equal(spell.phonetics, 'original')
 
     const dictate = createWordToolbarOptions('dictate')
     assert.equal(dictate.copy, true)

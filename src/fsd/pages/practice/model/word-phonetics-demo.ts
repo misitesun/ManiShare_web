@@ -13,7 +13,7 @@ const demoWords: Readonly<Record<string, DemoWordPhonetics>> = {
     girl: { phonetic: 'ɡɜːl', syllables: ['ɡɜːl'], phonics: ['ɡ', 'ɜː', 'l'] },
     boy: { phonetic: 'bɔɪ', syllables: ['bɔɪ'], phonics: ['b', 'ɔɪ'] },
     book: { phonetic: 'bʊk', syllables: ['bʊk'], phonics: ['b', 'ʊ', 'k'] },
-    apple: { phonetic: 'ˈæpəl', syllables: ['æp', 'əl'], phonics: ['æ', 'p', 'ə', 'l'] },
+    apple: { phonetic: 'ˈæpəl', syllables: ['æp', 'əl'], phonics: ['æ', 'p', 'əl'] },
     water: {
         phonetic: 'ˈwɔːtə(r)',
         syllables: ['wɔː', 'tə(r)'],
@@ -44,6 +44,40 @@ const demoWords: Readonly<Record<string, DemoWordPhonetics>> = {
     },
 }
 
+interface DemoWordSpellings {
+    readonly syllables: readonly string[]
+    readonly phonics: readonly string[]
+}
+
+/** 示例的字母—发音映射显式维护；如oo、th、le保持为完整拼读片段。 */
+const demoSpellings: Readonly<Record<string, DemoWordSpellings>> = {
+    woman: { syllables: ['wo', 'man'], phonics: ['w', 'o', 'm', 'a', 'n'] },
+    man: { syllables: ['man'], phonics: ['m', 'a', 'n'] },
+    girl: { syllables: ['girl'], phonics: ['g', 'ir', 'l'] },
+    boy: { syllables: ['boy'], phonics: ['b', 'oy'] },
+    book: { syllables: ['book'], phonics: ['b', 'oo', 'k'] },
+    apple: { syllables: ['ap', 'ple'], phonics: ['a', 'pp', 'le'] },
+    water: { syllables: ['wa', 'ter'], phonics: ['w', 'a', 't', 'er'] },
+    sun: { syllables: ['sun'], phonics: ['s', 'u', 'n'] },
+    green: { syllables: ['green'], phonics: ['g', 'r', 'ee', 'n'] },
+    happy: { syllables: ['hap', 'py'], phonics: ['h', 'a', 'pp', 'y'] },
+    school: { syllables: ['school'], phonics: ['s', 'ch', 'oo', 'l'] },
+    understand: {
+        syllables: ['un', 'der', 'stand'],
+        phonics: ['u', 'n', 'd', 'er', 's', 't', 'a', 'n', 'd'],
+    },
+    books: { syllables: ['books'], phonics: ['b', 'oo', 'k', 's'] },
+    brush: { syllables: ['brush'], phonics: ['b', 'r', 'u', 'sh'] },
+    teeth: { syllables: ['teeth'], phonics: ['t', 'ee', 'th'] },
+    nice: { syllables: ['nice'], phonics: ['n', 'i', 'ce'] },
+    to: { syllables: ['to'], phonics: ['t', 'o'] },
+    meet: { syllables: ['meet'], phonics: ['m', 'ee', 't'] },
+    you: { syllables: ['you'], phonics: ['y', 'ou'] },
+    we: { syllables: ['we'], phonics: ['w', 'e'] },
+    read: { syllables: ['read'], phonics: ['r', 'ea', 'd'] },
+    together: { syllables: ['to', 'ge', 'ther'], phonics: ['t', 'o', 'g', 'e', 'th', 'er'] },
+}
+
 export function getDemoWordPhonetics(
     english: string,
     phonetic: string,
@@ -71,14 +105,25 @@ export function getDemoWordPhonetics(
             const fixture = fixtures[wordIndex]
             if (!fixture) return []
             const id = `${word}:${wordIndex}`
+            const spellings = Object.hasOwn(demoSpellings, word)
+                ? demoSpellings[word]?.[kind]
+                : undefined
+            const mapped =
+                spellings !== undefined &&
+                spellings.length === fixture[kind].length &&
+                spellings.join('') === word
             return [
                 {
                     id,
                     word,
-                    segments: fixture[kind].map((ipa, segmentIndex) => ({
-                        id: `${id}:${kind}:${segmentIndex}`,
-                        ipa,
-                    })),
+                    segments: fixture[kind].map((ipa, segmentIndex) => {
+                        const spelling = mapped ? spellings?.[segmentIndex] : undefined
+                        return {
+                            id: `${id}:${kind}:${segmentIndex}`,
+                            ipa,
+                            ...(spelling === undefined ? {} : { spelling }),
+                        }
+                    }),
                 },
             ]
         })

@@ -1,5 +1,8 @@
 import { resolveCorrectAnimationId } from '../../../features/learning-settings'
 import type { LearningAnimationId, LearningPreferences } from '../../../features/learning-settings'
+import { createSoundPlayer } from '../../../shared/lib/sound-player'
+import type { SoundAudio, SoundPlaybackPhase } from '../../../shared/lib/sound-player'
+import { getMonotonicMilliseconds } from '../../../shared/lib/time'
 
 export type PracticeFeedbackPreferences = Pick<
     LearningPreferences,
@@ -23,12 +26,21 @@ export type PracticeFeedbackPreferences = Pick<
 >
 
 export type PracticeFeedbackKind =
-    'typing' | 'correct' | 'incorrect' | 'questionChange' | 'chapterComplete' | 'evaluationComplete'
+    | 'typing'
+    | 'correct'
+    | 'incorrect'
+    | 'questionChange'
+    | 'chapterComplete'
+    | 'evaluationComplete'
+    | 'wordRetry'
+    | 'wordRemember'
+    | 'recordStart'
 
 export interface PracticeFeedbackEvent {
     /** 演示会话内递增；相同或更早的事件不会再次播放。 */
     id: number
     kind: PracticeFeedbackKind
+    rating?: 'KEEP TRYING' | 'GOOD' | 'EXCELLENT' | 'PERFECT'
 }
 
 export interface PracticeFeedbackSoundAsset {
@@ -66,18 +78,6 @@ export interface PracticeFeedbackSoundSnapshot {
     message: string
 }
 
-export interface PracticeFeedbackAudio {
-    src: string
-    volume: number
-    preload: string
-    play(): Promise<void>
-    pause(): void
-    load(): void
-    removeAttribute(name: string): void
-    addEventListener(type: 'ended' | 'error', listener: () => void): void
-    removeEventListener(type: 'ended' | 'error', listener: () => void): void
-}
-
 export interface PracticeFeedbackSoundController {
     consume(event: PracticeFeedbackEvent, values: PracticeFeedbackPreferences): void
     setActive(active: boolean): void
@@ -98,6 +98,7 @@ export const initialPracticeFeedbackSoundSnapshot: PracticeFeedbackSoundSnapshot
 export function getPracticeFeedbackSoundSelection(
     values: PracticeFeedbackPreferences,
     kind: PracticeFeedbackKind,
+    rating?: PracticeFeedbackEvent['rating'],
 ): PracticeFeedbackSoundSelection {
     switch (kind) {
         case 'typing':
@@ -137,11 +138,21 @@ export function getPracticeFeedbackSoundSelection(
             }
         case 'evaluationComplete':
             return {
-                key: 'evaluationComplete',
+                key: `evaluationComplete:${rating ?? 'GOOD'}`,
                 label: '模拟评测结束音效',
                 enabled: values.evaluationSound,
                 volume: null,
             }
+        case 'wordRetry':
+        case 'wordRemember':
+            return {
+                key: kind,
+                label: kind === 'wordRetry' ? '再来音效' : '记住音效',
+                enabled: values.transitionSound,
+                volume: null,
+            }
+        case 'recordStart':
+            return { key: kind, label: '录音开始提示音', enabled: true, volume: null }
     }
 }
 
@@ -149,28 +160,22 @@ function isPlayableVolume(value: number | undefined): value is number {
     return value !== undefined && Number.isFinite(value) && value >= 0 && value <= 1
 }
 
-function isPlaybackBlocked(error: unknown): boolean {
-    return error instanceof Error && error.name === 'NotAllowedError'
-}
-
-/** 一次仅持有一个短音效；未确认素材不创建播放器，不回退为其他音色。 */
+/** 打字与结果分通道；输入不打断结果，切题不截断正在播放的正确／卡牌操作音。 */
 export function createPracticeFeedbackSoundController(
     assets: PracticeFeedbackSoundAssets,
-    createAudio: () => PracticeFeedbackAudio,
+    createAudio: () => SoundAudio,
+    now: () => number = getMonotonicMilliseconds,
 ): PracticeFeedbackSoundController {
     let snapshot = initialPracticeFeedbackSoundSnapshot
     let active = true
     let disposed = false
     let lastEventId = -1
-    let generation = 0
-    let current:
-        | {
-              audio: PracticeFeedbackAudio
-              kind: PracticeFeedbackKind
-              onEnded: () => void
-              onError: () => void
-          }
-        | undefined
+    let lastTypingTime = Number.NEGATIVE_INFINITY
+    let typingKey = ''
+    let effectKind: PracticeFeedbackKind | undefined
+    const typing = createSoundPlayer(createAudio, true)
+    const effect = createSoundPlayer(createAudio)
+    const playing = new Map<'typing' | 'effect', { event: PracticeFeedbackEvent }>()
     const subscribers = new Set<() => void>()
 
     function publish(next: PracticeFeedbackSoundSnapshot): void {
@@ -179,30 +184,18 @@ export function createPracticeFeedbackSoundController(
         for (const listener of subscribers) listener()
     }
 
-    function release(): void {
-        generation += 1
-        if (current === undefined) return
-        const { audio, onEnded, onError } = current
-        current = undefined
-        audio.removeEventListener('ended', onEnded)
-        audio.removeEventListener('error', onError)
-        audio.pause()
-        audio.removeAttribute('src')
-        audio.load()
-    }
-
     function stop(): void {
-        const hadAudio = current !== undefined
-        release()
-        if (hadAudio) publish({ ...snapshot, phase: 'stopped', message: '反馈音效已停止' })
+        typing.stop()
+        effect.stop()
+        playing.clear()
+        effectKind = undefined
     }
 
     function consume(event: PracticeFeedbackEvent, values: PracticeFeedbackPreferences): void {
         if (disposed || !Number.isSafeInteger(event.id) || event.id < 0 || event.id <= lastEventId)
             return
         lastEventId = event.id
-        release()
-        const selection = getPracticeFeedbackSoundSelection(values, event.kind)
+        const selection = getPracticeFeedbackSoundSelection(values, event.kind, event.rating)
         const eventSnapshot = { eventId: event.id, soundKey: selection.key }
         if (!active || !selection.enabled) {
             publish({
@@ -230,66 +223,52 @@ export function createPracticeFeedbackSoundController(
             })
             return
         }
-        const run = generation
-        let audio: PracticeFeedbackAudio
-        try {
-            audio = createAudio()
-        } catch {
-            publish({ ...eventSnapshot, phase: 'failed', message: `${selection.label}暂不可播放` })
-            return
-        }
-
-        function finish(phase: 'ended' | 'failed'): void {
-            if (disposed || run !== generation) return
-            release()
-            publish({
-                ...eventSnapshot,
-                phase,
-                message:
-                    phase === 'ended' ? `${selection.label}播放结束` : `${selection.label}加载失败`,
-            })
-        }
-
-        function onEnded(): void {
-            finish('ended')
-        }
-
-        function onError(): void {
-            finish('failed')
-        }
-
-        current = { audio, kind: event.kind, onEnded, onError }
-        audio.addEventListener('ended', onEnded)
-        audio.addEventListener('error', onError)
-        audio.preload = 'none'
-        audio.volume = volume
-        audio.src = asset.src
-        publish({ ...eventSnapshot, phase: 'starting', message: `正在加载：${selection.label}` })
-        try {
-            void audio.play().then(
-                (): void => {
-                    if (disposed || run !== generation) return
-                    publish({
-                        ...eventSnapshot,
-                        phase: 'playing',
-                        message: `正在播放：${selection.label}`,
-                    })
-                },
-                (error: unknown): void => {
-                    if (disposed || run !== generation) return
-                    release()
-                    publish({
-                        ...eventSnapshot,
-                        phase: isPlaybackBlocked(error) ? 'blocked' : 'failed',
-                        message: isPlaybackBlocked(error)
-                            ? '浏览器阻止播放，请再次点击演示按钮重试'
-                            : `${selection.label}播放失败`,
-                    })
-                },
+        const channel = event.kind === 'typing' ? 'typing' : 'effect'
+        if (channel === 'typing') {
+            if (effect.isActive()) return
+            const time = now()
+            if (typingKey === selection.key && time - lastTypingTime < 50) return
+            typingKey = selection.key
+            lastTypingTime = time
+        } else {
+            typing.stop()
+            if (
+                event.kind === 'questionChange' &&
+                effect.isActive() &&
+                (effectKind === 'correct' ||
+                    effectKind === 'wordRetry' ||
+                    effectKind === 'wordRemember')
             )
-        } catch {
-            finish('failed')
+                return
+            effectKind = event.kind
         }
+        const player = channel === 'typing' ? typing : effect
+        playing.set(channel, { event })
+        player.play({
+            src: asset.src,
+            volume,
+            onPhase(phase: SoundPlaybackPhase): void {
+                if (disposed || playing.get(channel)?.event !== event) return
+                if (phase !== 'starting' && phase !== 'playing') playing.delete(channel)
+                if (snapshot.eventId !== null && event.id < snapshot.eventId) return
+                publish({
+                    ...eventSnapshot,
+                    phase,
+                    message:
+                        phase === 'blocked'
+                            ? '浏览器未允许播放提示音，请再次点击或按键重试。'
+                            : phase === 'failed'
+                              ? `${selection.label}播放失败`
+                              : phase === 'starting'
+                                ? `正在加载：${selection.label}`
+                                : phase === 'playing'
+                                  ? `正在播放：${selection.label}`
+                                  : phase === 'ended'
+                                    ? `${selection.label}播放结束`
+                                    : '反馈音效已停止',
+                })
+            },
+        })
     }
 
     return {
@@ -299,16 +278,22 @@ export function createPracticeFeedbackSoundController(
             if (!active) stop()
         },
         updatePreferences(values: PracticeFeedbackPreferences): void {
-            if (
-                current !== undefined &&
-                !getPracticeFeedbackSoundSelection(values, current.kind).enabled
-            )
-                stop()
+            for (const [channel, current] of playing) {
+                const next = getPracticeFeedbackSoundSelection(
+                    values,
+                    current.event.kind,
+                    current.event.rating,
+                )
+                const player = channel === 'typing' ? typing : effect
+                if (!next.enabled) player.stop()
+            }
         },
         stop,
         dispose(): void {
-            release()
             disposed = true
+            typing.dispose()
+            effect.dispose()
+            playing.clear()
             subscribers.clear()
         },
         subscribe(listener: () => void): () => void {

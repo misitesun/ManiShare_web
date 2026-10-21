@@ -69,16 +69,16 @@ test('拼读提供排序和中英显示菜单及四档音标方案，截图初�
     assert.equal((html.match(/aria-pressed="true"/g) ?? []).length, 1)
 })
 
-test('拼写以音节拆分作为首项和初始选中方案，并且没有拼读专属菜单', (): void => {
+test('拼写以原始音标作为首项和初始选中方案，并且没有拼读专属菜单', (): void => {
     const html = renderToolbar('spell')
     assert.doesNotMatch(html, /aria-label="单词排序：/)
     assert.doesNotMatch(html, /aria-label="中英显示：/)
     assert.doesNotMatch(html, /role="menuitemradio"/)
-    const choices = ['音节拆分', '原始音标', '自然拼读', '无音标']
+    const choices = ['原始音标', '音节拆分', '自然拼读', '无音标']
     let previousIndex = -1
     for (const label of choices) {
         const button = getButtonMarkup(html, label)
-        assert.match(button, label === '音节拆分' ? /aria-pressed="true"/ : /aria-pressed="false"/)
+        assert.match(button, label === '原始音标' ? /aria-pressed="true"/ : /aria-pressed="false"/)
         const index = html.indexOf(button)
         assert.ok(index > previousIndex)
         previousIndex = index

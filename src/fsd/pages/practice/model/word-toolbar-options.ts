@@ -49,7 +49,6 @@ export function createWordToolbarOptions(mode: WordToolbarMode): WordToolbarOpti
         phonetics: 'original',
     }
     if (mode === 'pronounce') return { ...options, order: 'random' }
-    if (mode === 'spell') return { ...options, phonetics: 'syllables' }
     if (mode === 'dictate')
         return { ...options, copy: true, cutReading: false, phoneticsVisible: false }
     if (mode === 'typing') return { ...options, copy: true }

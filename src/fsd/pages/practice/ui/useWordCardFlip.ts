@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
 import { gsap, useGSAP } from '../../../shared/lib/animation'
+import { wordCardFlipMotion } from '../model/word-card-flip-motion'
 
 interface WordCardFlipOptions {
     readonly open: boolean
@@ -52,7 +53,7 @@ export function useWordCardFlip(
                     }
                     // 背面静止时为二维；翻回前先无动画恢复到等价的180度位姿。
                     if (pose.current === 'back') gsap.set(rotor, { rotationY: 180 })
-                    gsap.set(root, { perspective: 1000 })
+                    gsap.set(root, { perspective: wordCardFlipMotion.perspective })
                     gsap.set(rotor, { transformStyle: 'preserve-3d' })
                     gsap.set(front, { rotationY: 0, visibility: 'visible' })
                     gsap.set(back, { rotationY: 180, visibility: 'visible' })
@@ -60,8 +61,8 @@ export function useWordCardFlip(
                     pose.current = 'turning'
                     tween.current = gsap.to(rotor, {
                         rotationY: open ? 180 : 0,
-                        duration: 0.6,
-                        ease: 'power2.inOut',
+                        duration: wordCardFlipMotion.duration,
+                        ease: wordCardFlipMotion.ease,
                         onComplete: settle,
                     })
                 }, rootRef)

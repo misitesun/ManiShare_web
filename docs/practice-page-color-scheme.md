@@ -4,6 +4,8 @@
 
 ## 1. 使用范围和边界
 
+2026-10-20单词拼写补充：右上角本轮黄晶数字由`practice-crystal`提供，dark为Figma `1608:7632`的#FFBF1F，light引用既有深黄`warning`（#AD7100），原24px黄晶图片不做答题色filter。其消费范围仅`WordSpellingCrystals`，不被正文／答题自选色覆盖。口语入口复用句子模式原麦克风、`brand-start/end`紫绿细边及`practice-background/text`，正面词与音标继续绿色`practice-answer`；拼写解析复用原背面配色，不把正面改成灰色或蓝色。本轮未运行浏览器配色验收。
+
 2026-10-20解析翻面补充：用户新截图的背面为独立解析阅读态。`WordPronunciationAnalysis`使用`practice-card`表面、`brand-start`紫色细边、`foreground`单词／释义／例句、`practice-muted`完整音标和返回／查词图标、`accent-blue`中英文重点词。深浅主题均消费现有token，不添加原始色值或主题分支。此处蓝色表达例句目标词，不套用词性／语法角色配色；正面单词及分块音标仍沿原`practice-answer`默认绿色与用户显式设置，互不覆盖。本轮未运行浏览器配色验收。
 
 2026-10-20笔记侧栏补充：Figma `546:35888/36010`沿现有`dialog-border`五层渐变及`dialog-surface/accent`表面，文字为`foreground/hint`，编辑框为`accent-green/70`描边，聚焦为`accent-green`。保存显式使用`TldButton note-action + solid`，dark绿色为现有#00BF63；新增`button-solid-disabled`深色#58BF8D来自空输入设计态，浅色#A3D4BA配合现有浅色主题深绿按钮。编辑／删除保留原稿蓝／红SVG，关闭图标经既有filter适配浅色，笔记控件不随用户答题色偏好改变。本轮未做浏览器配色验收，效果待用户查看。
@@ -108,5 +110,6 @@ AnnotatedText的sentence-listening变体将既有四项词性色用作标签背�
 - 两个具名答题预设`dark-default`／`light-default`同样分别为夜间绿`#00e088`／白天绿`#10bb82`，由全局`answer-default-dark/light`提供；`practice-design-answer`引用对应预设。先前预设误配白／黑，已保存的`dark-default`会在挂载恢复后把单词与音标一起覆盖为白色，现纠正语义token，无需清缓存或重新保存设置。具名预设是固定选色，不随当前全站主题切换；句子`theme`默认色与手动HEX自选色保留原逻辑。
 - 音标斜线使用`practice-muted`；原始音标的字符同样为答题色，但没有分块底色。已有通用题面／句子逐词标注的完整IPA继续继承各自文字色和字号，不改成单词卡的强调配色。先前新增说明将卡片原始音标整体归为灰色是实现归类错误，现按用户指出的设计要求修正，不将该旧说明视为设计来源。
 - 拼读分块保留30px高、20px最小宽、18px字、4px圆角、4px段间距；拼写密度保留30px高、28px最小宽、24px字，其余位置继承所属文字密度。多字符音段按内容撑宽，长元音和双元音不按字符切块；多词按词组重排，超长单词音段容器局部滚动。
+- 拼写逐字输入：已输入字母与活动4px横线使用`practice-answer`，提交后的错位字母使用既有`danger`，未输入抄写提示和非活动线分别使用`practice-muted`与`practice-text/50`；默写仅隐藏未输入字形，几何保留。点击分段音标后的900ms对应片段底色由`practice-control-accent/25`提供，沿本产品绿色，不照搬哇学社蓝色。音标原静态分块底色保持`practice-phoneme`；不新增主题token或组件硬编码颜色。
 
 本轮只接展示与模拟分组；音标课程的目标音／错误／成功高亮仍使用其独立语义色，不受此次普通分块变更覆盖。按用户要求未运行测试、构建或PC视觉验收；平板／H5视觉及真机待用户验收。

@@ -20,6 +20,46 @@ function renderInput(props: Partial<PracticeWordSlotsInputProps> = {}): string {
     )
 }
 
+test('默认及默写均不显示提示，抄写只显示剩余目标，原生值和词槽数量保持一致', (): void => {
+    const props = { target: 'Apple', value: 'AP' }
+    const copying = renderInput({ ...props, showWordHint: true })
+    assert.match(copying, /data-word-slot-hint-remaining="true">ple<\/span>/)
+    assert.match(copying, /data-word-slot-placeholder="true"[^>]*>APple<\/span>/)
+    assert.match(copying, /data-word-slot-answer[^>]*text-left/)
+    for (const markup of [
+        copying,
+        renderInput({ ...props, showWordHint: false }),
+        renderInput(props),
+    ]) {
+        assert.match(markup, /<input[^>]*value="AP"/)
+        assert.equal((markup.match(/<input\b/g) ?? []).length, 1)
+        assert.equal((markup.match(/data-word-slot="\d+"/g) ?? []).length, 1)
+    }
+    assert.doesNotMatch(renderInput(props), /data-word-slot-hint/)
+    assert.doesNotMatch(renderInput({ ...props, showWordHint: false }), /data-word-slot-hint/)
+})
+
+test('抄写保留错误原文和反馈，输入完成或超长后不留下提示，也不截断真实录入', (): void => {
+    const wrong = renderInput({
+        target: 'cat',
+        value: 'Cx',
+        showWordHint: true,
+        phase: 'incorrect',
+        feedback: {
+            value: 'Cx',
+            slots: [{ index: 0, states: ['correct', 'incorrect', 'missing'] }],
+        },
+    })
+    assert.match(wrong, /<input[^>]*value="Cx"/)
+    assert.match(wrong, /data-word-slot-hint-remaining="true">t<\/span>/)
+    assert.match(wrong, /data-word-slot-character="incorrect"/)
+    for (const value of ['cat', 'cats', 'CAT']) {
+        const markup = renderInput({ target: 'cat', value, showWordHint: true })
+        assert.ok(markup.includes(`value="${value}"`))
+        assert.doesNotMatch(markup, /data-word-slot-hint/)
+    }
+})
+
 test('显式反馈分段显示正确错误缺失多余，下划线独立且不增加输入框', (): void => {
     const markup = renderInput({
         target: 'cat dog',

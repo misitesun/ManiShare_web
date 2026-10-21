@@ -1,0 +1,264 @@
+{
+    "source": "/Users/sly/Downloads/新哇学社/waxueshe-client-web-main/src/assets/sound",
+    "files": [
+        {
+            "file": "type/0.mp3",
+            "bytes": 4647,
+            "sha256": "b021c19f53aa1488ba269372436d8a70306912f230f9f05f14a109eadeceb120",
+            "metadataDurationSeconds": 0.287313,
+            "format": "MP3"
+        },
+        {
+            "file": "type/1.mp3",
+            "bytes": 2551,
+            "sha256": "29dd8da1af9633defbf92f07373870fd5d62c756c3042e9b53c600838038ab35",
+            "metadataDurationSeconds": 0.287347,
+            "format": "MP3"
+        },
+        {
+            "file": "type/2.mp3",
+            "bytes": 3387,
+            "sha256": "8efe578a32bb04d3e117b09e3db0d500ae54ce8d1e835aa28cf590d461a51238",
+            "metadataDurationSeconds": 0.391837,
+            "format": "MP3"
+        },
+        {
+            "file": "type/3.mp3",
+            "bytes": 853,
+            "sha256": "d5cfa71737936e817994d08463373c4f0b43700cbb77a8fdd88c1cda6558f5f6",
+            "metadataDurationSeconds": 0.078367,
+            "format": "MP3"
+        },
+        {
+            "file": "type/4.mp3",
+            "bytes": 1376,
+            "sha256": "5e2ae4ee20da3aa9273c49b0e2915ed3acdb2fd79dcd6a2e0435687c5092569d",
+            "metadataDurationSeconds": 0.287347,
+            "format": "MP3"
+        },
+        {
+            "file": "type/5.mp3",
+            "bytes": 1963,
+            "sha256": "dff83714ebb6f8cbdbae3dd86ec6129881a9f951db66006e37e6cdec2a3fd32e",
+            "metadataDurationSeconds": 0.835918,
+            "format": "MP3"
+        },
+        {
+            "file": "type/6.mp3",
+            "bytes": 1977,
+            "sha256": "694d33f832025f37d1f5bd06de841bb05c3ad94a8deb9d1e552fe6613d609df6",
+            "metadataDurationSeconds": 0.20898,
+            "format": "MP3"
+        },
+        {
+            "file": "type/7.mp3",
+            "bytes": 2839,
+            "sha256": "993289ba264627bb0002e428729fee7e07407f7e320e0a5ab2813625e58d4d64",
+            "metadataDurationSeconds": 0.653061,
+            "format": "MP3"
+        },
+        {
+            "file": "type/8.mp3",
+            "bytes": 3424,
+            "sha256": "540ce19524db1dbc6cea40f085a6cfaeb318ef2e63c80c6283eafea7832e4f0d",
+            "metadataDurationSeconds": 0.391837,
+            "format": "MP3"
+        },
+        {
+            "file": "type/9.mp3",
+            "bytes": 540,
+            "sha256": "2a87e42a102a85de646bba3ae088b2c69fb69488696e1299de8d5ffd69164a3a",
+            "metadataDurationSeconds": 0.078367,
+            "format": "MP3"
+        },
+        {
+            "file": "type/10.mp3",
+            "bytes": 1690,
+            "sha256": "5a753238191271fc8b996d3cf100d13303f168149525c5b5080d7ab3c4ad0e41",
+            "metadataDurationSeconds": 0.365714,
+            "format": "MP3"
+        },
+        {
+            "file": "type/11.mp3",
+            "bytes": 775,
+            "sha256": "a135e660fb2fe00551f5b314824cbe64c39d9711c14cdc2e8961d00d42257c5f",
+            "metadataDurationSeconds": 0.261224,
+            "format": "MP3"
+        },
+        {
+            "file": "type/12.mp3",
+            "bytes": 4959,
+            "sha256": "6951cea15b24c2e6216a640cfbd4c38fc3138abd1662fa2b3c0f64cff4fbd973",
+            "metadataDurationSeconds": 0.548571,
+            "format": "MP3"
+        },
+        {
+            "file": "success/0.mp3",
+            "bytes": 9663,
+            "sha256": "2dc8186e5c8955adeb12804d877d045d7e5b118cc5e5dec8fdffcc1bbd9fc786",
+            "metadataDurationSeconds": 0.600812,
+            "format": "MP3"
+        },
+        {
+            "file": "success/1.wav",
+            "bytes": 188500,
+            "sha256": "bdfa9b0cafe852ae551e6a72baacf40def05ff55f657a4e559c17fbf52a78f96",
+            "metadataDurationSeconds": 1.068345,
+            "format": "WAV"
+        },
+        {
+            "file": "error/0.mp3",
+            "bytes": 12406,
+            "sha256": "29190650dc8f54c419a104980a6320f421601e07585f9bc84f9478cd274ec2ba",
+            "metadataDurationSeconds": 1.515102,
+            "format": "MP3"
+        },
+        {
+            "file": "error/1.mp3",
+            "bytes": 5932,
+            "sha256": "5d0dc6082a66950639e3adda63455daad9fcf768ab75a01fecae71e8e0f35ad6",
+            "metadataDurationSeconds": 0.705306,
+            "format": "MP3"
+        },
+        {
+            "file": "error/2.mp3",
+            "bytes": 3021,
+            "sha256": "4cfbfc858e93db53fc808200e3a231b764b6417ea12372bcb138d3de15f52a0c",
+            "metadataDurationSeconds": 0.339592,
+            "format": "MP3"
+        },
+        {
+            "file": "error/3.mp3",
+            "bytes": 4097,
+            "sha256": "8ea11c36a800ecb475c9b874b39e44d1d2503c9c1c0196ce4bedaf11d3c97ca9",
+            "metadataDurationSeconds": 0.470204,
+            "format": "MP3"
+        },
+        {
+            "file": "error/4.mp3",
+            "bytes": 5738,
+            "sha256": "f7e9e44cb80df89fb2bc0146318402f90d09d130f4bef2167554137b1bffd7c7",
+            "metadataDurationSeconds": 0.679184,
+            "format": "MP3"
+        },
+        {
+            "file": "error/5.mp3",
+            "bytes": 3166,
+            "sha256": "84133c8518facaf0246da90138b0f5ba81fff19cc083e8d03396d14299cad3d9",
+            "metadataDurationSeconds": 0.78375,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/0.mp3",
+            "bytes": 102240,
+            "sha256": "1d6e90002e3d0c8bb3ede2e610710ecfecafc8954ee10f273780221c5dbef660",
+            "metadataDurationSeconds": 5.112,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/1.mp3",
+            "bytes": 47984,
+            "sha256": "92d9734d87ae08cad00060d117a4f4d6fb25604932ad79b357bd2299e85d155e",
+            "metadataDurationSeconds": 5.302857,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/2.mp3",
+            "bytes": 141321,
+            "sha256": "b946f3607f3a22f44dd3f50a703287fece9624f2dd347dc90032baa6f7b96331",
+            "metadataDurationSeconds": 5.172245,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/3.mp3",
+            "bytes": 115112,
+            "sha256": "8dd83f5fa7d034190984d7cbea4821a6da678292defb6b8a5d7b35caf33723ad",
+            "metadataDurationSeconds": 4.75425,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/4.mp3",
+            "bytes": 36362,
+            "sha256": "8696cc0e5311b48eb3a6223f7e0c44d185a71c46e8999a4eef6bb62959b188e3",
+            "metadataDurationSeconds": 2.272625,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/5.mp3",
+            "bytes": 63038,
+            "sha256": "4af64168734c6c65ce5cbde040e95f18e7f8a05f98a94e562acac164fb44ba5a",
+            "metadataDurationSeconds": 3.68325,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/6.mp3",
+            "bytes": 86070,
+            "sha256": "848c6f960e9f72e33549255a2b7fb73476a91a7262685426695ea7ea6b9b89dc",
+            "metadataDurationSeconds": 3.63102,
+            "format": "MP3"
+        },
+        {
+            "file": "finish/7.mp3",
+            "bytes": 32158,
+            "sha256": "e96901b4e3b21ece500ad8bf2a0cd5df478ccb88ac545f7f61204505da2e3d70",
+            "metadataDurationSeconds": 3.970571,
+            "format": "MP3"
+        },
+        {
+            "file": "game/next.wav",
+            "bytes": 264132,
+            "sha256": "429c4d316d6269a8b66e97698d560f0fde01fb48dbd5ab794208ec5215e897f6",
+            "metadataDurationSeconds": 1.497098,
+            "format": "WAV"
+        },
+        {
+            "file": "game/dim.mp3",
+            "bytes": 24715,
+            "sha256": "dd2b29707223d2f2709d394543cf358f928559687ce6603fdf621f100e41f6a0",
+            "metadataDurationSeconds": 0.744,
+            "format": "MP3"
+        },
+        {
+            "file": "game/remember.mp3",
+            "bytes": 85989,
+            "sha256": "e89204eb100f92a6b7c8f5daf315000819932bfa952793deab744a852995a964",
+            "metadataDurationSeconds": 2.115918,
+            "format": "MP3"
+        },
+        {
+            "file": "record/1.mp3",
+            "bytes": 45975,
+            "sha256": "ec4f0a70f696060679f7ae228473020b3f59771d0bebfb5fa5d7eae06bc25c23",
+            "metadataDurationSeconds": 1.436719,
+            "format": "MP3"
+        },
+        {
+            "file": "oral/keep_trying.mp3",
+            "bytes": 10851,
+            "sha256": "0c147d67052c30a3ac5b17e4709656dcc8a9ab11a1100ced6dc73f04b7091a0b",
+            "metadataDurationSeconds": 1.728,
+            "format": "MP3"
+        },
+        {
+            "file": "oral/good.mp3",
+            "bytes": 8403,
+            "sha256": "e3dabcd5697d7e9571a71abeb0d5a8a7e36bb07ad77e1f9f595966a4de5b1d3d",
+            "metadataDurationSeconds": 1.32,
+            "format": "MP3"
+        },
+        {
+            "file": "oral/excellent.mp3",
+            "bytes": 10707,
+            "sha256": "d62b5c29628d016ba4eaa74732dc7c5b463d77582388f215bdbfb5d1108ecae8",
+            "metadataDurationSeconds": 1.704,
+            "format": "MP3"
+        },
+        {
+            "file": "oral/perfect.mp3",
+            "bytes": 10419,
+            "sha256": "1e2652e6aa09b7a1b60651103229da50c67f6ae138841e4dac9fdb414a99dbd7",
+            "metadataDurationSeconds": 1.656,
+            "format": "MP3"
+        }
+    ]
+}

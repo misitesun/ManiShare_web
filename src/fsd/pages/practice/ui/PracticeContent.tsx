@@ -14,7 +14,8 @@ import { getPracticeReference } from '../model/reference-layout'
 import { practiceTechnicalMediaSources } from '../model/technical-media-samples'
 import { isPracticeAnswerVisible } from '../model/practice-visibility'
 import type { WordToolbarOptions } from '../model/word-toolbar-options'
-import type { WordSlotsFeedback } from '../model/word-slot-input'
+import type { WordSpellingInputController } from '../model/word-spelling-input'
+import type { WordSpellingQuestionTransition } from '../model/word-spelling-question-motion'
 import {
     getSentenceToolbarTranslationOverride,
     isSentenceToolbarMode,
@@ -73,7 +74,10 @@ export interface PracticeContentProps {
     readonly additionalOptions?: AdditionalToolbarOptions
     readonly onInput: (value: string) => void
     readonly onWordSpellingSubmit?: ((value: string) => void) | undefined
-    readonly wordSpellingFeedback?: WordSlotsFeedback | undefined
+    readonly onWordSpellingController?:
+        ((controller: WordSpellingInputController | null) => void) | undefined
+    readonly spellingQuestionRevision?: number | undefined
+    readonly spellingQuestionTransition?: WordSpellingQuestionTransition | null | undefined
     readonly onBlock: (id: string) => void
     readonly onNote: (questionId: string) => void
     readonly oralEnabled: boolean
@@ -118,7 +122,9 @@ export function PracticeContent({
     additionalOptions,
     onInput,
     onWordSpellingSubmit,
-    wordSpellingFeedback,
+    onWordSpellingController,
+    spellingQuestionRevision,
+    spellingQuestionTransition,
     onBlock,
     onNote,
     oralEnabled,
@@ -360,20 +366,24 @@ export function PracticeContent({
                     input={session.input}
                     onInput={onInput}
                     onSubmit={onWordSpellingSubmit}
-                    feedback={mode === 'spell' ? wordSpellingFeedback : undefined}
+                    onSpellingController={onWordSpellingController}
+                    onPlay={onReadAloud}
+                    questionRevision={spellingQuestionRevision}
+                    questionTransition={spellingQuestionTransition}
                     blocked={blocked}
                     showImage={imageVisible}
                     reading={reading}
                     showTranslation={showTranslation}
                     phoneticMode={localOptions?.phonetics ?? 'original'}
+                    showWordHint={mode === 'spell' && localOptions?.copy === true}
+                    ignoreCase={values.ignoreCase}
                     showPhonetics={
-                        mode === 'spell' && localOptions?.phonetics === 'none'
-                            ? false
+                        mode === 'spell'
+                            ? (localOptions?.phonetics ?? 'original') !== 'none'
                             : answerVisible
                               ? values.showAnswerPhonetics
                               : showPhonetics
                     }
-                    onNote={(): void => onNote(question.id)}
                     onNotice={onNotice}
                     displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
                     borderStyle={appearance.borderStyle}

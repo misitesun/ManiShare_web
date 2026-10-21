@@ -96,7 +96,7 @@ test('可见字段与保留历史字段覆盖存储模型，选择项和滑块�
             )
         }
     }
-    const expectedToneCounts = { typingTone: 13, correctTone: 2, errorTone: 6, completionTone: 9 }
+    const expectedToneCounts = { typingTone: 13, correctTone: 2, errorTone: 6, completionTone: 8 }
     for (const [key, count] of Object.entries(expectedToneCounts)) {
         const field = fields.find((candidate) => candidate.key === key)
         assert.ok(field && (field.kind === 'select' || field.kind === 'radio'))
@@ -314,7 +314,7 @@ test('专项新增字段按确认的选项恢复，非法输入仅回退对应�
     )
     assert.equal(defaultPreferences.correctEffectType, 'lottie-0')
     assert.equal(defaultPreferences.errorTone, '顿响')
-    assert.equal(defaultPreferences.completionTone, '章节完成音效1')
+    assert.equal(defaultPreferences.completionTone, '落幕（默认）')
     const restored = parsePreferences({
         version: 1,
         values: {

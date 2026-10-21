@@ -8,6 +8,7 @@ import {
     getWordSlotCharacters,
     getWordSlotTextPosition,
     getWordSlotPlaceholder,
+    getWordSlotHint,
     getWordSlotSelection,
     getWordSlotView,
     getWordSlotVisibleCaret,
@@ -35,6 +36,8 @@ export interface PracticeWordSlotsInputProps {
     readonly compact?: boolean | undefined
     readonly onSubmit?: ((value: string) => void) | undefined
     readonly feedback?: WordSlotsFeedback | undefined
+    /** 显式显示尚未录入的单词提示；默认关闭，其他输入消费者保持原行为。 */
+    readonly showWordHint?: boolean
 }
 
 /** 词槽只映射完整原生文本与选区；提交、编辑快捷键和输入法仍由原生输入及页面命令负责。 */
@@ -51,6 +54,7 @@ export function PracticeWordSlotsInput({
     compact = false,
     onSubmit,
     feedback,
+    showWordHint = false,
 }: PracticeWordSlotsInputProps): ReactElement {
     const id = useId()
     const internalInputRef = useRef<HTMLInputElement>(null)
@@ -282,6 +286,7 @@ export function PracticeWordSlotsInput({
             >
                 {slots.map((slot): ReactElement => {
                     const active = focused && !blocked && slot.index === activeIndex
+                    const hint = showWordHint ? getWordSlotHint(slot.target, slot.value) : ''
                     const characters =
                         feedback === undefined
                             ? undefined
@@ -347,8 +352,12 @@ export function PracticeWordSlotsInput({
                                             data-word-slot-placeholder
                                             className="invisible col-start-1 row-start-1"
                                         >
-                                            {getWordSlotPlaceholder(slot.target, slot.value) ||
-                                                '\u00a0'}
+                                            {(showWordHint
+                                                ? slot.value + hint
+                                                : getWordSlotPlaceholder(
+                                                      slot.target,
+                                                      slot.value,
+                                                  )) || '\u00a0'}
                                         </span>
                                         <span
                                             aria-hidden="true"
@@ -357,9 +366,22 @@ export function PracticeWordSlotsInput({
                                         >
                                             {slot.value}
                                         </span>
+                                        {hint && (
+                                            <span
+                                                data-word-slot-hint
+                                                className="pointer-events-none absolute inset-x-[0.12em] top-0 text-left text-practice-muted"
+                                            >
+                                                <span className="invisible">{slot.value}</span>
+                                                <span data-word-slot-hint-remaining>{hint}</span>
+                                            </span>
+                                        )}
                                         <span
                                             data-word-slot-answer
-                                            className="pointer-events-none absolute inset-x-0 top-0 text-center"
+                                            className={
+                                                showWordHint
+                                                    ? 'pointer-events-none absolute inset-x-[0.12em] top-0 text-left'
+                                                    : 'pointer-events-none absolute inset-x-0 top-0 text-center'
+                                            }
                                         >
                                             {characters ? (
                                                 <span className="inline-flex whitespace-pre">

@@ -1,5 +1,9 @@
 # 完整学习设置
 
+- 2026-10-20声音特效：`learningSoundAssets`／`getLearningSoundPreview`经根入口共享37份本地音源，资源、摘要、时长与映射见[声音素材](assets/sounds/README.md)。`EffectsSettings`六类显式试听使用`shared/lib/sound-player`，同一时刻只试听一个，关闭开关／改音色／后台／离开停止，开页及恢复设置不自动播放，当前试听音量可即时更新。沿原semantic主题和流式布局补充H5／PC操作，不新增颜色或依赖。
+- 已按用户要求删除“章节完成音效1”，默认改为“落幕（默认）”；`hasLegacyCompletionTone`使合法v1旧值经原键一次性回写落幕，保留其他设置及音量，失败仍使用可用内存并报告saveError。空／坏缓存不强行写入默认值。此项覆盖下方旧“默认值与合法历史数据不更改”的声音完成字段规则。
+- 本轮已补映射／迁移／试听SSR及播放生命周期用例，仅格式化和差异核对，未运行测试、构建或运行时试听，PC／平板／H5及Electron效果待用户验收。
+
 - 职责：共同维护发音、专项、答题、特效、外观、快捷键、系统七 Tab 的编辑、预览、本机持久化和背景图处理；供独立设置页及练习内完整弹窗复用同一份实现。
 - 入口：根 `index.ts` 导出 `LearningSettingsProvider`、`LearningSettingsEditor`、`useLearningSettingsSnapshot`、`PracticeBackgroundSurface` 和必要类型/Tab 解析函数；快捷键公开 `ShortcutPreferences`、`ShortcutPreferenceKey`、`ShortcutInput`、`shortcutFields`、`captureShortcut`、`shortcutError`、`getEffectiveShortcut` 和 `matchesShortcut`。内部 Hook 不作为公共入口，不在两个消费者里各自恢复、保存一份状态。
 - 所有者：app 的共同 Provider 装配点只挂载一次 `LearningSettingsProvider`，内部唯一调用偏好与背景图 Hook。独立页、弹窗、外观预览和练习消费同源值；打开/关闭设置不能重建练习会话。状态不使用跨标签页同步或新增全局状态库。

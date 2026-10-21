@@ -4,7 +4,7 @@ import { getWordDictionaryUrl } from '../model/word-dictionary'
 interface WordDictionaryLinkProps {
     readonly word: string
     readonly disabled: boolean
-    readonly appearance: 'front' | 'analysis'
+    readonly appearance: 'front' | 'spelling' | 'analysis'
     readonly children: ReactNode
 }
 
@@ -29,7 +29,9 @@ export function WordDictionaryLink({
             className={
                 appearance === 'front'
                     ? 'inline-flex size-8 shrink-0 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus aria-disabled:cursor-default'
-                    : 'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-practice-muted outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus aria-disabled:cursor-default md:size-8'
+                    : appearance === 'spelling'
+                      ? 'inline-flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus aria-disabled:cursor-default md:size-8'
+                      : 'flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-lg text-practice-muted outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-focus aria-disabled:cursor-default md:size-8'
             }
         >
             {children}

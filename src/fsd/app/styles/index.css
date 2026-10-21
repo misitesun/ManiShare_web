@@ -54,6 +54,7 @@
     --color-practice-exit-course: var(--app-color-practice-exit-course);
     --color-practice-exit-course-border: var(--app-color-practice-exit-course-border);
     --color-practice-muted: var(--app-color-practice-muted);
+    --color-practice-crystal: var(--app-color-practice-crystal);
     --color-sentence-answer-line: var(--app-color-sentence-answer-line);
     --color-sentence-reveal: var(--app-color-sentence-reveal);
     --color-sentence-block-selected: var(--app-color-sentence-block-selected);
@@ -235,6 +236,9 @@
     --color-dialog-overlay: var(--app-color-dialog-overlay);
     --color-dialog-surface: var(--app-color-dialog-surface);
     --color-dialog-surface-accent: var(--app-color-dialog-surface-accent);
+    --color-oral-action: var(--app-color-oral-action);
+    --color-oral-record: var(--app-color-oral-record);
+    --color-oral-play: var(--app-color-oral-play);
     --color-login-canvas: var(--app-color-login-canvas);
     --color-login-primary: var(--app-color-login-primary);
     --color-login-secondary: var(--app-color-login-secondary);
@@ -449,6 +453,7 @@
     --app-color-practice-design-answer: var(--app-color-answer-default-dark);
     --app-color-practice-sentence-answer: #ffffff;
     --app-color-practice-muted: rgba(255, 255, 255, 0.6);
+    --app-color-practice-crystal: #ffbf1f;
     --app-color-practice-card: #1b1c22;
     --app-color-practice-deck: #3b3949;
     --app-color-practice-phoneme: #424452;
@@ -628,6 +633,9 @@
     --app-color-dialog-overlay: rgb(0 0 0 / 50%);
     --app-color-dialog-surface: #0e0e10;
     --app-color-dialog-surface-accent: #111822;
+    --app-color-oral-action: #00de77;
+    --app-color-oral-record: #00de77;
+    --app-color-oral-play: #0090de;
     --app-color-login-canvas: #000000;
     --app-color-login-primary: #ffffff;
     --app-color-login-secondary: rgb(255 255 255 / 60%);
@@ -746,6 +754,7 @@
     --app-color-practice-design-answer: var(--app-color-answer-default-light);
     --app-color-practice-sentence-answer: var(--app-color-text-primary);
     --app-color-practice-muted: var(--app-color-text-secondary);
+    --app-color-practice-crystal: var(--app-color-warning);
     --app-color-practice-card: var(--app-color-surface);
     --app-color-practice-deck: var(--app-color-surface-raised);
     --app-color-practice-phoneme: var(--app-color-surface-recessed);
@@ -940,6 +949,9 @@
     --app-color-dialog-overlay: rgb(17 24 21 / 38%);
     --app-color-dialog-surface: #ffffff;
     --app-color-dialog-surface-accent: #f2f7f5;
+    --app-color-oral-action: #087e5c;
+    --app-color-oral-record: #00de77;
+    --app-color-oral-play: #0090de;
     --app-color-login-canvas: #000000;
     --app-color-login-primary: #ffffff;
     --app-color-login-secondary: rgb(255 255 255 / 60%);

@@ -27,3 +27,5 @@ export type { PracticeBackgroundState } from './model/usePracticeBackgroundImage
 export { LearningAudioWave } from './ui/LearningAudioWave'
 export { getLearningAnimation, resolveCorrectAnimationId } from './model/feedback-animations'
 export type { LearningAnimationId } from './model/feedback-animations'
+export { learningSoundAssets, getLearningSoundPreview } from './model/feedback-sounds'
+export type { LearningSoundAsset, LearningSoundPreviewKind } from './model/feedback-sounds'

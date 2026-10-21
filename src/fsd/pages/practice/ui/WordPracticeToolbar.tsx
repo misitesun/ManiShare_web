@@ -16,12 +16,14 @@ import type {
     WordToolbarOptions,
     WordToolbarRow,
 } from '../model/word-toolbar-options'
+import { WordSpellingCrystals } from './WordSpellingCrystals'
 
 interface WordPracticeToolbarProps {
     readonly mode: WordToolbarMode
     readonly values: WordToolbarOptions
     readonly onChange: (values: WordToolbarOptions) => void
     readonly onNotice: (message: string) => void
+    readonly crystals?: number
 }
 
 type ToolbarMenu = 'options' | 'order' | 'language' | 'phonetics' | null
@@ -55,6 +57,7 @@ export function WordPracticeToolbar({
     values,
     onChange,
     onNotice,
+    crystals = 0,
 }: WordPracticeToolbarProps): ReactElement {
     const [menu, setMenu] = useState<ToolbarMenu>(null)
     const phoneticsRef = useRef<HTMLDivElement>(null)
@@ -72,11 +75,6 @@ export function WordPracticeToolbar({
         media.addEventListener('change', closeHiddenMenu)
         return (): void => media.removeEventListener('change', closeHiddenMenu)
     }, [menu])
-    const phonetics =
-        mode === 'spell'
-            ? [phoneticOptions[1], phoneticOptions[0], phoneticOptions[2], phoneticOptions[3]]
-            : phoneticOptions
-
     return (
         <div
             data-practice-toolbar="word"
@@ -86,12 +84,14 @@ export function WordPracticeToolbar({
             className={
                 mode === 'pronounce'
                     ? 'relative z-[1] min-w-0 px-3 pt-5 text-practice-control-text design:absolute design:left-3 design:right-3 design:top-[21px] design:p-0'
-                    : 'relative z-30 min-w-0 px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
+                    : mode === 'spell'
+                      ? 'relative z-30 flex min-w-0 items-start gap-3 px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
+                      : 'relative z-30 min-w-0 px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
             }
         >
             <div
                 data-word-toolbar-scroll
-                className="-my-1 flex min-w-0 flex-nowrap items-center gap-0.5 overflow-x-auto overscroll-x-contain py-1 md:gap-3"
+                className="-my-1 flex min-w-0 flex-1 flex-nowrap items-center gap-0.5 overflow-x-auto overscroll-x-contain py-1 md:gap-3"
             >
                 <PracticeToolbarTimer family="word" />
                 <PracticeToolbarOptions
@@ -110,7 +110,8 @@ export function WordPracticeToolbar({
                                 value={values.copy}
                                 onChange={(copy): void => {
                                     onChange({ ...values, copy })
-                                    onNotice('输入方式已选择，抄写题面待后续精修。')
+                                    if (mode !== 'spell')
+                                        onNotice('输入方式已选择，抄写题面待后续精修。')
                                 }}
                             />
                         ) : (
@@ -195,7 +196,7 @@ export function WordPracticeToolbar({
                                 menuPosition="portal"
                                 label="音标方案"
                                 value={values.phonetics}
-                                options={phonetics}
+                                options={phoneticOptions}
                                 open={menu === 'phonetics'}
                                 onOpenChange={(open): void =>
                                     setMenu((current) =>
@@ -230,7 +231,7 @@ export function WordPracticeToolbar({
                                 tone="practice-outline"
                                 motion="slide"
                             />
-                            {phonetics.map((option) => (
+                            {phoneticOptions.map((option) => (
                                 <button
                                     key={option.value}
                                     type="button"
@@ -252,6 +253,7 @@ export function WordPracticeToolbar({
                     </>
                 )}
             </div>
+            {mode === 'spell' && <WordSpellingCrystals value={crystals} />}
             <span className="sr-only">排序、中英显示与音标方案均作用于当前本地练习。</span>
         </div>
     )

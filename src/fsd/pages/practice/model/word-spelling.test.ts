@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { judgeWordSpelling, getWordSpellingAccuracy } from './word-spelling'
+import {
+    judgeWordSpelling,
+    getWordSpellingAccuracy,
+    getWordSpellingCrystals,
+} from './word-spelling'
 import { getDemoQuestions, initialPracticeSession, reducePracticeSession } from './practice-demo'
 
 test('拼写模拟题保留原两条并新增十个不同单词，不扩展默写或其他模式', (): void => {
@@ -43,21 +47,55 @@ test('错题可原文修改重试，非空提交计次，成功后重复提交�
     assert.equal(wrong.phase, 'incorrect')
     assert.equal(wrong.input, 'wom')
     assert.deepEqual(wrong.spellingStatistics, { submissions: 1, correct: 0 })
+    assert.equal(getWordSpellingCrystals(wrong.spellingStatistics), 0)
     const edited = reducePracticeSession(wrong, { type: 'input', value: 'WOMAN ' })
     const correct = reducePracticeSession(edited, { ...submit, value: edited.input })
     assert.equal(correct.phase, 'correct')
     assert.equal(correct.input, 'WOMAN ')
     assert.deepEqual(correct.spellingStatistics, { submissions: 2, correct: 1 })
     assert.equal(getWordSpellingAccuracy(correct.spellingStatistics), 50)
+    assert.equal(getWordSpellingCrystals(correct.spellingStatistics), 10)
     assert.equal(reducePracticeSession(correct, { ...submit, value: 'wrong' }), correct)
     const next = reducePracticeSession(correct, { type: 'move', delta: 1, total: 12 })
     assert.equal(next.phase, 'answering')
     assert.equal(next.input, '')
     assert.deepEqual(next.spellingStatistics, correct.spellingStatistics)
+    assert.equal(getWordSpellingCrystals(next.spellingStatistics), 10)
     assert.deepEqual(reducePracticeSession(next, { type: 'reset' }).spellingStatistics, {
         submissions: 0,
         correct: 0,
     })
+})
+
+test('本轮黄晶只随有效正确提交每次增加10，重复提交、揭晓和切题不发奖励，重练清零', (): void => {
+    const submit = {
+        type: 'submit-spelling',
+        target: 'woman',
+        value: 'woman',
+        ignoreCase: true,
+    } as const
+    const correct = reducePracticeSession(initialPracticeSession, submit)
+    const duplicate = reducePracticeSession(correct, submit)
+    assert.equal(getWordSpellingCrystals(initialPracticeSession.spellingStatistics), 0)
+    assert.equal(getWordSpellingCrystals(duplicate.spellingStatistics), 10)
+    const next = reducePracticeSession(duplicate, { type: 'move', delta: 1, total: 12 })
+    const revealed = reducePracticeSession(next, { type: 'phase', phase: 'revealed' })
+    assert.equal(
+        getWordSpellingCrystals(reducePracticeSession(revealed, submit).spellingStatistics),
+        10,
+    )
+    const another = reducePracticeSession(next, {
+        ...submit,
+        target: 'apple',
+        value: 'apple',
+    })
+    assert.equal(getWordSpellingCrystals(another.spellingStatistics), 20)
+    assert.equal(
+        getWordSpellingCrystals(
+            reducePracticeSession(another, { type: 'reset' }).spellingStatistics,
+        ),
+        0,
+    )
 })
 
 test('揭晓和结束不推导正确结果，准确率由本轮提交量计算并四舍五入', (): void => {

@@ -1,15 +1,12 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import type { SoundAudio } from '../../../shared/lib/sound-player'
 import {
     createPracticeFeedbackSoundController,
     getPracticeFeedbackAnimation,
     getPracticeFeedbackSoundSelection,
 } from './practice-feedback'
-import type {
-    PracticeFeedbackAudio,
-    PracticeFeedbackPreferences,
-    PracticeFeedbackSoundAssets,
-} from './practice-feedback'
+import type { PracticeFeedbackPreferences, PracticeFeedbackSoundAssets } from './practice-feedback'
 
 const values: PracticeFeedbackPreferences = {
     typingSound: true,
@@ -22,7 +19,7 @@ const values: PracticeFeedbackPreferences = {
     errorTone: '顿响',
     errorVolume: 30,
     completionSound: true,
-    completionTone: '章节完成音效1',
+    completionTone: '落幕（默认）',
     completionVolume: 80,
     transitionSound: true,
     evaluationSound: true,
@@ -31,9 +28,10 @@ const values: PracticeFeedbackPreferences = {
     completionEffect: true,
 }
 
-class AudioStub implements PracticeFeedbackAudio {
+class AudioStub implements SoundAudio {
     src = ''
     volume = 1
+    currentTime = 0
     preload = ''
     pauseCount = 0
     loadCount = 0
@@ -82,8 +80,53 @@ const assets: PracticeFeedbackSoundAssets = {
     'typing:轻键': { src: '/fixtures/typing-light.wav' },
     'correct:清音（默认）': { src: '/fixtures/correct-clear.wav' },
     'incorrect:顿响': { src: '/fixtures/error-thud.wav' },
-    'chapterComplete:章节完成音效1': { src: '/fixtures/complete-one.wav' },
+    'chapterComplete:落幕（默认）': { src: '/fixtures/complete-one.wav' },
 }
+
+test('同源打字限流并复用，结果声与卡牌操作不会被打字或随后的切题截断', (): void => {
+    let time = 0
+    const audios: AudioStub[] = []
+    const controller = createPracticeFeedbackSoundController(
+        {
+            ...assets,
+            questionChange: { src: '/next.wav', volume: 0.4 },
+            wordRemember: { src: '/remember.mp3', volume: 0.4 },
+        },
+        (): AudioStub => {
+            const audio = new AudioStub()
+            audios.push(audio)
+            return audio
+        },
+        (): number => time,
+    )
+    controller.consume({ id: 1, kind: 'typing' }, values)
+    time = 20
+    controller.consume({ id: 2, kind: 'typing' }, values)
+    assert.equal(audios.length, 1)
+    assert.equal(audios[0]?.playCount, 1)
+    time = 60
+    controller.consume({ id: 3, kind: 'typing' }, values)
+    assert.equal(audios.length, 1)
+    assert.equal(audios[0]?.playCount, 2)
+    controller.consume({ id: 4, kind: 'correct' }, values)
+    const correct = audios[1]
+    assert.ok(correct)
+    controller.consume({ id: 5, kind: 'typing' }, values)
+    controller.consume({ id: 6, kind: 'questionChange' }, values)
+    assert.equal(audios.length, 2)
+    assert.ok(correct.src)
+    assert.equal(correct.pauseCount, 0)
+    correct.emit('ended')
+    controller.consume({ id: 7, kind: 'wordRemember' }, values)
+    const remember = audios[2]
+    assert.ok(remember)
+    controller.consume({ id: 8, kind: 'questionChange' }, values)
+    assert.equal(audios.length, 3)
+    assert.equal(remember.pauseCount, 0)
+    controller.updatePreferences({ ...values, transitionSound: false })
+    assert.equal(remember.src, '')
+    controller.dispose()
+})
 
 test('未接入素材或关闭音效时不创建音频；不同音色不回退到默认素材', (): void => {
     let created = 0
@@ -109,7 +152,7 @@ test('四类音色各用自身音量；切题和评测提示必须有已确认�
     const controller = createPracticeFeedbackSoundController(
         {
             questionChange: { src: '/fixtures/question.wav' },
-            evaluationComplete: { src: '/fixtures/evaluation.wav', volume: 0.25 },
+            'evaluationComplete:GOOD': { src: '/fixtures/evaluation.wav', volume: 0.25 },
         },
         (): AudioStub => audio,
     )

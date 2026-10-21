@@ -26,6 +26,19 @@ test('没有缓存、格式损坏或未知版本时使用空缓存，不引入�
         assert.deepEqual(parsePracticeToolbarPreferences(value), { version: 1, scopes: {} })
 })
 
+test('拼写无有效音标缓存时默认原始音标，合法个人选择仍可恢复', (): void => {
+    for (const phonetics of [undefined, 'unknown', 'original', 'syllables', 'phonics', 'none']) {
+        const preferences = parsePracticeToolbarPreferences({
+            version: 1,
+            scopes: { 'word:spell': { phonetics } },
+        })
+        assert.equal(
+            getWordToolbarPreferences(preferences, 'spell').phonetics,
+            phonetics === undefined || phonetics === 'unknown' ? 'original' : phonetics,
+        )
+    }
+})
+
 test('缓存缺项或坏值逐字段回退，合法false和枚举值可恢复', (): void => {
     const preferences = parsePracticeToolbarPreferences({
         version: 1,

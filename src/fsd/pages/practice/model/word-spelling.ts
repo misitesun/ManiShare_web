@@ -24,3 +24,8 @@ export function getWordSpellingAccuracy(statistics: WordSpellingStatistics): num
         ? 0
         : Math.round((statistics.correct / statistics.submissions) * 100)
 }
+
+/** 当前暂定每次有效答对加10黄晶；复用已去重的本轮统计，不创建账户或持久化状态。 */
+export function getWordSpellingCrystals(statistics: WordSpellingStatistics): number {
+    return statistics.correct * 10
+}

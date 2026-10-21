@@ -21,9 +21,11 @@ export interface MediaResponsePlan {
     readonly body: MediaResponseByteSpan | null
 }
 
-/** 首版只给已有本地 WAV / MP4 开启范围传输，不改变 HTML、RSC 或其他资源。 */
+/** 仅本地 WAV／MP3／MP4 使用范围传输，不改变 HTML、RSC 或其他资源。 */
 export function supportsMediaByteRanges(contentType: string): boolean {
-    return contentType === 'audio/wav' || contentType === 'video/mp4'
+    return (
+        contentType === 'audio/wav' || contentType === 'audio/mpeg' || contentType === 'video/mp4'
+    )
 }
 
 export function resolveMediaByteRange(

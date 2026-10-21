@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { WordDictionaryLink } from './WordDictionaryLink'
 
 test('正面搜索与背面查词共用当前单词外链，均在新标签打开且隔离opener和referrer', (): void => {
-    for (const appearance of ['front', 'analysis'] as const)
+    for (const appearance of ['front', 'spelling', 'analysis'] as const)
         for (const word of ['apple', 'woman']) {
             const html = renderToStaticMarkup(
                 createElement(WordDictionaryLink, {

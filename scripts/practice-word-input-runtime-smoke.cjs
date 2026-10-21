@@ -507,13 +507,15 @@ async function checkWordSpelling(window, origin, label, report) {
     assert.equal(current.phase, 'correct')
     assert.equal(current.result, true)
     assert.equal(current.oral, true)
-    assert.equal(current.answerPanel, true)
+    assert.equal(current.answerPanel, false, 'correct submission does not open the answer panel')
     assert.equal(current.answer, 'woman')
     assert.deepEqual(current.statistics, ['3', '1', '33%'])
     assert.equal(current.oralBounds.width, 234)
     assert.equal(current.oralBounds.height, 46)
     assert.equal(current.statsBounds.width, 385)
     assert.equal(current.statsBounds.height, 68)
+    await press(window, 'ArrowDown')
+    assert.equal((await spellingResult(window)).answerPanel, true)
     await waitFor(
         window,
         () => {
@@ -523,8 +525,10 @@ async function checkWordSpelling(window, origin, label, report) {
                 Math.abs(new DOMMatrixReadOnly(getComputedStyle(panel).transform).m42) < 0.1
             )
         },
-        'correct answer panel finishes its entrance',
+        'manually opened answer panel finishes its entrance',
     )
+    await press(window, 'ArrowUp')
+    assert.equal((await spellingResult(window)).answerPanel, false)
     await settle(window)
     await capture(window, label, 'spelling-correct', report)
     const responsive = []
@@ -612,7 +616,7 @@ async function checkWordSpelling(window, origin, label, report) {
         const completed = await spellingResult(window)
         assert.equal(completed.phase, 'correct')
         assert.equal(completed.answer, target)
-        assert.equal(completed.answerPanel, true)
+        assert.equal(completed.answerPanel, false)
         words.push(target)
     }
     assert.equal(new Set(words).size, 10)

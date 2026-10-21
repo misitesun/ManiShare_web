@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import { sharedConfig } from '../../../shared/config'
 import { storage } from '../../../shared/lib/storage'
 import { notification } from '../../../shared/notification'
-import { defaultPreferences, hasLegacyControlShortcut, parsePreferences } from './preferences'
+import {
+    defaultPreferences,
+    hasLegacyCompletionTone,
+    hasLegacyControlShortcut,
+    parsePreferences,
+} from './preferences'
 import type { LearningPreferences } from './preferences'
 
 export interface LearningPreferencesState {
@@ -21,7 +26,7 @@ interface RestoredLearningPreferences {
     saveError: boolean
 }
 
-/** 挂载后调用；恢复与一次性 Ctrl 迁移回写共用原偏好键。 */
+/** 挂载后恢复；Ctrl快捷键及旧完成音色的迁移共用原偏好键，仅回写一次。 */
 export function restoreLearningPreferences(): RestoredLearningPreferences {
     let stored: unknown
     try {
@@ -30,7 +35,7 @@ export function restoreLearningPreferences(): RestoredLearningPreferences {
         return { values: { ...defaultPreferences }, saveError: true }
     }
     const values = parsePreferences(stored)
-    if (hasLegacyControlShortcut(stored)) {
+    if (hasLegacyControlShortcut(stored) || hasLegacyCompletionTone(stored)) {
         try {
             storage.set(sharedConfig.storageKeys.learningPreferences, { version: 1, values })
         } catch {

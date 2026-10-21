@@ -153,7 +153,7 @@ export const defaultPreferences: LearningPreferences = {
     errorTone: '顿响',
     errorVolume: 100,
     completionSound: true,
-    completionTone: '章节完成音效1',
+    completionTone: '落幕（默认）',
     completionVolume: 100,
     showTranslation: true,
     showPhonetics: false,
@@ -393,7 +393,6 @@ export const preferenceGroups: Record<SettingsTab, readonly SettingsGroup[]> = {
                     key: 'completionTone',
                     label: '章节完成音效类型',
                     options: [
-                        '章节完成音效1',
                         '落幕（默认）',
                         '终章',
                         '礼赞',
@@ -719,6 +718,16 @@ export function hasLegacyControlShortcut(value: unknown): boolean {
         const shortcut = source[key]
         return typeof shortcut === 'string' && isShortcut(shortcut) && hasControlModifier(shortcut)
     })
+}
+
+/** 已删除的历史完成音色只迁移该字段，其他合法偏好照常保留。 */
+export function hasLegacyCompletionTone(value: unknown): boolean {
+    return (
+        isRecord(value) &&
+        value.version === 1 &&
+        isRecord(value.values) &&
+        value.values.completionTone === '章节完成音效1'
+    )
 }
 
 function hasControlModifier(value: string): boolean {

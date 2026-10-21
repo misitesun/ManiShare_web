@@ -137,15 +137,15 @@ test('区间读取不会发送文件之外或截断后的错误字节长度', ()
     }
 })
 
-test('Range 传输仅限首版 WAV 和 MP4，HTML、RSC、图片等维持原有响应', (): void => {
+test('Range 传输限 WAV／MP3／MP4，HTML、RSC、图片等维持原有响应', (): void => {
     assert.equal(supportsMediaByteRanges('audio/wav'), true)
     assert.equal(supportsMediaByteRanges('video/mp4'), true)
+    assert.equal(supportsMediaByteRanges('audio/mpeg'), true)
     for (const mime of [
         'text/html; charset=utf-8',
         'text/x-component',
         'text/javascript; charset=utf-8',
         'image/png',
-        'audio/mpeg',
         'application/octet-stream',
         'text/plain; charset=utf-8',
     ])
