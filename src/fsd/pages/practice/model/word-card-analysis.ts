@@ -8,6 +8,7 @@ export interface WordCardExample {
     readonly id: string
     readonly english: readonly WordExamplePart[]
     readonly translation: readonly WordExamplePart[]
+    readonly readingSource?: string
 }
 
 export interface WordCardAnalysisState {

@@ -10,7 +10,7 @@ const panels = [
         name: 'answer',
         selector: '[data-practice-answer-panel="answer"]',
         navigation: '[data-practice-navigation-action="answer"]',
-        close: '[data-practice-answer-panel="answer"] button',
+        close: '[data-practice-navigation-action="answer"]',
         axis: 'y',
         direction: -1,
     },

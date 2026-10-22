@@ -77,7 +77,13 @@ test('阻断时拼写解析、不熟及两面的词典外链均不可操作', ()
     const html = renderCard('spell', true)
     assert.match(html, /data-word-analysis-trigger[^>]*disabled=""/)
     assert.match(html, /disabled=""[^>]*aria-label="标记当前单词为不熟"/)
-    assert.doesNotMatch(html, /\shref=/)
+    const dictionaryLinks = html.match(/<a\b[^>]*data-word-dictionary-link[^>]*>/g) ?? []
+    assert.equal(dictionaryLinks.length, 2)
+    for (const link of dictionaryLinks) {
+        assert.doesNotMatch(link, /\shref=/)
+        assert.match(link, /aria-disabled="true"/)
+        assert.match(link, /tabindex="-1"/)
+    }
     assert.match(html, /aria-disabled="true" tabindex="-1"/)
 })
 

@@ -10,7 +10,7 @@ import {
 
 const question = { english: 'Thanks for your message.', translation: '谢谢你的留言。' }
 
-test('专用内容弹窗仅用于单词和句子族，与小模式无关', (): void => {
+test('未提供小模式时，原单词和句子内容弹窗契约保持', (): void => {
     for (const demo of practiceDemos) {
         assert.equal(
             usesPracticeContentDialog(demo.family),
@@ -52,4 +52,21 @@ test('显示层保留题目原文与缺项，不改写或编造内容', (): void
         { language: 'zh-CN', text: '' },
     ])
     assert.deepEqual(original, { english: 'a < b & c', translation: '' })
+})
+
+test('音频七模式接入同一共用内容弹窗', (): void => {
+    assert.equal(usesPracticeContentDialog('audio', 'listen'), true)
+    for (const mode of ['read', 'check', 'translate', 'blocks', 'typing', 'oral'] as const)
+        assert.equal(usesPracticeContentDialog('audio', mode), true)
+    for (const family of ['word', 'sentence'] as const)
+        for (const mode of [
+            'listen',
+            'read',
+            'check',
+            'translate',
+            'blocks',
+            'typing',
+            'oral',
+        ] as const)
+            assert.equal(usesPracticeContentDialog(family, mode), true)
 })

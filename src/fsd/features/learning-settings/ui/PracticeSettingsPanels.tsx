@@ -50,7 +50,6 @@ function SettingsFields({
                                 <TldButton
                                     size="compact"
                                     variant="secondary"
-                                    className="min-h-10 cursor-pointer disabled:cursor-not-allowed md:min-h-8"
                                     disabled={!preview.enabled || !preview.asset}
                                     aria-label={`${previewing === kind ? '停止试听' : '试听'}${preview.label}`}
                                     onClick={(): void => onSoundPreview(kind)}

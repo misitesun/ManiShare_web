@@ -175,11 +175,18 @@ async function assertAudioScope(window) {
         splitGroups: document.querySelectorAll('[data-audio-toolbar] [aria-label="句子显示方式"]')
             .length,
         audioCount: document.querySelectorAll('main[aria-label="练习内容"] audio').length,
+        listening: Boolean(document.querySelector('[data-audio-listening]')),
+        mode: new URLSearchParams(location.search).get('mode'),
     }))
     assert.deepEqual(scope.footerKnowledge, [], 'audio footer has no mastered or unfamiliar action')
     assert.deepEqual(scope.splitChoices, [], 'audio toolbar has no full or split choice')
     assert.equal(scope.splitGroups, 0, 'audio toolbar has no sentence split group')
-    assert.equal(scope.audioCount, 1, 'audio mode keeps one real audio element')
+    assert.equal(scope.listening, scope.mode === 'listen', 'only listening uses the shared surface')
+    assert.equal(
+        scope.audioCount,
+        scope.mode === 'listen' ? 0 : 1,
+        'listening uses its separate reading host; other modes keep the technical player',
+    )
 }
 
 async function visitMode(window, origin, mode, waitForNetworkIdle) {
@@ -210,7 +217,16 @@ async function visitMode(window, origin, mode, waitForNetworkIdle) {
     await waitForImages(window, 'body', mode + ' images complete')
     await waitFor(
         window,
-        () => {
+        (expected) => {
+            if (expected === 'listen')
+                return (
+                    Boolean(document.querySelector('[data-audio-listening]')) &&
+                    Boolean(
+                        document.querySelector(
+                            '[data-audio-listening-controls] button[aria-label="播放"]:enabled, [data-audio-listening-controls] button[aria-label="暂停"]:enabled',
+                        ),
+                    )
+                )
             const audio = document.querySelector('main[aria-label="练习内容"] audio')
             return (
                 audio !== null &&
@@ -219,7 +235,8 @@ async function visitMode(window, origin, mode, waitForNetworkIdle) {
                 audio.duration > 0
             )
         },
-        mode + ' audio metadata ready',
+        mode + ' player or shared reading controls ready',
+        mode,
     )
     await assertAudioScope(window)
 }
@@ -428,7 +445,164 @@ async function switchMode(window, mode) {
     await assertAudioScope(window)
 }
 
+async function checkListeningMediaPreservation(window) {
+    await closeOptions(window)
+    await evaluate(window, () => {
+        const state = {
+            originalPlay: HTMLMediaElement.prototype.play,
+            element: null,
+            replacements: 0,
+            originalLoop: false,
+            originalMuted: false,
+            events: { loadstart: 0, emptied: 0, pause: 0 },
+            listeners: [],
+        }
+        window.audioToolbarReadingCheck = state
+        HTMLMediaElement.prototype.play = function (...args) {
+            if (
+                this instanceof HTMLAudioElement &&
+                this.src.includes('/practice-demo/sentence-listening/')
+            ) {
+                if (state.element === null) {
+                    state.element = this
+                    state.originalLoop = this.loop
+                    state.originalMuted = this.muted
+                    this.loop = true
+                    this.muted = true
+                    for (const name of Object.keys(state.events)) {
+                        const handler = () => state.events[name]++
+                        this.addEventListener(name, handler)
+                        state.listeners.push([name, handler])
+                    }
+                } else if (state.element !== this) state.replacements++
+            }
+            return state.originalPlay.apply(this, args)
+        }
+    })
+    try {
+        if (
+            await evaluate(window, () =>
+                Boolean(
+                    document.querySelector(
+                        '[data-audio-listening-controls] button[aria-label="暂停"]',
+                    ),
+                ),
+            )
+        )
+            await click(window, '[data-audio-listening-controls] button[aria-label="暂停"]')
+        await click(window, '[data-audio-listening-controls] button[aria-label="播放"]')
+        await waitFor(
+            window,
+            () => {
+                const audio = window.audioToolbarReadingCheck.element
+                return audio && !audio.paused && audio.readyState >= 2 && audio.currentTime > 0
+            },
+            'shared reading host really plays its local WAV',
+        )
+        const original = await evaluate(window, () => {
+            const state = window.audioToolbarReadingCheck
+            state.events = { loadstart: 0, emptied: 0, pause: 0 }
+            return {
+                source: state.element.src,
+                volume: state.element.volume,
+                rate: state.element.playbackRate,
+            }
+        })
+        assert.match(original.source, /\/practice-demo\/sentence-listening\/.+\.wav$/)
+        await openOptions(window)
+        for (const name of ['图片', '切读']) {
+            for (const checked of [false, true]) {
+                await click(
+                    window,
+                    '[data-audio-options] [role="switch"][aria-label="' + name + '"]',
+                )
+                await waitFor(
+                    window,
+                    (label, expected) =>
+                        document
+                            .querySelector(
+                                '[data-audio-options] [role="switch"][aria-label="' + label + '"]',
+                            )
+                            ?.getAttribute('aria-checked') === String(expected),
+                    'local choice updates independently of manual playback',
+                    name,
+                    checked,
+                )
+                if (name === '图片')
+                    assert.equal(
+                        await evaluate(window, () =>
+                            Boolean(
+                                document.querySelector(
+                                    '[data-audio-listening] [data-practice-media]',
+                                ),
+                            ),
+                        ),
+                        checked,
+                    )
+                const current = await evaluate(window, () => {
+                    const state = window.audioToolbarReadingCheck
+                    return {
+                        source: state.element.src,
+                        volume: state.element.volume,
+                        rate: state.element.playbackRate,
+                        playing: !state.element.paused,
+                        replacements: state.replacements,
+                        events: { ...state.events },
+                    }
+                })
+                assert.equal(current.source, original.source)
+                assert.equal(current.volume, original.volume)
+                assert.equal(current.rate, original.rate)
+                assert.equal(current.playing, true)
+                assert.equal(current.replacements, 0)
+                assert.deepEqual(current.events, { loadstart: 0, emptied: 0, pause: 0 })
+            }
+        }
+        await closeOptions(window)
+        await click(window, '[data-audio-listening-controls] button[aria-label="暂停"]')
+        await waitFor(
+            window,
+            () => window.audioToolbarReadingCheck.element.paused,
+            'manual pause stops the shared reading host',
+        )
+        const final = await evaluate(window, () => {
+            const state = window.audioToolbarReadingCheck
+            return {
+                source: state.element.src,
+                volume: state.element.volume,
+                rate: state.element.playbackRate,
+                replacements: state.replacements,
+                loadstart: state.events.loadstart,
+                emptied: state.events.emptied,
+            }
+        })
+        assert.deepEqual(final, { ...original, replacements: 0, loadstart: 0, emptied: 0 })
+        await openOptions(window)
+        return {
+            sharedReadingHost: true,
+            localChoicesPreserveElementSourceAndManualPlayback: true,
+            manualPausePreserved: true,
+            noReload: true,
+        }
+    } finally {
+        await evaluate(window, () => {
+            const state = window.audioToolbarReadingCheck
+            if (!state) return
+            HTMLMediaElement.prototype.play = state.originalPlay
+            if (state.element) {
+                state.element.pause()
+                for (const [name, handler] of state.listeners)
+                    state.element.removeEventListener(name, handler)
+                state.element.loop = state.originalLoop
+                state.element.muted = state.originalMuted
+            }
+            delete window.audioToolbarReadingCheck
+        })
+    }
+}
+
 async function checkMediaPreservation(window, definition) {
+    if (definition.mode === 'listen') return checkListeningMediaPreservation(window)
     const original = await evaluate(window, () => {
         const audio = document.querySelector('main[aria-label="练习内容"] audio')
         if (!audio) throw new Error('Missing audio for local toolbar preservation check')

@@ -36,7 +36,7 @@ export function isSentenceToolbarMode(value: string): value is SentenceToolbarMo
     )
 }
 
-/** split=false 表示完整；这里只保存截图选择，不执行拆句、抄写或切读。 */
+/** split=false表示完整；中译英copy控制输入提示，cutReading由页面朗读宿主消费。 */
 export function createSentenceToolbarOptions(mode: SentenceToolbarMode): SentenceToolbarOptions {
     const options: SentenceToolbarOptions = {
         split: true,

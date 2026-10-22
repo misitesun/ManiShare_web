@@ -1,11 +1,41 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
+    createPracticeEntryLoadingCompletion,
     completePracticeEntryLoading,
     getPracticeEntryLoadingProgress,
     practiceEntryLoadingDurationMs,
     reconcilePracticeEntryLoading,
 } from './practice-entry-loading'
+
+test('计时先到时无需等待动画帧，动画晚到也只能完成一次', (): void => {
+    let completed = 0
+    const completion = createPracticeEntryLoadingCompletion((): void => {
+        completed += 1
+    })
+    const timer = completion.finish
+    const animation = completion.finish
+    timer()
+    animation()
+    timer()
+    assert.equal(completed, 1)
+})
+
+test('动画先结束仍只完成一次，入口卸载后晚到计时和动画都无效', (): void => {
+    let completed = 0
+    const complete = (): void => {
+        completed += 1
+    }
+    const animationFirst = createPracticeEntryLoadingCompletion(complete)
+    animationFirst.finish()
+    animationFirst.finish()
+    assert.equal(completed, 1)
+    const cancelled = createPracticeEntryLoadingCompletion(complete)
+    cancelled.cancel()
+    cancelled.finish()
+    cancelled.finish()
+    assert.equal(completed, 1)
+})
 
 test('entry progress runs linearly for two seconds and stays within its accessible range', (): void => {
     assert.equal(practiceEntryLoadingDurationMs, 2000)

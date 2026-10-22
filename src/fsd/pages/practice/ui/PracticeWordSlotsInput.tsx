@@ -3,7 +3,10 @@
 import { useMemo } from 'react'
 import type { CSSProperties, ReactElement, RefObject } from 'react'
 import type { PracticePhase } from '../model/practice-demo'
-import type { WordSpellingInputController } from '../model/word-spelling-input'
+import type {
+    PracticeAnswerAlphabet,
+    WordSpellingInputController,
+} from '../model/word-spelling-input'
 import { createWordSpellingLayout } from '../model/word-spelling-input'
 import type { WordSlotsFeedback } from '../model/word-slot-input'
 import { PracticeAnswerInput } from './PracticeAnswerInput'
@@ -23,7 +26,7 @@ export interface PracticeWordSlotsInputProps {
     readonly onSubmit?: ((value: string) => void) | undefined
     readonly onController?: ((controller: WordSpellingInputController | null) => void) | undefined
     readonly ignoreCase?: boolean | undefined
-    readonly alphabet?: 'text' | 'typing'
+    readonly alphabet?: PracticeAnswerAlphabet
     readonly onCursorChange?: ((cursor: number) => void) | undefined
     readonly feedback?: WordSlotsFeedback | undefined
     readonly showWordHint?: boolean

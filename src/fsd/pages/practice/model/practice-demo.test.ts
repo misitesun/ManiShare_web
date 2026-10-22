@@ -79,3 +79,41 @@ test('完成只标记本轮结束，重练恢复首题输入和题态而不冒�
     assert.equal(finished.index, 1)
     assert.deepEqual(reducePracticeSession(finished, { type: 'reset' }), initialPracticeSession)
 })
+
+test('句子中译英、自查、指法、口语与拼块复用十条既有句子与音源', (): void => {
+    const questions = getDemoQuestions('sentence', 'translate')
+    assert.equal(questions.length, 10)
+    assert.equal(new Set(questions.map((question) => question.id)).size, 10)
+    assert.deepEqual(questions, getDemoQuestions('sentence', 'listen'))
+    assert.deepEqual(questions, getDemoQuestions('sentence', 'read'))
+    assert.deepEqual(questions, getDemoQuestions('sentence', 'check'))
+    assert.deepEqual(questions, getDemoQuestions('sentence', 'typing'))
+    assert.deepEqual(questions, getDemoQuestions('sentence', 'oral'))
+    for (const question of getDemoQuestions('sentence', 'check'))
+        assert.match(question.readingSource ?? '', /^\/practice-demo\/sentence-listening\/.+\.wav$/)
+    assert.deepEqual(getDemoQuestions('sentence', 'blocks'), questions)
+})
+
+test('音频七模式使用独立十题，正文与只读WAV复用句子，题目和词块身份隔离', (): void => {
+    const audio = getDemoQuestions('audio', 'listen')
+    const sentence = getDemoQuestions('sentence', 'listen')
+    assert.equal(audio.length, 10)
+    assert.notEqual(audio, sentence)
+    assert.equal(new Set(audio.map((question) => question.id)).size, 10)
+    for (const [index, question] of audio.entries()) {
+        const original = sentence[index]
+        if (!original) throw new Error('Missing sentence fixture')
+        assert.notEqual(question, original)
+        assert.notEqual(question.id, original.id)
+        assert.notEqual(question.tokens, original.tokens)
+        assert.equal(question.english, original.english)
+        assert.equal(question.readingSource, original.readingSource)
+        for (const [tokenIndex, token] of question.tokens.entries()) {
+            assert.notEqual(token, original.tokens[tokenIndex])
+            assert.notEqual(token.id, original.tokens[tokenIndex]?.id)
+            assert.equal(token.text, original.tokens[tokenIndex]?.text)
+        }
+    }
+    for (const mode of ['read', 'check', 'translate', 'blocks', 'typing', 'oral'] as const)
+        assert.equal(getDemoQuestions('audio', mode), audio)
+})

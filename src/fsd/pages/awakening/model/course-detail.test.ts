@@ -5,7 +5,19 @@ import {
     hasAwakeningCourseDetail,
     getAwakeningPracticeEntry,
     isAwakeningPracticeSource,
+    getNextAwakeningPracticeChapter,
 } from './course-detail'
+
+test('自动下节沿本地课程顺序，缺失、非法、不匹配来源和末章没有下一章', (): void => {
+    const next = getNextAwakeningPracticeChapter('phonetics', 'chapter-1', 'sentence-basic')
+    assert.equal(next?.chapterId, 'chapter-2')
+    assert.equal(next?.demoId, 'word-basic')
+    assert.equal(next?.defaultMode, 'pronounce')
+    assert.equal(getNextAwakeningPracticeChapter('unknown', 'chapter-1', 'sentence-basic'), null)
+    assert.equal(getNextAwakeningPracticeChapter('phonetics', 'missing', 'sentence-basic'), null)
+    assert.equal(getNextAwakeningPracticeChapter('phonetics', 'chapter-1', 'word-basic'), null)
+    assert.equal(getNextAwakeningPracticeChapter('phonetics', 'chapter-13', 'picture-basic'), null)
+})
 
 test('only the provided course exposes the static detail preview', () => {
     assert.equal(hasAwakeningCourseDetail('phonetics'), true)

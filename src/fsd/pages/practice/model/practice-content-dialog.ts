@@ -1,4 +1,4 @@
-import type { PracticeFamily, PracticeQuestion } from './practice-demo'
+import type { PracticeFamily, PracticeMode, PracticeQuestion } from './practice-demo'
 
 export type PracticeContentDisplay = 'chinese' | 'english' | 'bilingual'
 
@@ -13,8 +13,8 @@ export const practiceContentDisplayOptions = [
     { id: 'bilingual', label: '双语显示' },
 ] as const
 
-export function usesPracticeContentDialog(family: PracticeFamily): boolean {
-    return family === 'word' || family === 'sentence'
+export function usesPracticeContentDialog(family: PracticeFamily, mode?: PracticeMode): boolean {
+    return family === 'word' || family === 'sentence' || (family === 'audio' && mode !== undefined)
 }
 
 export function resolvePracticeContentDisplay(value: string): PracticeContentDisplay {

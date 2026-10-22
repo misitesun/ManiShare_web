@@ -42,15 +42,17 @@ test('完整五行键盘保留特殊键，键帽为展示语义且不会创建�
         assert.match(markup, new RegExp('data-keyboard-key="' + code + '"'))
     }
     assert.match(markup, />CapsLock<\/text>/)
+    assert.match(markup, />Backspace<\/text>/)
     assert.match(markup, />Space<\/text>/)
     const visibleLabels = Array.from(
         markup.matchAll(/<text\b[^>]*>([^<]*)<\/text>/g),
         (match) => match[1] ?? '',
     )
-    assert.equal(visibleLabels.length, 30)
+    assert.equal(visibleLabels.length, 31)
     assert.deepEqual(visibleLabels.filter((label) => !/^[A-Z]$/.test(label)).sort(), [
         '&#x27;',
         '-',
+        'Backspace',
         'CapsLock',
         'Space',
     ])

@@ -16,11 +16,21 @@ export interface OralAssessmentDemoOptions {
     readonly active: boolean
     readonly blocked: boolean
     readonly target: OralAssessmentTarget
+    /** 可注入固定样例序列；按录制次数循环，与录音时长、音量无关。 */
+    readonly sampleScores?: readonly number[] | undefined
+    /** 宿主可注入示例音频；playing只取真实媒体状态，不能由play()的Promise推断。 */
+    readonly playback?: OralAssessmentPlayback | undefined
     readonly isPaused?: () => boolean
     readonly onFeedback?: (
         kind: 'recordStart' | 'evaluationComplete',
         rating?: OralAssessmentResult['rating'],
     ) => void
+}
+
+export interface OralAssessmentPlayback {
+    readonly status: 'idle' | 'pending' | 'playing' | 'stopped' | 'error'
+    readonly play: () => boolean
+    readonly stop: () => void
 }
 
 export interface OralAssessmentDemoStore {
@@ -42,6 +52,8 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
     let interval: number | null = null
     let timeout: number | null = null
     let generation = 0
+    let sampleIndex = 0
+    let replayRequested = false
     const listeners = new Set<() => void>()
 
     function publish(next: OralAssessmentDemoState): void {
@@ -67,6 +79,18 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
         )
     }
 
+    function stopReplay(): void {
+        if (
+            replayRequested ||
+            state.playing ||
+            options?.playback?.status === 'pending' ||
+            options?.playback?.status === 'playing'
+        ) {
+            replayRequested = false
+            options?.playback?.stop()
+        }
+    }
+
     function schedule(): void {
         cancelWork()
         if (!enabled()) return
@@ -82,11 +106,14 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
             timeout = clock.setTimeout((): void => {
                 if (!currentRun() || options === null) return
                 timeout = null
-                const result = createOralAssessmentSample(options.target)
+                const samples = options.sampleScores
+                const score = samples?.length ? samples[sampleIndex % samples.length] : undefined
+                const result = createOralAssessmentSample(options.target, score)
+                sampleIndex += 1
                 publish({ ...state, stage: 'result', result })
                 options.onFeedback?.('evaluationComplete', result.rating)
             }, 1200)
-        } else if (state.playing) {
+        } else if (state.playing && options?.playback === undefined) {
             timeout = clock.setTimeout(
                 (): void => {
                     if (!currentRun()) return
@@ -100,11 +127,14 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
 
     function reset(): void {
         cancelWork()
+        stopReplay()
+        sampleIndex = 0
         publish(initialOralAssessmentDemoState)
     }
 
     function begin(): void {
         cancelWork()
+        stopReplay()
         publish({ stage: 'recording', elapsed: 0, playing: false, result: null })
         schedule()
         options?.onFeedback?.('recordStart')
@@ -120,6 +150,7 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
         },
         configure(next): void {
             const previous = options
+            if (previous?.playback !== undefined && next.playback === undefined) stopReplay()
             options = next
             if (
                 !next.active ||
@@ -131,8 +162,15 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
                 return
             }
             if (previous.active !== next.active || previous.blocked !== next.blocked) {
+                if (next.blocked) stopReplay()
                 if (next.blocked && state.playing) publish({ ...state, playing: false })
                 schedule()
+            }
+            if (next.playback !== undefined && replayRequested) {
+                const status = next.playback.status
+                if (status === 'stopped' || status === 'error') replayRequested = false
+                const playing = status === 'playing' && enabled()
+                if (playing !== state.playing) publish({ ...state, playing })
             }
         },
         start(): void {
@@ -149,10 +187,22 @@ export function createOralAssessmentDemo(clock: OralAssessmentDemoClock): OralAs
         reset,
         pause(): void {
             cancelWork()
+            stopReplay()
             if (state.playing) publish({ ...state, playing: false })
         },
         replay(): void {
             if (!enabled() || state.stage !== 'result') return
+            if (options?.playback !== undefined) {
+                cancelWork()
+                if (replayRequested) {
+                    stopReplay()
+                    if (state.playing) publish({ ...state, playing: false })
+                } else {
+                    replayRequested = true
+                    if (!options.playback.play()) replayRequested = false
+                }
+                return
+            }
             publish({ ...state, playing: !state.playing })
             schedule()
         },

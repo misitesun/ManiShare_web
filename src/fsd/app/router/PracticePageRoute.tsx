@@ -8,13 +8,20 @@ import {
     resolvePracticeBackPath,
     resolvePracticeDraftScope,
     resolvePracticeExitPath,
+    resolvePracticeNextChapterPath,
 } from './practice-origin'
 function PracticeQueryRoute(): ReactElement {
     const query = useSearchParams()
     const router = useRouter()
+    const nextChapterPath = resolvePracticeNextChapterPath(query.toString())
     return (
         <PracticePage
             route={resolvePracticeView(query.get('demo'), query.get('mode'))}
+            onNextChapter={
+                nextChapterPath === null
+                    ? undefined
+                    : (): void => router.replace(nextChapterPath, { scroll: false })
+            }
             backPath={resolvePracticeBackPath(query.get('sourceCourse'))}
             onExit={(destination): void =>
                 router.push(resolvePracticeExitPath(destination, query.get('sourceCourse')))

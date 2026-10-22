@@ -24,7 +24,10 @@ test('背面使用当前题的释义与例句，预渲染不发请求或执行�
     )
     assert.match(html, /woman 的单词解析/)
     assert.match(html, /妇女；女性；成年女子/)
-    assert.equal(Array.from(html.matchAll(/data-word-analysis-example=""/g)).length, 3)
+    assert.equal(
+        Array.from(html.matchAll(/<li\b[^>]*data-word-analysis-example="true"/g)).length,
+        3,
+    )
     assert.match(html, /data-word-example-highlight="true"/)
     assert.doesNotMatch(html, /Please give me a pencil|<audio|<iframe|role="dialog"/)
 })

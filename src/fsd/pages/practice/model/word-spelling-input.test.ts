@@ -258,6 +258,79 @@ test('删除先清当前位并保持定位，空位再次删除才向前定位�
     assert.equal(submitWordSpellingInput(cleared, layout, true).value, null)
 })
 
+test('woman判错后连续回删到首位，重新输入不跳过被清空的正确字母', (): void => {
+    const breakdown = getDemoWordPhonetics('woman', '/ˈwʊmən/')
+    for (const mode of ['original', 'syllables', 'phonics', 'none'] as const) {
+        const layout = createWordSpellingLayout('woman', mode, breakdown)
+        let state = spaceWordSpellingInput(
+            typeWordSpellingInput(createWordSpellingInputState(layout), 'woean'),
+            layout,
+            true,
+        ).state
+        assert.equal(state.cursor, 2)
+        assert.deepEqual(state.wrong, [2])
+
+        for (const [cursor, letters, wrong] of [
+            [2, ['w', 'o', '', 'a', 'n'], [2]],
+            [1, ['w', 'o', '', 'a', 'n'], [2]],
+            [1, ['w', '', '', 'a', 'n'], [1, 2]],
+            [0, ['w', '', '', 'a', 'n'], [1, 2]],
+            [0, ['', '', '', 'a', 'n'], [0, 1, 2]],
+        ] as const) {
+            state = deleteWordSpellingInput(state)
+            assert.equal(state.cursor, cursor)
+            assert.deepEqual(state.letters, letters)
+            assert.deepEqual(state.wrong, wrong)
+            assert.equal(state.attempts, 1)
+        }
+        assert.deepEqual(getWordSpellingEditablePositions(state), [0, 1, 2])
+        assert.equal(submitWordSpellingInput(state, layout, true).value, null)
+        let navigating = state
+        for (const cursor of [1, 2, 0]) {
+            navigating = spaceWordSpellingInput(navigating, layout, true).state
+            assert.equal(navigating.cursor, cursor)
+            assert.deepEqual(navigating.letters, state.letters)
+        }
+        for (const [letter, cursor, wrong] of [
+            ['w', 1, [1, 2]],
+            ['o', 2, [2]],
+            ['m', 3, []],
+        ] as const) {
+            state = typeWordSpellingInput(state, letter)
+            assert.equal(state.cursor, cursor)
+            assert.deepEqual(state.wrong, wrong)
+            assert.equal(getWordSpellingEntryCursor(state), cursor)
+            assert.equal(state.attempts, 1)
+        }
+        assert.deepEqual(state.letters, ['w', 'o', 'm', 'a', 'n'])
+        const result = spaceWordSpellingInput(state, layout, true)
+        assert.equal(result.value, 'woman')
+        assert.equal(result.state.completed, true)
+        assert.equal(result.state.attempts, 2)
+    }
+})
+
+test('纠错中的选区删除同样登记新空位，重填后继续处理原错位', (): void => {
+    const layout = createWordSpellingLayout('woman', 'original')
+    const submitted = spaceWordSpellingInput(
+        createWordSpellingInputState(layout, 'woean'),
+        layout,
+        true,
+    ).state
+    const cleared = clearWordSpellingInputSelection(submitted, 0, 2)
+    assert.deepEqual(cleared.letters, ['', '', 'e', 'a', 'n'])
+    assert.deepEqual(cleared.wrong, [0, 1, 2])
+    assert.equal(cleared.cursor, 0)
+    const first = typeWordSpellingInput(cleared, 'w')
+    assert.equal(first.cursor, 1)
+    const second = typeWordSpellingInput(first, 'o')
+    assert.equal(second.cursor, 2)
+    assert.deepEqual(second.wrong, [2])
+    const result = submitWordSpellingInput(typeWordSpellingInput(second, 'm'), layout, true)
+    assert.equal(result.value, 'woman')
+    assert.equal(result.state.completed, true)
+})
+
 test('整词清空重回首位，选区删除或覆盖错误字母仍按同一模型跳下一错位', (): void => {
     for (const layout of [
         createWordSpellingLayout('woman', 'syllables', getDemoWordPhonetics('woman', '/ˈwʊmən/')),

@@ -32,7 +32,7 @@ export function isAudioToolbarMode(value: string): value is AudioToolbarMode {
     )
 }
 
-/** 音频所有模式均无拆分；这里只保存本轮截图选择，不执行抄写或切读。 */
+/** 音频所有模式均无拆分；实际抄写和切读由共用题面及朗读宿主消费。 */
 export function createAudioToolbarOptions(mode: AudioToolbarMode): AudioToolbarOptions {
     return {
         copy: mode === 'translate' || mode === 'typing',

@@ -1,4 +1,5 @@
 import { matchesShortcut } from '../../../features/learning-settings'
+import { isSentenceGameFamily } from './sentence-game-family'
 import type { ShortcutInput, ShortcutPreferences } from '../../../features/learning-settings'
 import type { PracticeCommand } from './practice-command-types'
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
@@ -10,6 +11,7 @@ import {
 } from './practice-visibility'
 import { supportsPracticeKnowledge, supportsPracticePanel } from './practice-footer'
 import type { OralDemoStage } from './oral-demo'
+import type { WordMeaningVariant } from './word-meaning'
 
 export type PracticeKeyboardTarget = 'content' | 'answer-input' | 'editor' | 'native'
 export interface PracticeShortcutContext {
@@ -25,6 +27,7 @@ export interface PracticeShortcutContext {
     readonly values: ShortcutPreferences
     /** 全部真实练习作答输入显式启用；普通编辑器保留原生行为。 */
     readonly answerInputCommands?: boolean
+    readonly wordMeaningVariant?: WordMeaningVariant
 }
 export interface PracticeKeyInput extends ShortcutInput {
     readonly repeat?: boolean
@@ -73,7 +76,9 @@ export function resolvePracticeShortcut(
     )
         return null
     const { values, family, mode, phase } = context
-    const answerCommands = context.answerInputCommands === true && hasPracticeAnswerInput(mode)
+    const answerCommands =
+        context.answerInputCommands === true &&
+        hasPracticeAnswerInput(mode, context.wordMeaningVariant)
     const plain = !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey
     if (
         target === 'answer-input' &&
@@ -136,7 +141,13 @@ export function resolvePracticeShortcut(
     if (supportsPracticeKnowledge(family, mode))
         for (const command of ['practice.markMastered', 'practice.markUnfamiliar'] as const)
             if (matches(event, command, values)) return command
-    if (supportsPracticePanel(family, mode)) {
+    if (
+        supportsPracticePanel(family, mode) &&
+        !(
+            isSentenceGameFamily(family) &&
+            (mode === 'read' || mode === 'check' || mode === 'typing' || mode === 'oral')
+        )
+    ) {
         if (matches(event, 'practice.panel.hide', values) && context.panelVisible)
             return 'practice.panel.hide'
         if (matches(event, 'practice.panel.show', values)) return 'practice.panel.show'
@@ -147,16 +158,30 @@ export function resolvePracticeShortcut(
             return context.oralStage === 'evaluating' || context.oralStage === 'error'
                 ? null
                 : 'practice.oral'
-        return canShowQuickOral(family, mode, phase, context.hasTarget, context.showEvaluation)
+        return canShowQuickOral(
+            family,
+            mode,
+            phase,
+            context.hasTarget,
+            context.showEvaluation,
+            context.wordMeaningVariant,
+        )
             ? 'practice.oral'
             : null
     }
     if (matches(event, 'practice.primary', values)) return 'practice.primary'
     if (matches(event, 'practice.contextual', values)) {
         if (target === 'answer-input') return null
-        if (answerCommands && hasPracticeAnswerInput(mode) && !isPracticeAnswerVisible(phase))
+        if (isSentenceGameFamily(family) && mode === 'read') return 'practice.readAloud'
+        if (family === 'word' && mode === 'meaning' && context.wordMeaningVariant === 'context')
             return 'practice.contextual'
-        // 阅读保留滚动；词块空格只由当前聚焦的真实词块按钮处理。
+        if (
+            answerCommands &&
+            hasPracticeAnswerInput(mode, context.wordMeaningVariant) &&
+            !isPracticeAnswerVisible(phase)
+        )
+            return 'practice.contextual'
+        // 其他阅读保留滚动；词块空格只由当前聚焦的真实词块按钮处理。
         if (family === 'text-reader' || (mode === 'read' && !family.endsWith('-reader')))
             return null
         if (mode === 'blocks' && !isPracticeAnswerVisible(phase)) return null

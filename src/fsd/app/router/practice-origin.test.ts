@@ -5,8 +5,30 @@ import {
     resolvePracticeBackPath,
     resolvePracticeDraftScope,
     resolvePracticeExitPath,
+    resolvePracticeNextChapterPath,
 } from './practice-origin'
 import { practiceViewQuery } from '../../pages/practice'
+
+test('自动下节只修改已校验的本地章节与模式，保留来源和其他查询', (): void => {
+    const search =
+        'demo=sentence-basic&mode=listen&sourceCourse=phonetics&sourceChapter=chapter-1&extra=kept'
+    const path = resolvePracticeNextChapterPath(search)
+    assert.ok(path)
+    const query = new URLSearchParams(path.split('?')[1])
+    assert.equal(query.get('demo'), 'word-basic')
+    assert.equal(query.get('mode'), 'pronounce')
+    assert.equal(query.get('sourceChapter'), 'chapter-2')
+    assert.equal(query.get('sourceCourse'), 'phonetics')
+    assert.equal(query.get('extra'), 'kept')
+    for (const unavailable of [
+        'demo=sentence-basic&mode=listen',
+        search.replace('sourceCourse=phonetics', 'sourceCourse=unknown'),
+        search.replace('chapter-1', 'chapter-2'),
+        search.replace('mode=listen', 'mode=invalid'),
+        'demo=picture-basic&mode=listen&sourceCourse=phonetics&sourceChapter=chapter-13',
+    ])
+        assert.equal(resolvePracticeNextChapterPath(unavailable), null)
+})
 
 test('退出分为项目首页和经校验的来源课程，不接收任意返回URL', (): void => {
     assert.equal(resolvePracticeExitPath('home', 'phonetics'), '/')

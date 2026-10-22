@@ -22,6 +22,52 @@ export interface OralAssessmentResult {
     readonly description: string
 }
 
+export type OralAssessmentScoreTone = 'low' | 'good' | 'excellent' | 'perfect'
+
+export interface OralAssessmentScorePresentation {
+    readonly tone: OralAssessmentScoreTone
+    readonly label: string
+    readonly rating: OralAssessmentResult['rating']
+    readonly description: string
+}
+
+const scorePresentations: Readonly<
+    Record<OralAssessmentScoreTone, OralAssessmentScorePresentation>
+> = {
+    low: {
+        tone: 'low',
+        label: 'KEEP TRYING',
+        rating: 'KEEP TRYING',
+        description: '坚持练习，持续进步！',
+    },
+    good: {
+        tone: 'good',
+        label: 'GOOD EFFORT',
+        rating: 'GOOD',
+        description: '表现不错，继续加油！',
+    },
+    excellent: {
+        tone: 'excellent',
+        label: 'GREAT WORK',
+        rating: 'EXCELLENT',
+        description: '表现优秀，细节加分！',
+    },
+    perfect: {
+        tone: 'perfect',
+        label: 'PERFECT',
+        rating: 'PERFECT',
+        description: '近乎完美，保持水准！',
+    },
+}
+
+/** 区间以用户确认的文字规则为准，小数分数在相邻档位间连续。 */
+export function getOralAssessmentScorePresentation(score: number): OralAssessmentScorePresentation {
+    const value = normalizeOralAssessmentScore(score)
+    return scorePresentations[
+        value <= 60 ? 'low' : value <= 80 ? 'good' : value <= 90 ? 'excellent' : 'perfect'
+    ]
+}
+
 export interface OralAssessmentDemoState {
     readonly stage: OralAssessmentStage
     readonly elapsed: number
@@ -37,23 +83,40 @@ export const initialOralAssessmentDemoState: OralAssessmentDemoState = Object.fr
 })
 
 const sampleWordScores = [45, 60, 34, 60, 23, 39, 30, 60, 42] as const
+const sampleMetrics: Readonly<
+    Record<
+        OralAssessmentScoreTone,
+        { readonly accuracy: number; readonly fluency: number; readonly completeness: number }
+    >
+> = {
+    low: { accuracy: 30, fluency: 40, completeness: 50 },
+    good: { accuracy: 52, fluency: 53, completeness: 55 },
+    excellent: { accuracy: 80, fluency: 92, completeness: 90 },
+    perfect: { accuracy: 80, fluency: 88, completeness: 90 },
+}
 
 /** 固定样例，仅用于四步 UI；分数不由输入、计时或音量推算。 */
-export function createOralAssessmentSample(target: OralAssessmentTarget): OralAssessmentResult {
+export function createOralAssessmentSample(
+    target: OralAssessmentTarget,
+    sampleScore = 40,
+): OralAssessmentResult {
+    const score = normalizeOralAssessmentScore(sampleScore)
+    const presentation = getOralAssessmentScorePresentation(score)
     return {
-        score: 40,
-        accuracy: 30,
-        fluency: 40,
-        completeness: 50,
-        rating: 'KEEP TRYING',
-        description: '坚持练习，持续进步！',
+        score,
+        ...sampleMetrics[presentation.tone],
+        rating: presentation.rating,
+        description: presentation.description,
         words: target.text
             .trim()
             .split(/\s+/)
             .filter(Boolean)
             .map((text, index) => ({
                 text,
-                score: sampleWordScores[index % sampleWordScores.length] ?? 45,
+                score:
+                    score === 40
+                        ? (sampleWordScores[index % sampleWordScores.length] ?? 45)
+                        : score,
             })),
     }
 }

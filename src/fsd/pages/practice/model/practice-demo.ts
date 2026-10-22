@@ -4,6 +4,19 @@ import { getDemoWordPhonetics } from './word-phonetics-demo'
 import type { WordPhoneticBreakdown } from './word-phonetics'
 import { getDemoWordCardExamples } from './word-card-analysis-demo'
 import type { WordCardExample } from './word-card-analysis'
+import type { WordMeaningContent } from './word-meaning'
+import { wordMeaningQuestions } from './word-meaning-demo'
+import { sentenceListeningQuestions } from './sentence-listening-demo'
+import { audioGameQuestions } from './audio-game-demo'
+import { editSentenceBlocks, judgeSentenceBlocks } from './sentence-blocks'
+import type { SentenceBlockEdit } from './sentence-blocks'
+import { getWordDemoReadingSource } from './word-demo-reading'
+import {
+    createSentenceAnswerLayout,
+    isSentenceAnswerComplete,
+    judgeSentenceAnswerValues,
+    serializeSentenceAnswer,
+} from './sentence-answer-input'
 
 export type PracticeFamily =
     | 'word'
@@ -45,7 +58,7 @@ export interface PracticeToken {
     readonly phonetic: string
     readonly meaning: string
     readonly pos: 'pronoun' | 'verb' | 'noun' | 'adverb'
-    readonly syntax: 'subject' | 'predicate' | 'object' | 'complement' | 'unknown'
+    readonly syntax: 'subject' | 'predicate' | 'object' | 'complement' | 'adverbial' | 'unknown'
 }
 export interface PracticeQuestion {
     readonly id: string
@@ -55,6 +68,7 @@ export interface PracticeQuestion {
     readonly wordPhonetics?: WordPhoneticBreakdown
     /** 可选的本地解析例句，真实接口由适配器映射；缺失时显示空态。 */
     readonly wordExamples?: readonly WordCardExample[]
+    readonly wordMeaning?: WordMeaningContent
     readonly tokens: readonly PracticeToken[]
     /** 页面内部的可选朗读音源，后续由真实接口适配器映射；不是后台字段约定。 */
     readonly readingSource?: string
@@ -279,11 +293,35 @@ const wordPronunciationQuestions: readonly PracticeQuestion[] = [
         tokens: [],
     },
 ].map((question) =>
-    withDemoWordPhonetics({
+    withDemoWordReading(
+        withDemoWordPhonetics({
+            ...question,
+            wordExamples: getDemoWordCardExamples(question.english),
+        }),
+    ),
+)
+
+/** 指法练习复用已核实词条内容，保持独立题目身份与十题题量。 */
+const wordTypingQuestions: readonly PracticeQuestion[] = wordPronunciationQuestions.map(
+    (question) =>
+        withDemoWordReading({
+            ...question,
+            id: `typing:${question.id}`,
+        }),
+)
+
+/** 口语独立十题身份；复用相同单词音源，录音与评分仍为本地模拟。 */
+const wordOralQuestions: readonly PracticeQuestion[] = wordPronunciationQuestions.map((question) =>
+    withDemoWordReading({
         ...question,
-        wordExamples: getDemoWordCardExamples(question.english),
+        id: `oral:${question.id}`,
     }),
 )
+
+function withDemoWordReading(question: PracticeQuestion): PracticeQuestion {
+    const source = getWordDemoReadingSource(question.english)
+    return source === undefined ? question : { ...question, readingSource: source }
+}
 
 const wordSeedQuestions: readonly PracticeQuestion[] = [
     {
@@ -302,7 +340,7 @@ const wordSeedQuestions: readonly PracticeQuestion[] = [
     },
 ].map(withDemoWordPhonetics)
 
-/** 拼写与默写复用十二道本地题；其他单词模式保留原两道占位题。 */
+/** 拼写与默写复用十二道本地题；句中练义使用独立语境题库。 */
 const wordAnswerQuestions: readonly PracticeQuestion[] = [
     ...wordSeedQuestions,
     ...wordPronunciationQuestions.filter((question) => question.id !== 'woman'),
@@ -313,15 +351,25 @@ const wordAnswerQuestions: readonly PracticeQuestion[] = [
         phonetic: '/skuːl/',
         tokens: [],
     },
-].map(withDemoWordPhonetics)
+].map((question) => withDemoWordReading(withDemoWordPhonetics(question)))
+
+const wordMeaningReadingQuestions: readonly PracticeQuestion[] =
+    wordMeaningQuestions.map(withDemoWordReading)
 
 export function getDemoQuestions(
     family: PracticeFamily,
     mode?: PracticeMode,
 ): readonly PracticeQuestion[] {
+    if (mode !== undefined && sentenceModes.includes(mode)) {
+        if (family === 'sentence') return sentenceListeningQuestions
+        if (family === 'audio') return audioGameQuestions
+    }
     if (family === 'word' && (mode === undefined || mode === 'pronounce'))
         return wordPronunciationQuestions
     if (family === 'word' && (mode === 'spell' || mode === 'dictate')) return wordAnswerQuestions
+    if (family === 'word' && mode === 'meaning') return wordMeaningReadingQuestions
+    if (family === 'word' && mode === 'typing') return wordTypingQuestions
+    if (family === 'word' && mode === 'oral') return wordOralQuestions
     if (family === 'phonetics')
         return [
             {
@@ -412,11 +460,30 @@ export type PracticeSessionAction =
     | { readonly type: 'phase'; readonly phase: PracticePhase }
     | { readonly type: 'move'; readonly delta: number; readonly total: number }
     | { readonly type: 'block'; readonly id: string }
+    | {
+          readonly type: 'edit-sentence-blocks'
+          readonly edit: SentenceBlockEdit
+          readonly tokens: readonly PracticeToken[]
+      }
+    | { readonly type: 'submit-sentence-blocks'; readonly tokens: readonly PracticeToken[] }
     | { readonly type: 'toggle-answer' }
     | { readonly type: 'reset' }
+    | { readonly type: 'restart-answer' }
     | { readonly type: 'finish' }
     | {
-          readonly type: 'submit-spelling' | 'submit-answer'
+          readonly type: 'submit-sentence-typing'
+          readonly values: readonly string[]
+          readonly target: string
+          readonly ignoreCase: boolean
+      }
+    | {
+          readonly type: 'submit-spelling'
+          readonly value: string
+          readonly target: string
+          readonly ignoreCase: boolean
+      }
+    | {
+          readonly type: 'submit-answer'
           readonly value: string
           readonly target: string
           readonly ignoreCase: boolean
@@ -429,6 +496,10 @@ export const initialPracticeSession: PracticeSession = {
     finished: false,
     spellingStatistics: { submissions: 0, correct: 0 },
 }
+function isSentenceBlocksResult(phase: PracticePhase): boolean {
+    return phase === 'correct' || phase === 'revealed'
+}
+
 export function reducePracticeSession(
     state: PracticeSession,
     action: PracticeSessionAction,
@@ -440,6 +511,44 @@ export function reducePracticeSession(
                 state.phase === 'revealed' || state.phase === 'correct' ? 'answering' : 'revealed',
         }
     if (action.type === 'reset') return initialPracticeSession
+    if (action.type === 'restart-answer')
+        return {
+            ...initialPracticeSession,
+            index: state.index,
+            spellingStatistics: state.spellingStatistics,
+        }
+    if (action.type === 'edit-sentence-blocks') {
+        if (state.finished || isSentenceBlocksResult(state.phase)) return state
+        const blocks = editSentenceBlocks(action.tokens, state.blocks, action.edit)
+        if (blocks === state.blocks) return state
+        const completed =
+            action.edit.type === 'toggle' &&
+            !state.blocks.includes(action.edit.id) &&
+            blocks.length === action.tokens.length
+        const judgment = completed ? judgeSentenceBlocks(action.tokens, blocks) : 'empty'
+        return { ...state, blocks, phase: judgment === 'empty' ? 'answering' : judgment }
+    }
+    if (action.type === 'submit-sentence-blocks') {
+        if (state.finished || isSentenceBlocksResult(state.phase)) return state
+        const judgment = judgeSentenceBlocks(action.tokens, state.blocks)
+        return judgment === 'empty' ? state : { ...state, phase: judgment }
+    }
+    if (action.type === 'submit-sentence-typing') {
+        if (state.finished || state.phase === 'correct' || state.phase === 'revealed') return state
+        const layout = createSentenceAnswerLayout(action.target)
+        if (!isSentenceAnswerComplete(layout, action.values)) return state
+        const phase = judgeSentenceAnswerValues(layout, action.values, action.ignoreCase)
+        if (phase === 'empty') return state
+        return {
+            ...state,
+            input: serializeSentenceAnswer(layout, action.values),
+            phase,
+            spellingStatistics: {
+                submissions: state.spellingStatistics.submissions + 1,
+                correct: state.spellingStatistics.correct + (phase === 'correct' ? 1 : 0),
+            },
+        }
+    }
     if (action.type === 'submit-spelling' || action.type === 'submit-answer') {
         if (state.finished || state.phase === 'correct' || state.phase === 'revealed') return state
         const phase = judgeWordSpelling(action.value, action.target, action.ignoreCase)

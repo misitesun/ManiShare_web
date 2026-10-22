@@ -1,4 +1,5 @@
 import { getAdditionalToolbarRows } from './additional-toolbar-options'
+import { isSentenceGameFamily } from './sentence-game-family'
 import { audioToolbarRows, isAudioToolbarMode } from './audio-toolbar-options'
 import { practiceMediaSource } from './media-controller'
 import type { PracticeFamily, PracticeMode } from './practice-demo'
@@ -25,8 +26,10 @@ export interface PracticeCutReadingInput {
     readonly visitKey: string
     readonly family: PracticeFamily
     readonly mode: PracticeMode
-    /** 当前模式所属局部设置的 cutReading 值，不读取全局兼容字段。 */
+    /** 当前访问的朗读意图来自局部切读或显式自动播放，不读取全局兼容字段。 */
     readonly enabled: boolean
+    /** 句子／音频阅读没有切读控件，仅显式阅读播放意图可开放本次访问的自动朗读。 */
+    readonly sequenceEnabled?: boolean
     readonly ready: boolean
     readonly blocked: boolean
     readonly source?: string
@@ -92,7 +95,11 @@ export function getPracticeCutReadingTransition(
     const sameVisit = state.visitKey === input.visitKey
     const source = practiceMediaSource(input.source)
     const allowed =
-        isPracticeCutReadingEnabled(input.family, input.mode, input.enabled) &&
+        (isPracticeCutReadingEnabled(input.family, input.mode, input.enabled) ||
+            (isSentenceGameFamily(input.family) &&
+                input.mode === 'read' &&
+                input.enabled &&
+                input.sequenceEnabled === true)) &&
         input.ready &&
         !input.blocked
     const presentation: PracticeCutReadingPresentation = !allowed

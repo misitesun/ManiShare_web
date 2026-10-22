@@ -1,6 +1,10 @@
 'use client'
 import { useRef, useState } from 'react'
-import type { CSSProperties, ReactElement } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type {
+    OralAssessmentDemoController,
+    OralAssessmentTarget,
+} from '../../../features/oral-assessment'
 import { getPreviewAppearance } from '../../../features/learning-settings'
 import type { LearningPreferences } from '../../../features/learning-settings'
 import { TldButton } from '../../../shared/ui/tld-button'
@@ -33,6 +37,7 @@ import {
 } from '../model/additional-toolbar-options'
 import type { AdditionalToolbarOptions } from '../model/additional-toolbar-options'
 import type { OralDemoController } from '../model/useOralDemo'
+import type { WordCardExample } from '../model/word-card-analysis'
 import type { PracticeMediaController } from '../model/media-controller'
 import { AnnotatedText } from './AnnotatedText'
 import { PracticeMedia } from './PracticeMedia'
@@ -48,7 +53,19 @@ import type { WordCardNavigation, WordPronunciationDeckController } from '../mod
 import { WordAnswerCard } from './WordAnswerCard'
 import { PracticeWordPhonetics } from './PracticeWordPhonetics'
 import { SentenceExercise } from './SentenceExercise'
+import { isSentenceGameFamily } from '../model/sentence-game-family'
+import { SentenceBlocksExercise } from './SentenceBlocksExercise'
+import type { SentenceBlockEdit } from '../model/sentence-blocks'
 import { SentenceListeningExercise } from './SentenceListeningExercise'
+import { WordMeaningExercise } from './WordMeaningExercise'
+import { WordTypingExercise } from './WordTypingExercise'
+import { SentenceTypingExercise } from './SentenceTypingExercise'
+import { WordOralAssessmentExercise } from './WordOralAssessmentExercise'
+import type { WordMeaningState } from '../model/word-meaning'
+import { SentenceReadingExercise } from './SentenceReadingExercise'
+import { createSentenceReadingDisplayOptions } from '../model/sentence-reading-display'
+import type { SentenceReadingDisplayOptions } from '../model/sentence-reading-display'
+import type { SentenceAnswerSubmission } from '../model/sentence-answer-input'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import { PhoneticsDemo } from './PhoneticsDemo'
 import wordAsset from '../assets/word-woman-e23d5f.png'
@@ -68,18 +85,25 @@ export interface PracticeContentProps {
     readonly values: LearningPreferences
     readonly imageVisible: boolean
     readonly blocked: boolean
+    readonly listeningBlind?: boolean
+    readonly sentenceReadingDisplay?: SentenceReadingDisplayOptions
+    readonly sentenceReadingRevision?: number
     readonly paused?: boolean
     readonly wordOptions?: WordToolbarOptions
+    readonly wordMeaning?: WordMeaningState
     readonly sentenceOptions?: SentenceToolbarOptions
     readonly audioOptions?: AudioToolbarOptions
     readonly additionalOptions?: AdditionalToolbarOptions
     readonly onInput: (value: string) => void
     readonly onAnswerSubmit?: ((value: string) => void) | undefined
+    readonly onSentenceSubmit?: ((submission: SentenceAnswerSubmission) => void) | undefined
+    readonly onSentenceNavigate?: (() => void) | undefined
     readonly onAnswerController?:
         ((controller: WordSpellingInputController | null) => void) | undefined
     readonly spellingQuestionRevision?: number | undefined
     readonly spellingQuestionTransition?: WordSpellingQuestionTransition | null | undefined
     readonly onBlock: (id: string) => void
+    readonly onSentenceBlockEdit: (edit: SentenceBlockEdit) => void
     readonly onNote: (questionId: string) => void
     readonly oralEnabled: boolean
     readonly onOral: () => void
@@ -89,9 +113,13 @@ export interface PracticeContentProps {
     readonly onReveal: () => void
     readonly onPrimary: () => void
     readonly oralController: OralDemoController
+    readonly oralAssessmentController?: OralAssessmentDemoController
+    readonly oralAssessmentTarget?: OralAssessmentTarget
+    readonly oralAssessmentWave?: ReactNode
     readonly onMediaController: (controller: PracticeMediaController | null) => void
     readonly onPlaybackStateChange?: (state: PracticePlaybackState) => void
     readonly onReadAloud?: () => void
+    readonly onExampleReadAloud?: ((example: WordCardExample) => void) | undefined
     readonly reading?: PracticeReadingView | undefined
     readonly questions?: readonly PracticeQuestion[]
     readonly cardBusy?: boolean
@@ -116,17 +144,24 @@ export function PracticeContent({
     values,
     imageVisible,
     blocked,
+    listeningBlind = false,
+    sentenceReadingDisplay,
+    sentenceReadingRevision = 0,
     paused = false,
     wordOptions,
+    wordMeaning,
     sentenceOptions,
     audioOptions,
     additionalOptions,
     onInput,
     onAnswerSubmit,
+    onSentenceSubmit,
+    onSentenceNavigate,
     onAnswerController,
     spellingQuestionRevision,
     spellingQuestionTransition,
     onBlock,
+    onSentenceBlockEdit,
     onNote,
     oralEnabled,
     onOral,
@@ -136,9 +171,13 @@ export function PracticeContent({
     onReveal,
     onPrimary,
     oralController,
+    oralAssessmentController,
+    oralAssessmentTarget,
+    oralAssessmentWave,
     onMediaController,
     onPlaybackStateChange,
     onReadAloud,
+    onExampleReadAloud,
     reading,
     questions,
     cardBusy = false,
@@ -154,12 +193,19 @@ export function PracticeContent({
     const [answerCursor, setAnswerCursor] = useState(0)
     const appearance = getPreviewAppearance(values)
     const localOptions = demo.family === 'word' ? wordOptions : undefined
+    const sentenceGameFamily = isSentenceGameFamily(demo.family) ? demo.family : undefined
+    const sentenceGameOptions = demo.family === 'audio' ? audioOptions : sentenceOptions
     const sentenceTranslation =
         demo.family === 'sentence' && sentenceOptions && isSentenceToolbarMode(mode)
             ? getSentenceToolbarTranslationOverride(mode, sentenceOptions)
             : undefined
+    const audioTranslation =
+        demo.family === 'audio' && audioOptions && isAudioToolbarMode(mode)
+            ? getAudioToolbarTranslationOverride(mode, audioOptions)
+            : undefined
     const showTranslation =
         sentenceTranslation ??
+        audioTranslation ??
         (localOptions && (mode === 'spell' || mode === 'dictate' || mode === 'oral')
             ? localOptions.translationVisible
             : values.showTranslation)
@@ -170,10 +216,6 @@ export function PracticeContent({
     const effectiveImage = imageVisible
     const reference = getPracticeReference(demo.family, mode, session.phase)
     const reader = demo.family.endsWith('-reader')
-    const audioTranslation =
-        demo.family === 'audio' && audioOptions && isAudioToolbarMode(mode)
-            ? getAudioToolbarTranslationOverride(mode, audioOptions)
-            : undefined
     const additionalTranslation =
         additionalOptions && isAdditionalToolbarFamily(demo.family)
             ? getAdditionalToolbarTranslationOverride(demo.family, mode, additionalOptions)
@@ -203,9 +245,95 @@ export function PracticeContent({
                   ? greetingAsset.src
                   : sentenceAsset.src
     const style: ContentStyle = { '--practice-reference-top': `${reference.top}px` }
-    if (demo.family === 'sentence' && mode === 'listen')
+    if (
+        (demo.family === 'word' || sentenceGameFamily !== undefined) &&
+        mode === 'oral' &&
+        oralAssessmentController &&
+        oralAssessmentTarget
+    )
+        return (
+            <WordOralAssessmentExercise
+                family={sentenceGameFamily ?? 'word'}
+                target={oralAssessmentTarget}
+                controller={oralAssessmentController}
+                imageVisible={imageVisible}
+                translationVisible={showTranslation}
+                reading={reading}
+                wave={oralAssessmentWave}
+            />
+        )
+    if (demo.family === 'word' && mode === 'typing')
+        return (
+            <WordTypingExercise
+                question={question}
+                phase={session.phase}
+                input={session.input}
+                blocked={blocked}
+                imageVisible={imageVisible}
+                copy={wordOptions?.copy ?? true}
+                translationVisible={showTranslation}
+                ignoreCase={values.ignoreCase}
+                displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
+                reading={reading}
+                onInput={onInput}
+                onSubmit={onAnswerSubmit}
+                onController={onAnswerController}
+                onPlay={onReadAloud ?? ((): void => onNotice('单词音源未接入，暂不能朗读。'))}
+            />
+        )
+    if (sentenceGameFamily && mode === 'typing')
+        return (
+            <SentenceTypingExercise
+                family={sentenceGameFamily}
+                question={question}
+                phase={session.phase}
+                input={session.input}
+                blocked={blocked}
+                imageVisible={imageVisible}
+                copy={sentenceGameOptions?.copy ?? true}
+                translationVisible={showTranslation}
+                ignoreCase={values.ignoreCase}
+                borderStyle={appearance.borderStyle}
+                displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
+                reading={reading}
+                onInput={onInput}
+                onSubmit={onSentenceSubmit}
+                onController={onAnswerController}
+                onPlay={onReadAloud ?? ((): void => onNotice('句子音源未接入，暂不能朗读。'))}
+            />
+        )
+    if (demo.family === 'word' && mode === 'meaning')
+        return (
+            <WordMeaningExercise
+                question={question}
+                variant={wordMeaning?.variant ?? 'fill'}
+                phase={session.phase}
+                input={session.input}
+                blocked={blocked}
+                imageVisible={imageVisible}
+                phoneticsVisible={showPhonetics}
+                translationVisible={wordMeaning?.translationVisible ?? false}
+                ignoreCase={values.ignoreCase}
+                displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
+                borderStyle={appearance.borderStyle}
+                reading={reading}
+                onInput={onInput}
+                onSubmit={onAnswerSubmit}
+                onController={onAnswerController}
+                onRevealTranslation={onPrimary}
+            />
+        )
+    if (
+        ((demo.family === 'sentence' || demo.family === 'audio') && mode === 'listen') ||
+        (sentenceGameFamily !== undefined &&
+            (((mode === 'translate' || mode === 'blocks') && session.phase === 'correct') ||
+                (mode === 'check' && answerVisible)))
+    )
         return (
             <SentenceListeningExercise
+                family={demo.family === 'audio' ? 'audio' : 'sentence'}
+                plainEnglish={mode === 'listen'}
+                blind={listeningBlind}
                 question={question}
                 values={values}
                 imageVisible={imageVisible}
@@ -224,24 +352,38 @@ export function PracticeContent({
                 onNote={(): void => onNote(question.id)}
             />
         )
-    if (
-        demo.family === 'sentence' &&
-        (mode === 'translate' || mode === 'check' || mode === 'blocks')
-    )
+    if (sentenceGameFamily && mode === 'blocks')
+        return (
+            <SentenceBlocksExercise
+                family={sentenceGameFamily}
+                question={question}
+                session={session}
+                values={values}
+                imageVisible={imageVisible}
+                translationVisible={showTranslation}
+                blocked={blocked}
+                onEdit={onSentenceBlockEdit}
+                reading={reading}
+            />
+        )
+    if (sentenceGameFamily && (mode === 'translate' || mode === 'check'))
         return (
             <SentenceExercise
+                family={sentenceGameFamily}
                 question={question}
                 mode={mode}
                 session={session}
                 values={values}
                 imageVisible={imageVisible}
-                {...(sentenceTranslation !== undefined
-                    ? { translationVisible: sentenceTranslation }
+                showWordHint={sentenceGameOptions?.copy ?? true}
+                {...(sentenceTranslation !== undefined || audioTranslation !== undefined
+                    ? { translationVisible: sentenceTranslation ?? audioTranslation }
                     : {})}
                 blocked={blocked}
                 reading={reading}
                 onInput={onInput}
-                onAnswerSubmit={onAnswerSubmit}
+                onSentenceSubmit={onSentenceSubmit}
+                onNavigate={onSentenceNavigate}
                 onAnswerController={onAnswerController}
                 onBlock={onBlock}
                 onReveal={onReveal}
@@ -311,7 +453,10 @@ export function PracticeContent({
                         className="mx-auto block h-auto w-full max-w-full rounded-[20px] object-cover"
                         style={{
                             maxWidth: reference.mediaWidth,
-                            aspectRatio: `${reference.mediaWidth}/${reference.mediaHeight}`,
+                            aspectRatio:
+                                demo.family === 'word'
+                                    ? '16 / 9'
+                                    : `${reference.mediaWidth}/${reference.mediaHeight}`,
                         }}
                     />
                     <PracticeReadingOverlay reading={reading} />
@@ -350,7 +495,9 @@ export function PracticeContent({
                     onPlay={
                         onReadAloud ?? ((): void => onNotice('单词发音素材未接入，暂不能朗读。'))
                     }
-                    onExamplePlay={(): void => onNotice('例句音源未接入，暂不能朗读。')}
+                    onExamplePlay={
+                        onExampleReadAloud ?? ((): void => onNotice('当前例句暂无朗读音源。'))
+                    }
                     onAdd={(): void => onNotice('不熟标记暂未开放，当前未保存。')}
                 />
             </div>
@@ -371,6 +518,7 @@ export function PracticeContent({
                     onSubmit={onAnswerSubmit}
                     onSpellingController={onAnswerController}
                     onPlay={onReadAloud}
+                    onExamplePlay={onExampleReadAloud}
                     questionRevision={spellingQuestionRevision}
                     questionTransition={spellingQuestionTransition}
                     blocked={blocked}
@@ -392,6 +540,19 @@ export function PracticeContent({
                     borderStyle={appearance.borderStyle}
                 />
             </div>
+        )
+    if (sentenceGameFamily && mode === 'read')
+        return (
+            <SentenceReadingExercise
+                family={sentenceGameFamily}
+                questions={questions ?? [question]}
+                currentQuestionId={question.id}
+                revision={sentenceReadingRevision}
+                values={values}
+                display={sentenceReadingDisplay ?? createSentenceReadingDisplayOptions()}
+                blocked={blocked}
+                onNote={onNote}
+            />
         )
     if (mode === 'read' && !mediaIsAudio && !mediaIsVideo && demo.family !== 'picture-reader')
         return (

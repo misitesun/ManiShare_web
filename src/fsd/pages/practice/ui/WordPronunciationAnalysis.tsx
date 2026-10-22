@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import type { PracticeQuestion } from '../model/practice-demo'
-import type { WordExamplePart } from '../model/word-card-analysis'
+import type { WordCardExample, WordExamplePart } from '../model/word-card-analysis'
 import { formatWordPhonetic } from '../model/word-phonetics'
 import { getWordCardOutlineRadius } from '../model/word-card-outline'
 import { WordDictionaryLink } from './WordDictionaryLink'
@@ -10,7 +10,7 @@ interface WordPronunciationAnalysisProps {
     readonly disabled: boolean
     readonly borderDepth: 'front' | 'near' | 'far'
     readonly onBack: () => void
-    readonly onExamplePlay: () => void
+    readonly onExamplePlay: (example: WordCardExample) => void
 }
 
 function ExampleText({ parts }: { readonly parts: readonly WordExamplePart[] }): ReactElement {
@@ -20,7 +20,7 @@ function ExampleText({ parts }: { readonly parts: readonly WordExamplePart[] }):
                 <span
                     key={index}
                     data-word-example-highlight={part.highlighted || undefined}
-                    className={part.highlighted ? 'text-accent-blue' : undefined}
+                    className={part.highlighted ? 'text-accent-blue' : ''}
                 >
                     {part.text}
                 </span>
@@ -121,7 +121,7 @@ export function WordPronunciationAnalysis({
                                     type="button"
                                     disabled={disabled}
                                     aria-label={`朗读例句：${example.english.map((part) => part.text).join('')}`}
-                                    onClick={onExamplePlay}
+                                    onClick={(): void => onExamplePlay(example)}
                                     className="flex min-h-10 w-full min-w-0 cursor-pointer items-start gap-2 rounded-md text-left text-[16px] leading-6 outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default"
                                 >
                                     <HeadsetIcon />

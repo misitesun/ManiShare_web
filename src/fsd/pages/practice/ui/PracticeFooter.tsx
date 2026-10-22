@@ -2,12 +2,20 @@ import type { ReactElement } from 'react'
 import type { PracticeCommand } from '../model/practice-command-types'
 import type { PracticeFooterItem } from '../model/practice-footer'
 import { formatPracticeShortcut } from '../model/practice-footer'
+import readingPlay from '../assets/sentence-reading-play.svg'
+import readingPause from '../assets/sentence-reading-pause.svg'
+
+interface PracticeFooterPlayback {
+    readonly active: boolean
+    readonly onToggle: () => void
+}
 
 interface PracticeFooterProps {
     readonly items: readonly PracticeFooterItem[]
     readonly onAction: (action: PracticeCommand) => void
     readonly blocked?: boolean
     readonly floating?: boolean
+    readonly playback?: PracticeFooterPlayback
 }
 
 function DirectionIcon({ next }: { readonly next: boolean }): ReactElement {
@@ -63,7 +71,23 @@ function ShortcutLabels({
     )
 }
 
-function FooterItemContent({ item }: { readonly item: PracticeFooterItem }): ReactElement {
+function FooterItemContent({
+    item,
+    playback,
+}: {
+    readonly item: PracticeFooterItem
+    readonly playback?: PracticeFooterPlayback | undefined
+}): ReactElement {
+    if (item.id === 'playback' && playback)
+        return (
+            <img
+                src={playback.active ? readingPause.src : readingPlay.src}
+                alt=""
+                width={28}
+                height={28}
+                className="shrink-0 [filter:var(--app-filter-dialog-icon)]"
+            />
+        )
     if (item.id === 'playback')
         return (
             <>
@@ -96,6 +120,7 @@ export function PracticeFooter({
     onAction,
     blocked = false,
     floating = false,
+    playback,
 }: PracticeFooterProps): ReactElement | null {
     if (items.length === 0) return null
     const reading = items.length === 3 && items[1]?.id === 'playback'
@@ -112,9 +137,11 @@ export function PracticeFooter({
             <div
                 data-practice-footer-row
                 className={
-                    reading
-                        ? 'mx-auto flex h-[100px] w-max min-w-max items-center gap-2 md:gap-[23px]'
-                        : 'mx-auto flex h-[100px] w-max min-w-max items-center gap-2 md:gap-5'
+                    playback
+                        ? 'relative mx-auto flex h-[100px] w-max min-w-max items-center gap-2 md:-top-[3px] md:gap-[23px]'
+                        : reading
+                          ? 'mx-auto flex h-[100px] w-max min-w-max items-center gap-2 md:gap-[23px]'
+                          : 'mx-auto flex h-[100px] w-max min-w-max items-center gap-2 md:gap-5'
                 }
             >
                 {items.map((item) => {
@@ -140,25 +167,36 @@ export function PracticeFooter({
                         <button
                             key={item.id}
                             type="button"
-                            aria-label={item.label}
+                            aria-label={
+                                item.id === 'playback' && playback
+                                    ? playback.active
+                                        ? '暂停'
+                                        : '播放'
+                                    : item.label
+                            }
                             aria-expanded={item.expanded}
                             data-practice-footer-item={item.id}
                             data-practice-footer-action={command}
                             disabled={blocked || item.disabled}
-                            onClick={(): void => onAction(command)}
+                            onClick={(): void => {
+                                if (item.id === 'playback' && playback) playback.onToggle()
+                                else onAction(command)
+                            }}
                             className={
                                 item.id === 'read-aloud'
                                     ? 'hidden min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:inline-flex md:min-w-24 xl:h-8 xl:min-h-8'
                                     : item.size === 'playback'
                                       ? 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular text-practice-control-text outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-10 md:border-0 md:p-0 xl:h-7 xl:min-h-7 xl:w-7'
                                       : item.size === 'direction'
-                                        ? 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-auto md:min-w-20 xl:h-8 xl:min-h-8'
+                                        ? playback
+                                            ? 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-20 md:min-w-20 md:px-0 xl:h-8 xl:min-h-8'
+                                            : 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-auto md:min-w-20 xl:h-8 xl:min-h-8'
                                         : item.size === 'panel' || item.size === 'primary'
                                           ? 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:min-w-[88px] xl:h-8 xl:min-h-8'
                                           : 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:min-w-24 xl:h-8 xl:min-h-8'
                             }
                         >
-                            <FooterItemContent item={item} />
+                            <FooterItemContent item={item} playback={playback} />
                         </button>
                     )
                 })}

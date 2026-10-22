@@ -7,12 +7,19 @@ import {
 } from './word-spelling'
 import { getDemoQuestions, initialPracticeSession, reducePracticeSession } from './practice-demo'
 
-test('拼写保留十二题基线，默写增加十题，其他模式保留原题量', (): void => {
-    const original = getDemoQuestions('word', 'meaning')
+test('拼写默写保留十二题基线，句中练义使用独立十题，不改其他原题量', (): void => {
+    const original = getDemoQuestions('guess', 'guess')
     const questions = getDemoQuestions('word', 'spell')
     const dictation = getDemoQuestions('word', 'dictate')
+    for (const variants of [questions, dictation])
+        assert.deepEqual(
+            variants.slice(0, 2).map(({ readingSource, ...baseline }) => {
+                assert.ok(readingSource)
+                return baseline
+            }),
+            original,
+        )
     assert.equal(questions.length, 12)
-    assert.deepEqual(questions.slice(0, 2), original)
     assert.equal(new Set(questions.map((question) => question.id)).size, 12)
     assert.equal(new Set(questions.slice(2).map((question) => question.english)).size, 10)
     assert.ok(
@@ -24,10 +31,10 @@ test('拼写保留十二题基线，默写增加十题，其他模式保留原�
             ),
     )
     assert.equal(getDemoQuestions('word', 'pronounce').length, 10)
+    assert.equal(getDemoQuestions('word', 'meaning').length, 10)
     assert.equal(original.length, 2)
     assert.equal(getDemoQuestions('guess', 'guess').length, 2)
     assert.equal(dictation.length, 12)
-    assert.deepEqual(dictation.slice(0, 2), original)
     assert.equal(new Set(dictation.map((question) => question.id)).size, 12)
     assert.equal(new Set(dictation.slice(2).map((question) => question.english)).size, 10)
 })

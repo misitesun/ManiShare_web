@@ -126,7 +126,7 @@ export const practiceModeSelections: Readonly<
         defaultMode: 'listen',
         options: [
             listeningOption,
-            readingOption,
+            { ...readingOption, label: '阅读全览' },
             selfCheckOption,
             { ...translationOption, thumbnail: sentenceTranslationThumbnailAsset.src },
             {

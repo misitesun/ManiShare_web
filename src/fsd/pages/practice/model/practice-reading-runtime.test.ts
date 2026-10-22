@@ -11,8 +11,15 @@ import {
     createPracticeReadingRuntime,
     schedulePracticeReadingUpdate,
 } from './practice-reading-runtime'
-import type { PracticeReadingSnapshot } from './practice-reading-runtime'
+import type {
+    PracticeReadingPlaybackScheduler,
+    PracticeReadingSnapshot,
+} from './practice-reading-runtime'
 import { usePracticeReading } from './usePracticeReading'
+import {
+    createSentenceListeningPlaybackOptions,
+    resolveSentenceListeningNavigation,
+} from './sentence-listening-playback'
 
 class ReadingElement extends EventTarget implements PracticeMediaElement {
     src = ''
@@ -22,6 +29,7 @@ class ReadingElement extends EventTarget implements PracticeMediaElement {
     volume = 1
     playbackRate = 1
     paused = true
+    ended = false
     error: { readonly code: number } | null = null
     playCalls = 0
     loadCalls = 0
@@ -71,7 +79,11 @@ const initial: PracticeCutReadingInput = {
     blocked: false,
 }
 
-function fixture(initialize?: (element: ReadingElement, index: number) => void): {
+function fixture(
+    initialize?: (element: ReadingElement, index: number) => void,
+    onEnded?: (visitKey: string) => void,
+    schedulePlayback?: PracticeReadingPlaybackScheduler,
+): {
     readonly elements: ReadingElement[]
     readonly writes: PracticeReadingSnapshot[]
     readonly runtime: ReturnType<typeof createPracticeReadingRuntime>
@@ -90,6 +102,8 @@ function fixture(initialize?: (element: ReadingElement, index: number) => void):
         },
         createPracticeReadingMemory(),
         createPracticeMediaGroup(),
+        onEnded,
+        schedulePlayback,
     )
     return { elements, writes, runtime }
 }
@@ -98,6 +112,159 @@ async function settled(): Promise<void> {
     await Promise.resolve()
     await Promise.resolve()
 }
+
+test('同一朗读宿主切换单词与指定例句，点击同一例句暂停，旧题或非法音源不创建媒体', async (): Promise<void> => {
+    const { runtime, elements } = fixture()
+    runtime.update({ ...initial, enabled: false })
+    assert.equal(runtime.toggleSourcePlayback('/samples/example-2.wav', 'stale-visit'), false)
+    assert.equal(
+        runtime.toggleSourcePlayback('https://remote.invalid/example.wav', initial.visitKey),
+        false,
+    )
+    assert.equal(elements.length, 0)
+    assert.equal(runtime.toggleSourcePlayback('/samples/example-2.wav', initial.visitKey), true)
+    await settled()
+    assert.equal(elements[0]?.src, '/samples/example-2.wav')
+    assert.equal(runtime.snapshot().status, 'playing')
+    runtime.toggleSourcePlayback('/samples/example-2.wav', initial.visitKey)
+    assert.equal(runtime.snapshot().playRequested, false)
+    runtime.togglePlayback()
+    await settled()
+    assert.equal(elements.length, 2)
+    assert.equal(elements[0]?.listeners, 0)
+    assert.equal(elements[1]?.src, initial.source)
+    assert.equal(runtime.snapshot().status, 'playing')
+    runtime.update({ ...initial, visitKey: 'next-word', enabled: false })
+    assert.equal(runtime.toggleSourcePlayback('/samples/example-2.wav', initial.visitKey), false)
+    assert.equal(runtime.snapshot().playRequested, false)
+    runtime.dispose()
+    assert.ok(elements.every((element) => element.listeners === 0))
+})
+
+test('例句替换等待中的单词朗读会取消旧提示音等待，弹窗／隐藏后不补播', async (): Promise<void> => {
+    const pending: { complete: (allowed: boolean) => void; cancelled: boolean }[] = []
+    const { runtime, elements } = fixture(undefined, undefined, (complete): (() => void) => {
+        const request = { complete, cancelled: false }
+        pending.push(request)
+        return (): void => {
+            request.cancelled = true
+        }
+    })
+    runtime.update(initial)
+    assert.equal(elements[0]?.playCalls, 0)
+    runtime.toggleSourcePlayback('/samples/example-1.wav', initial.visitKey)
+    assert.equal(pending[0]?.cancelled, true)
+    pending[0]?.complete(true)
+    await settled()
+    assert.ok(elements.every((element) => element.playCalls === 0))
+    pending[1]?.complete(true)
+    await settled()
+    assert.equal(elements[1]?.playCalls, 1)
+    runtime.update({ ...initial, blocked: true })
+    assert.equal(runtime.snapshot().playRequested, false)
+    runtime.update({ ...initial, blocked: false, enabled: false })
+    runtime.toggleSourcePlayback('/samples/example-3.wav', initial.visitKey)
+    const latest = pending.at(-1)
+    runtime.setHidden(true)
+    latest?.complete(true)
+    await settled()
+    assert.equal(runtime.snapshot().playRequested, false)
+    runtime.dispose()
+})
+
+test('指法复用朗读前置调度，提示音放行后才播，暂停撤销旧等待且关闭切读仍可手动朗读', async (): Promise<void> => {
+    const pending: { complete: (allowed: boolean) => void; cancelled: boolean }[] = []
+    const { runtime, elements } = fixture(undefined, undefined, (complete): (() => void) => {
+        const request = { complete, cancelled: false }
+        pending.push(request)
+        return (): void => {
+            request.cancelled = true
+        }
+    })
+    const input: PracticeCutReadingInput = {
+        ...initial,
+        mode: 'typing',
+        source: '/practice-demo/word-typing/woman.wav',
+    }
+    runtime.update(input)
+    assert.equal(elements[0]?.playCalls, 0)
+    assert.equal(runtime.snapshot().playRequested, true)
+    pending[0]?.complete(true)
+    await settled()
+    assert.equal(elements[0]?.playCalls, 1)
+
+    runtime.update({ ...input, visitKey: 'typing-visit-2' })
+    assert.equal(elements[0]?.playCalls, 1)
+    runtime.pause()
+    assert.equal(pending[1]?.cancelled, true)
+    pending[1]?.complete(true)
+    await settled()
+    assert.equal(elements[0]?.playCalls, 1, '暂停后不补播旧题')
+    assert.equal(runtime.snapshot().playRequested, false)
+
+    runtime.update({ ...input, visitKey: 'typing-visit-3', enabled: false })
+    assert.equal(pending.length, 2, '切读关闭不登记自动播放')
+    assert.equal(runtime.play(), true)
+    assert.equal(elements[0]?.playCalls, 1)
+    pending[2]?.complete(true)
+    await settled()
+    assert.equal(elements[0]?.playCalls, 2)
+    runtime.dispose()
+    assert.equal(elements[0]?.listeners, 0)
+})
+
+test('真实播完先 pause 后 ended 仍只回报当前访问一次，旧同源访问事件失效', async (): Promise<void> => {
+    const ended: string[] = []
+    const { runtime, elements } = fixture(undefined, (visit): void => {
+        ended.push(visit)
+    })
+    runtime.update({ ...initial, family: 'sentence', mode: 'listen' })
+    await settled()
+    const first = elements[0]
+    assert.ok(first)
+    first.ended = true
+    first.paused = true
+    first.dispatchEvent(new Event('pause'))
+    first.dispatchEvent(new Event('ended'))
+    first.dispatchEvent(new Event('ended'))
+    assert.deepEqual(ended, ['visit-1'])
+    runtime.update({ ...initial, family: 'sentence', mode: 'listen', visitKey: 'visit-2' })
+    await settled()
+    const second = elements[1]
+    assert.ok(second)
+    assert.equal(first.listeners, 0)
+    first.dispatchEvent(new Event('ended'))
+    assert.deepEqual(ended, ['visit-1'])
+    second.dispatchEvent(new Event('ended'))
+    assert.deepEqual(ended, ['visit-1', 'visit-2'])
+    runtime.dispose()
+})
+
+test('暂停后关闭自动播放保留进度，晚到结束不推进，仍可手动朗读或切读下一题', async (): Promise<void> => {
+    const ended: string[] = []
+    const { runtime, elements } = fixture(undefined, (visit): void => {
+        ended.push(visit)
+    })
+    runtime.update(initial)
+    await settled()
+    const first = elements[0]
+    assert.ok(first)
+    first.currentTime = 4
+    assert.equal(runtime.play(), true)
+    assert.equal(first.playCalls, 1, '显式开启自动播放不能把已在播放的音频反向暂停')
+    runtime.pause()
+    runtime.update({ ...initial, enabled: false })
+    assert.equal(first.currentTime, 4)
+    first.dispatchEvent(new Event('ended'))
+    assert.deepEqual(ended, [])
+    assert.equal(runtime.togglePlayback(), true)
+    await settled()
+    assert.equal(first.playCalls, 2)
+    runtime.update({ ...initial, visitKey: 'visit-2' })
+    await settled()
+    assert.equal(elements[1]?.playCalls, 1)
+    runtime.dispose()
+})
 
 test('缺失或外部音源不创建 Audio，不加载或请求播放，SSR 初始快照确定', (): void => {
     const { runtime, elements } = fixture()
@@ -113,6 +280,34 @@ test('缺失或外部音源不创建 Audio，不加载或请求播放，SSR 初�
         return createElement('span', null, `${reading.status}:${reading.playRequested}`)
     }
     assert.equal(renderToString(createElement(Probe)), '<span>unavailable:false</span>')
+})
+
+test('阅读全览首题单次朗读在就绪后执行，普通更新、暂停和后续无意图访问不重复播放', async (): Promise<void> => {
+    for (const family of ['sentence', 'audio'] as const) {
+        const { runtime, elements } = fixture()
+        const first: PracticeCutReadingInput = {
+            ...initial,
+            family,
+            mode: 'read',
+            sequenceEnabled: true,
+        }
+        runtime.update({ ...first, ready: false })
+        assert.equal(elements.length, 0)
+        runtime.update(first)
+        await settled()
+        assert.equal(elements[0]?.playCalls, 1)
+        runtime.update(first)
+        assert.equal(elements[0]?.playCalls, 1)
+        runtime.pause()
+        runtime.update(first)
+        assert.equal(elements[0]?.playCalls, 1)
+        runtime.update({ ...first, visitKey: 'visit-2', enabled: false, sequenceEnabled: false })
+        assert.equal(
+            elements.reduce((total, element) => total + element.playCalls, 0),
+            1,
+        )
+        runtime.dispose()
+    }
 })
 
 test('首次有效 source 到达且 ready 后绑定再自动播放，普通更新不重建或重复播放', async (): Promise<void> => {
@@ -357,6 +552,56 @@ test('同访问换成另一有效或无效 source 时清理旧媒体并归为非
         assert.equal(elements.length, 1, '同访问已消费自动尝试，换源不重新构造或预加载')
         assert.equal(runtime.snapshot().status, 'unavailable')
         assert.equal(runtime.snapshot().playRequested, false)
+        runtime.dispose()
+    }
+})
+
+test('手动接管首次切题即按切读朗读，不重复播放，自动推进保持独立', async (): Promise<void> => {
+    for (const cutReadingEnabled of [true, false]) {
+        const ended: string[] = []
+        const { runtime, elements } = fixture(undefined, (visit): void => {
+            ended.push(visit)
+        })
+        const options = { ...createSentenceListeningPlaybackOptions(), autoAdvance: true }
+        const input: PracticeCutReadingInput = { ...initial, family: 'audio', mode: 'listen' }
+        runtime.update(input)
+        await settled()
+        const first = elements[0]
+        assert.ok(first)
+        assert.equal(first.paused, false)
+        const manual = resolveSentenceListeningNavigation(options, 'manual')
+        runtime.pause()
+        const next = {
+            ...input,
+            visitKey: 'manual-visit-2',
+            enabled: cutReadingEnabled || manual.options.autoAdvance,
+        }
+        runtime.update(next)
+        await settled()
+        for (let count = 0; count < 3; count += 1) runtime.update(next)
+        assert.equal(manual.options.autoAdvance, false)
+        assert.equal(first.paused, true)
+        assert.equal(first.listeners, 0)
+        assert.equal(elements.length, cutReadingEnabled ? 2 : 1)
+        assert.equal(runtime.snapshot().playRequested, cutReadingEnabled)
+        first.dispatchEvent(new Event('ended'))
+        assert.deepEqual(ended, [], '旧题结束事件不能继续自动切题')
+        if (cutReadingEnabled) {
+            assert.equal(elements[1]?.playCalls, 1, '切读开启时首次手动切题立即朗读且不重复请求')
+        } else {
+            assert.equal(runtime.play(), true, '切读关闭时新题不自动朗读，仍允许显式播放')
+            await settled()
+            assert.equal(elements[1]?.playCalls, 1)
+        }
+        const automatic = resolveSentenceListeningNavigation(options, 'automatic')
+        runtime.update({
+            ...input,
+            visitKey: 'automatic-visit-3',
+            enabled: cutReadingEnabled || automatic.options.autoAdvance,
+        })
+        await settled()
+        assert.equal(automatic.options.autoAdvance, true)
+        assert.equal(elements[2]?.playCalls, 1, '正常自动推进到新题仍自动朗读')
         runtime.dispose()
     }
 })

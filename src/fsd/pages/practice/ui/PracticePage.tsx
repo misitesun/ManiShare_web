@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useReducer, useState, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useState, useRef, useSyncExternalStore } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import Link from 'next/link'
 import {
@@ -39,6 +39,11 @@ import type {
     PracticeFeedbackEvent,
     PracticeFeedbackSoundController,
 } from '../model/practice-feedback'
+import { waitForSentenceReadingCue } from '../model/sentence-reading-cue'
+import { isSentenceGameFamily } from '../model/sentence-game-family'
+import { editSentenceBlocks, judgeSentenceBlocks } from '../model/sentence-blocks'
+import type { SentenceBlockEdit, SentenceBlocksJudgment } from '../model/sentence-blocks'
+import type { PracticeReadingPlaybackScheduler } from '../model/practice-reading-runtime'
 import { practiceMediaSource, stopPracticeMedia } from '../model/media-controller'
 import type { PracticeMediaController } from '../model/media-controller'
 import {
@@ -48,6 +53,10 @@ import {
 } from '../model/practice-visibility'
 import { PracticeContent } from './PracticeContent'
 import { WordSpellingResult } from './WordSpellingResult'
+import { PracticeAnswerStatistics } from './PracticeAnswerStatistics'
+import { WordMeaningVariantSwitch } from './WordMeaningExercise'
+import { initialWordMeaningState, reduceWordMeaningState } from '../model/word-meaning'
+import type { WordMeaningVariant } from '../model/word-meaning'
 import { getWordSpellingCrystals, judgeWordSpelling } from '../model/word-spelling'
 import type { WordSpellingInputController } from '../model/word-spelling-input'
 import { createPracticeAnswerFocusRequest } from '../model/practice-answer-focus'
@@ -78,6 +87,7 @@ import {
 } from '../model/practice-footer'
 import type { PracticeCommand } from '../model/practice-command-types'
 import { usePracticeCommands } from '../model/usePracticeCommands'
+import { usePracticeInteractionFocus } from '../model/usePracticeInteractionFocus'
 import { resolvePracticePrimary } from '../model/practice-primary'
 import { useOralDemo } from '../model/useOralDemo'
 import { PracticeFooter } from './PracticeFooter'
@@ -114,6 +124,32 @@ import {
     isPracticeCutReadingEnabled,
 } from '../model/practice-cut-reading'
 import { usePracticeReading } from '../model/usePracticeReading'
+import { getWordDemoReadingSource } from '../model/word-demo-reading'
+import type { WordCardExample } from '../model/word-card-analysis'
+import { getOralAssessmentPlaybackStatus } from '../model/oral-assessment-playback'
+import { createAudioListeningReadingSequence } from '../model/audio-listening-reading-sequence'
+import { useSentenceListeningAdvance } from '../model/useSentenceListeningAdvance'
+import {
+    createSentenceListeningPlaybackOptions,
+    toggleSentenceListeningPlayback,
+    resolveSentenceListeningEnd,
+    resolveSentenceListeningNavigation,
+} from '../model/sentence-listening-playback'
+import type {
+    ImmersiveListeningFamily,
+    SentenceListeningPlaybackOptions,
+    SentenceListeningPlaybackToggle,
+    SentenceListeningNavigationOrigin,
+} from '../model/sentence-listening-playback'
+import { SentenceListeningControls } from './SentenceListeningControls'
+import { SentenceReadingDisplay } from './SentenceReadingDisplay'
+import {
+    createSentenceAnswerLayout,
+    isSentenceAnswerComplete,
+    judgeSentenceAnswerValues,
+} from '../model/sentence-answer-input'
+import type { SentenceAnswerSubmission } from '../model/sentence-answer-input'
+import { createSentenceReadingDisplayOptions } from '../model/sentence-reading-display'
 import type { PracticeReadingView } from './PracticeReadingOverlay'
 import type { PracticePlaybackState } from './PracticeMedia'
 interface PracticePageProps {
@@ -123,6 +159,7 @@ interface PracticePageProps {
     readonly onSelect: (demo: string, mode: PracticeMode) => void
     readonly onCatalog: () => void
     readonly onExit: (destination: PracticeExitDestination) => void
+    readonly onNextChapter?: (() => void) | undefined
 }
 interface PracticeStyle extends CSSProperties {
     '--app-color-practice-background': string
@@ -151,11 +188,31 @@ export function PracticePage({
     onSelect,
     onCatalog,
     onExit,
+    onNextChapter,
 }: PracticePageProps): ReactElement {
     const toolbarPreferences = usePracticeToolbarPreferences()
     const scope = draftScope ?? (route.kind === 'demo' ? `demo:${route.view.demo.id}` : 'catalog')
     const draft = usePracticeDrafts(scope)
     const [openDraftScope, setOpenDraftScope] = useState<string | null>(null)
+    // 同类下一章保留播放选项；句子与音频各自持有，互不覆盖，不写入本地缓存。
+    const [listeningPlaybacks, setListeningPlaybacks] = useState<
+        Readonly<Record<ImmersiveListeningFamily, SentenceListeningPlaybackOptions>>
+    >(() => ({
+        sentence: createSentenceListeningPlaybackOptions(),
+        audio: createSentenceListeningPlaybackOptions(),
+    }))
+    const listeningFamily: ImmersiveListeningFamily =
+        route.kind === 'demo' && route.view.demo.family === 'audio' ? 'audio' : 'sentence'
+    const [readingPlaybacks, setReadingPlaybacks] = useState<
+        Readonly<Record<ImmersiveListeningFamily, SentenceListeningPlaybackOptions>>
+    >(() => ({
+        sentence: createSentenceListeningPlaybackOptions(),
+        audio: createSentenceListeningPlaybackOptions(),
+    }))
+    const usesReadingPlayback =
+        route.kind === 'demo' &&
+        isSentenceGameFamily(route.view.demo.family) &&
+        route.view.mode === 'read'
     const entryKey =
         route.kind === 'demo' ? `${scope}:${route.view.demo.id}:${route.view.mode}` : null
     const entryLoading = usePracticeEntryLoading(entryKey)
@@ -207,8 +264,27 @@ export function PracticePage({
         <TldDialogMotionProvider>
             {entryLoading.ready ? (
                 <PracticeSession
-                    key={`${route.view.demo.id}:${route.view.mode}`}
+                    key={entryKey}
                     view={route.view}
+                    scope={scope}
+                    listeningPlayback={
+                        usesReadingPlayback
+                            ? readingPlaybacks[listeningFamily]
+                            : listeningPlaybacks[listeningFamily]
+                    }
+                    onListeningPlaybackChange={(next): void => {
+                        if (usesReadingPlayback)
+                            setReadingPlaybacks((current) => ({
+                                ...current,
+                                [listeningFamily]: next,
+                            }))
+                        else
+                            setListeningPlaybacks((current) => ({
+                                ...current,
+                                [listeningFamily]: next,
+                            }))
+                    }}
+                    onNextChapter={onNextChapter}
                     onExit={onExit}
                     onSelect={onSelect}
                     onCatalog={(): void => {
@@ -239,6 +315,10 @@ export function PracticePage({
 }
 function PracticeSession({
     view,
+    scope,
+    listeningPlayback,
+    onListeningPlaybackChange,
+    onNextChapter,
     onSelect,
     onCatalog,
     onExit,
@@ -247,6 +327,10 @@ function PracticeSession({
     onOpenDraft,
 }: {
     readonly view: ResolvedPracticeView
+    readonly scope: string
+    readonly listeningPlayback: SentenceListeningPlaybackOptions
+    readonly onListeningPlaybackChange: (options: SentenceListeningPlaybackOptions) => void
+    readonly onNextChapter: PracticePageProps['onNextChapter']
     readonly onSelect: PracticePageProps['onSelect']
     readonly onCatalog: () => void
     readonly onExit: PracticePageProps['onExit']
@@ -259,10 +343,48 @@ function PracticeSession({
     const { values } = snapshot
     const appearance = getPreviewAppearance(values)
     const sourceQuestions = getDemoQuestions(demo.family, mode)
+    // Sentence前缀表示共用题型，实际来源仍由family隔离。
+    const isSentenceGame = isSentenceGameFamily(demo.family)
     const isWordPronunciation = demo.family === 'word' && mode === 'pronounce'
     const isWordSpelling = demo.family === 'word' && mode === 'spell'
     const isWordDictation = demo.family === 'word' && mode === 'dictate'
+    const isWordTyping = demo.family === 'word' && mode === 'typing'
+    const isSentenceTyping = isSentenceGame && mode === 'typing'
+    const isTypingPractice = isWordTyping || isSentenceTyping
+    const isWordOral = demo.family === 'word' && mode === 'oral'
+    const isSentenceOral = isSentenceGame && mode === 'oral'
+    const isOralExercise = isWordOral || isSentenceOral
+    const isSentenceTranslation = isSentenceGame && mode === 'translate'
+    const isSentenceCheck = isSentenceGame && mode === 'check'
+    const isSentenceInput = isSentenceTranslation || isSentenceTyping
+    const isSentenceBlocks = isSentenceGame && mode === 'blocks'
     const isWordInput = isWordSpelling || isWordDictation
+    const isWordMeaning = demo.family === 'word' && mode === 'meaning'
+    const isWordAnswerMode = isWordInput || isWordMeaning
+    const [wordMeaning, dispatchWordMeaning] = useReducer(
+        reduceWordMeaningState,
+        initialWordMeaningState,
+    )
+    const hasAnswerInput = hasPracticeAnswerInput(
+        mode,
+        isWordMeaning ? wordMeaning.variant : undefined,
+    )
+    const isImmersiveListening =
+        (demo.family === 'sentence' || demo.family === 'audio') && mode === 'listen'
+    const isAudioListening = demo.family === 'audio' && mode === 'listen'
+    const [audioReadingSequence] = useState(createAudioListeningReadingSequence)
+    const audioReadingPhase = useSyncExternalStore(
+        audioReadingSequence.subscribe,
+        audioReadingSequence.getSnapshot,
+        audioReadingSequence.getServerSnapshot,
+    )
+    useEffect(() => (): void => audioReadingSequence.reset(), [audioReadingSequence])
+    const isSentenceReading = isSentenceGame && mode === 'read'
+    const usesPlaybackControls = isImmersiveListening || isSentenceReading
+    const [readingDisplay, setReadingDisplay] = useState(createSentenceReadingDisplayOptions)
+    const listeningPlaybackRef = useRef(listeningPlayback)
+    listeningPlaybackRef.current = listeningPlayback
+    const automaticTransitionVisit = useRef<string | null>(null)
     const [spellingQuestionTransition, setSpellingQuestionTransition] =
         useState<WordSpellingQuestionTransition | null>(null)
     const [answerSession, dispatch] = useReducer(reducePracticeSession, initialPracticeSession)
@@ -276,6 +398,22 @@ function PracticeSession({
     const session = isWordPronunciation
         ? getWordPronunciationSession(answerSession, wordRemember)
         : answerSession
+    const isTranslationResult = isSentenceTranslation && session.phase === 'correct'
+    const isSentenceResult =
+        isTranslationResult ||
+        (isSentenceBlocks && session.phase === 'correct') ||
+        (isSentenceCheck && isPracticeAnswerVisible(session.phase))
+    const isFourRowLayout =
+        isWordAnswerMode ||
+        isTypingPractice ||
+        isOralExercise ||
+        isImmersiveListening ||
+        isSentenceCheck ||
+        isSentenceBlocks ||
+        isSentenceResult
+    const usesOralAssessmentDialog =
+        isWordAnswerMode || isTypingPractice || isImmersiveListening || isSentenceResult
+    const usesChapterNotes = isWordPronunciation || usesPlaybackControls || isSentenceResult
     const [rememberAction, setRememberAction] = useState<WordRememberAction | null>(null)
     const pendingRemember = useRef<{
         readonly action: WordRememberAction
@@ -305,6 +443,19 @@ function PracticeSession({
     const [noteTarget, setNoteTarget] = useState<string>('')
     const chapterNotes = usePracticeNotes(sourceQuestions.map((item) => item.id))
     const [resetRevision, setResetRevision] = useState(0)
+    const [manualReadingVisit, setManualReadingVisit] = useState<string | null>(() => {
+        const firstQuestion = sourceQuestions[0]
+        if (!isSentenceReading || !firstQuestion) return null
+        // 首次进入只登记首题的一次朗读；由既有就绪门控与访问去重执行，不开启自动切题。
+        return createPracticeCutReadingVisitKey({
+            scope,
+            family: demo.family,
+            mode,
+            questionId: firstQuestion.id,
+            index: 0,
+            revision: 0,
+        })
+    })
     const [notes, setNotes] = useState<Record<string, string>>({})
     const [message, setMessage] = useState('')
     const [panelVisible, setPanelVisible] = useState(demo.family === 'phonetics')
@@ -312,9 +463,10 @@ function PracticeSession({
     const wordDeck = useRef<WordPronunciationDeckController | null>(null)
     const answerInput = useRef<WordSpellingInputController | null>(null)
     const answerFocusAllowed = useRef(false)
+    const keyboardNavigation = useRef(false)
     const [answerFocus] = useState(() =>
         createPracticeAnswerFocusRequest({
-            canFocus: (): boolean => answerFocusAllowed.current,
+            canFocus: (): boolean => answerFocusAllowed.current && !keyboardNavigation.current,
             focus: (): void => answerInput.current?.focus(),
             schedule: (callback): number => window.requestAnimationFrame(callback),
             cancelFrame: (frame): void => window.cancelAnimationFrame(frame),
@@ -325,8 +477,21 @@ function PracticeSession({
     const registerFeedbackSound = useCallback(
         (controller: PracticeFeedbackSoundController | null): void => {
             feedbackSound.current = controller
+            if (controller === null && audioReadingSequence.getSnapshot() === 'waiting')
+                audioReadingSequence.cancel()
         },
-        [],
+        [audioReadingSequence],
+    )
+    const scheduleSentencePlayback = useCallback<PracticeReadingPlaybackScheduler>(
+        (complete): (() => void) =>
+            waitForSentenceReadingCue(
+                feedbackSound.current,
+                (allowed): void => {
+                    complete(allowed && !document.hidden)
+                },
+                { waitForAnswerFeedback: isSentenceInput || isSentenceBlocks },
+            ),
+        [isSentenceInput, isSentenceBlocks],
     )
     const registerAnswerInput = useCallback(
         (controller: WordSpellingInputController | null): void => {
@@ -348,7 +513,9 @@ function PracticeSession({
         mediaController.current = controller
     }, [])
     const pause = usePracticePause((): void => {
+        if (isAudioListening) audioReadingSequence.cancel()
         cancelRemember()
+        listeningAdvance.cancel()
         wordDeck.current?.cancel()
         timer.pause()
         mediaController.current?.pause()
@@ -368,19 +535,70 @@ function PracticeSession({
     })
     const wordOralQuestion = sourceQuestions[session.index] ?? sourceQuestions[0]
     const wordOralTarget: OralAssessmentTarget = {
-        id: `${mode}:${wordOralQuestion?.id ?? 'empty'}:${resetRevision}`,
+        id: `${demo.family}:${mode}:${isWordMeaning ? wordMeaning.variant : 'word'}:${wordOralQuestion?.id ?? 'empty'}:${resetRevision}`,
         text: wordOralQuestion?.english ?? '',
         translation: wordOralQuestion?.translation ?? '',
-        kind: 'word',
+        kind:
+            isImmersiveListening ||
+            isSentenceInput ||
+            isSentenceCheck ||
+            isSentenceOral ||
+            isSentenceBlocks
+                ? 'sentence'
+                : 'word',
     }
+    const oralAssessmentActive = isOralExercise || (usesOralAssessmentDialog && overlay === 'oral')
+    const oralAssessmentBlocked =
+        pause.paused ||
+        (overlay !== null && (isOralExercise || overlay !== 'oral')) ||
+        session.finished
+    const oralReplayAudio = usePracticeReading({
+        family: demo.family,
+        mode,
+        visitKey: wordOralTarget.id,
+        source: wordOralQuestion?.readingSource ?? getWordDemoReadingSource(wordOralTarget.text),
+        enabled: false,
+        ready:
+            oralAssessmentActive &&
+            snapshot.ready &&
+            toolbarPreferences.ready &&
+            Boolean(wordOralTarget.text),
+        blocked: oralAssessmentBlocked,
+        schedulePlayback: scheduleSentencePlayback,
+        onEnded: (endedVisit): void => {
+            if (endedVisit === wordOralTarget.id) wordOral.pause()
+        },
+    })
     const wordOral = useOralAssessmentDemo({
-        active: isWordInput && overlay === 'oral',
-        blocked: pause.paused || (overlay !== null && overlay !== 'oral'),
+        active: oralAssessmentActive,
+        blocked: oralAssessmentBlocked || !snapshot.ready || !toolbarPreferences.ready,
         isPaused: pause.isPaused,
         target: wordOralTarget,
-        onFeedback: (kind, rating): void => emit(kind, rating),
+        sampleScores: isOralExercise ? [40, 70, 85, 96] : undefined,
+        playback: {
+            status: getOralAssessmentPlaybackStatus(oralReplayAudio),
+            play: (): boolean => {
+                readingAudio.pause()
+                mediaController.current?.pause()
+                const available = oralReplayAudio.play()
+                setMessage(available ? '' : '当前题目暂无示例朗读音源。')
+                return available
+            },
+            stop: oralReplayAudio.stop,
+        },
+        onFeedback: (kind, rating): void => {
+            if (kind === 'recordStart') {
+                readingAudio.pause()
+                mediaController.current?.pause()
+            }
+            emit(kind, rating)
+        },
     })
-    const activeOral = isWordInput ? wordOral : oral
+    useEffect((): void => {
+        if (oralAssessmentActive && oralReplayAudio.status === 'error')
+            setMessage('音频播放失败，请再次点击播放。')
+    }, [oralAssessmentActive, oralReplayAudio.status])
+    const activeOral = usesOralAssessmentDialog || isOralExercise ? wordOral : oral
     const [event, setEvent] = useState<PracticeFeedbackEvent>()
     const eventSequence = useRef(0)
     const questions = isWordPronunciation
@@ -392,13 +610,30 @@ function PracticeSession({
     // 最后一条记住后保留完成弹窗的渲染宿主，不以空态替换整个会话。
     const question = questions[session.index] ?? sourceQuestions[0]
     const blocked = overlay !== null || pause.paused
+    const quickOralEnabled = canShowQuickOral(
+        demo.family,
+        mode,
+        session.phase,
+        Boolean(question?.english.trim()),
+        values.showEvaluation,
+        isWordMeaning ? wordMeaning.variant : undefined,
+    )
     answerFocusAllowed.current =
         snapshot.ready &&
         toolbarPreferences.ready &&
         !blocked &&
         !session.finished &&
-        hasPracticeAnswerInput(mode) &&
+        hasAnswerInput &&
         (session.phase === 'answering' || session.phase === 'incorrect')
+    usePracticeInteractionFocus({
+        rootRef,
+        answerInput,
+        keyboardNavigation,
+        ready: snapshot.ready && toolbarPreferences.ready,
+        blocked: blocked || draftOpen || session.finished,
+        answerEditable: answerFocusAllowed.current,
+        reading: isSentenceReading,
+    })
     useEffect(() => {
         if (
             !isWordPronunciation ||
@@ -425,13 +660,16 @@ function PracticeSession({
         }
     }, [cancelRemember])
     const readingVisit = createPracticeCutReadingVisitKey({
-        scope: demo.id,
+        scope,
         family: demo.family,
         mode,
         questionId: question?.id ?? '',
         index: session.index,
         revision: resetRevision,
     })
+    const readingSource = isWordMeaning
+        ? (question?.wordMeaning?.readingSource ?? question?.readingSource)
+        : question?.readingSource
     const cutReading = isPracticeCutReadingEnabled(
         demo.family,
         mode,
@@ -443,19 +681,51 @@ function PracticeSession({
                 ? audioOptions.cutReading
                 : (additionalOptions?.cutReading ?? false),
     )
+    const manualReadingRequested = isSentenceReading && manualReadingVisit === readingVisit
+    const readingEnabled =
+        (cutReading ||
+            manualReadingRequested ||
+            (usesPlaybackControls && listeningPlayback.autoAdvance)) &&
+        (!isAudioListening || audioReadingPhase === 'ready')
+    const listeningAdvance = useSentenceListeningAdvance({
+        visitKey: readingVisit,
+        enabled:
+            usesPlaybackControls &&
+            listeningPlayback.autoAdvance &&
+            !blocked &&
+            !session.finished &&
+            snapshot.ready &&
+            toolbarPreferences.ready &&
+            Boolean(question),
+        onAdvance: handleListeningAudioEnded,
+    })
     const readingAudio = usePracticeReading({
         family: demo.family,
         mode,
         visitKey: readingVisit,
-        ...(question?.readingSource ? { source: question.readingSource } : {}),
-        enabled: cutReading,
+        ...(readingSource ? { source: readingSource } : {}),
+        enabled: readingEnabled,
+        sequenceEnabled:
+            isSentenceReading && (listeningPlayback.autoAdvance || manualReadingRequested),
         ready: snapshot.ready && toolbarPreferences.ready && Boolean(question),
-        blocked: blocked || session.finished || rememberAction !== null,
+        blocked:
+            blocked ||
+            session.finished ||
+            rememberAction !== null ||
+            (isOralExercise && (wordOral.stage === 'recording' || wordOral.stage === 'evaluating')),
+        onEnded: usesPlaybackControls ? listeningAdvance.schedule : undefined,
+        schedulePlayback:
+            demo.family === 'sentence' ||
+            (demo.family === 'audio' && !isAudioListening) ||
+            demo.family === 'word'
+                ? scheduleSentencePlayback
+                : undefined,
     })
     const [contentPlayback, setContentPlayback] = useState<{
         readonly visitKey: string
         readonly state: PracticePlaybackState
     } | null>(null)
+    const sentencePlaybackActive = readingAudio.playRequested || listeningPlayback.autoAdvance
     const reportContentPlayback = useCallback(
         (state: PracticePlaybackState): void => {
             setContentPlayback((previous) =>
@@ -470,14 +740,23 @@ function PracticeSession({
         [readingVisit],
     )
     const readingView: PracticeReadingView | undefined =
-        cutReading && snapshot.ready && toolbarPreferences.ready && !blocked
+        (readingEnabled ||
+            ((demo.family === 'word' ||
+                isSentenceInput ||
+                isSentenceCheck ||
+                isSentenceOral ||
+                isSentenceBlocks) &&
+                (readingAudio.playRequested || readingAudio.status === 'error'))) &&
+        snapshot.ready &&
+        toolbarPreferences.ready &&
+        !blocked
             ? readingAudio.status === 'playing' ||
               (contentPlayback?.visitKey === readingVisit &&
                   contentPlayback.state.status === 'playing')
                 ? { status: 'playing', waveStyle: values.readingWave }
                 : readingAudio.status === 'error'
                   ? { status: 'blocked-playback', waveStyle: values.readingWave }
-                  : practiceMediaSource(question?.readingSource) === null
+                  : practiceMediaSource(readingSource) === null
                     ? { status: 'pending-source', waveStyle: values.readingWave }
                     : undefined
             : undefined
@@ -505,6 +784,7 @@ function PracticeSession({
         values,
         oralStage: activeOral.stage,
         panelVisible,
+        ...(isWordMeaning ? { wordMeaning } : {}),
     })
     const shortcutConflicts = shortcutFields.flatMap((field) => {
         const error = shortcutError(values, field.key, values[field.key])
@@ -531,10 +811,11 @@ function PracticeSession({
                           ? 'blocked'
                           : 'question',
             ready: snapshot.ready,
-            answerInputCommands: hasPracticeAnswerInput(mode),
+            answerInputCommands: hasAnswerInput,
+            ...(isWordMeaning ? { wordMeaningVariant: wordMeaning.variant } : {}),
             values,
         },
-        onCommand: executeCommand,
+        onCommand: executeKeyboardCommand,
     })
     if (!question)
         return (
@@ -553,10 +834,18 @@ function PracticeSession({
             ...(rating ? { rating } : {}),
         }
         // 在用户操作调用栈内请求播放；React事件消费仍保留并按ID去重。
-        feedbackSound.current?.consume(nextEvent, values)
+        if (isAudioListening && kind === 'questionChange')
+            audioReadingSequence.start(feedbackSound.current, nextEvent, values)
+        else feedbackSound.current?.consume(nextEvent, values)
         setEvent(nextEvent)
     }
-    function open(next: Overlay): void {
+    function open(next: Overlay, questionId?: string): void {
+        if (isAudioListening) audioReadingSequence.cancel()
+        listeningAdvance.cancel()
+        const noteQuestionId =
+            questionId ?? (usesPlaybackControls || isSentenceResult ? question?.id : undefined)
+        if (next === 'note' && usesChapterNotes && noteQuestionId !== undefined)
+            chapterNotes.open(noteQuestionId)
         feedbackSound.current?.stop()
         cancelRemember()
         wordDeck.current?.cancel()
@@ -573,10 +862,123 @@ function PracticeSession({
     function requestExit(action: PracticeExitAction): void {
         if (overlay === 'exit' && exitFlow.request(action)) setExitClosing(true)
     }
-    function move(delta: number): void {
+    function updateListeningPlayback(nextOptions: SentenceListeningPlaybackOptions): void {
+        // 先撤销/登记意图，避免同一轮事件中晚到的 ended 读取旧开关。
+        listeningPlaybackRef.current = nextOptions
+        if (!nextOptions.autoAdvance) listeningAdvance.cancel()
+        onListeningPlaybackChange(nextOptions)
+    }
+    function toggleListeningControl(key: SentenceListeningPlaybackToggle): void {
+        if (!usesPlaybackControls || blocked || session.finished) return
+        if (isSentenceReading && (key === 'blind' || key === 'autoNextChapter')) return
+        if (key === 'autoNextChapter' && onNextChapter === undefined) return
+        const nextOptions = toggleSentenceListeningPlayback(listeningPlaybackRef.current, key)
+        updateListeningPlayback(nextOptions)
+        if (key === 'autoAdvance' && nextOptions.autoAdvance) {
+            if (isAudioListening) audioReadingSequence.reset()
+            setMessage('')
+            // 显式开启需要立即播放；不消耗/改写原手动朗读的 toggle 行为。
+            if (!readingAudio.play())
+                setMessage('当前题目音频尚未接入，自动切题会在音频可播放后生效。')
+        }
+    }
+    function playListeningPlayback(): void {
+        if (!usesPlaybackControls || blocked || session.finished) return
+        if (isAudioListening) audioReadingSequence.reset()
+        listeningAdvance.cancel()
+        setMessage('')
+        if (!readingAudio.play()) setMessage('当前题目音频尚未接入，暂不能播放。')
+    }
+    function cancelPlaybackAutoAdvance(): void {
+        if (!usesPlaybackControls) return
+        if (isSentenceReading) setManualReadingVisit(null)
+        if (isAudioListening) audioReadingSequence.cancel()
+        updateListeningPlayback({ ...listeningPlaybackRef.current, autoAdvance: false })
+        readingAudio.pause()
+        mediaController.current?.pause()
+    }
+    function pauseListeningPlayback(): void {
+        if (!usesPlaybackControls || blocked || session.finished) return
+        cancelPlaybackAutoAdvance()
+        setMessage('')
+    }
+    function handleListeningAudioEnded(endedVisit: string): void {
+        if (
+            !usesPlaybackControls ||
+            endedVisit !== readingVisit ||
+            automaticTransitionVisit.current === endedVisit ||
+            blocked ||
+            session.finished ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready
+        )
+            return
+        const action = resolveSentenceListeningEnd({
+            options: listeningPlaybackRef.current,
+            index: session.index,
+            total: questions.length,
+            nextChapterAvailable: isImmersiveListening && onNextChapter !== undefined,
+        })
+        if (action === 'none') return
+        automaticTransitionVisit.current = endedVisit
+        if (action === 'next') move(1, 'automatic')
+        else if (action === 'repeat') {
+            stopPracticeMedia()
+            activeOral.reset()
+            dispatch({ type: 'reset' })
+            setResetRevision((revision) => revision + 1)
+            setPanelVisible(false)
+            setMessage('')
+            emit('questionChange')
+        } else if (action === 'next-chapter') {
+            stopPracticeMedia()
+            activeOral.reset()
+            timer.pause()
+            onNextChapter?.()
+        } else finishSession()
+    }
+    function prepareListeningNavigation(origin: SentenceListeningNavigationOrigin): void {
+        if (isSentenceReading) {
+            if (origin === 'manual') cancelPlaybackAutoAdvance()
+            return
+        }
+        if (!isImmersiveListening) return
+        const transition = resolveSentenceListeningNavigation(listeningPlaybackRef.current, origin)
+        if (transition.interruptAutoAdvance) {
+            // 先撤销意图与旧题等待，再暂停媒体，防止同一轮晚到 ended 继续推进。
+            updateListeningPlayback(transition.options)
+            if (isAudioListening) audioReadingSequence.cancel()
+            readingAudio.pause()
+            mediaController.current?.pause()
+        }
+    }
+    function move(delta: number, origin: SentenceListeningNavigationOrigin = 'manual'): void {
         if (pendingRemember.current !== null) return
         const nextIndex = Math.min(questions.length - 1, Math.max(0, session.index + delta))
-        if (nextIndex === session.index) return
+        if (nextIndex === session.index) {
+            if (
+                origin === 'manual' &&
+                (isSentenceReading || listeningPlaybackRef.current.autoAdvance)
+            )
+                prepareListeningNavigation(origin)
+            return
+        }
+        prepareListeningNavigation(origin)
+        const nextQuestion = questions[nextIndex]
+        if (origin === 'manual' && isSentenceReading && nextQuestion !== undefined) {
+            // 单次朗读绑定新访问；不重新打开自动切题，也不改变听力的切读偏好。
+            setManualReadingVisit(
+                createPracticeCutReadingVisitKey({
+                    scope,
+                    family: demo.family,
+                    mode,
+                    questionId: nextQuestion.id,
+                    index: nextIndex,
+                    revision: resetRevision + 1,
+                }),
+            )
+        }
+        listeningAdvance.cancel()
         if (isWordSpelling && question) {
             const direction = getWordSpellingQuestionDirection(session.index, nextIndex)
             if (direction)
@@ -592,6 +994,7 @@ function PracticeSession({
         }
         stopPracticeMedia()
         activeOral.reset()
+        dispatchWordMeaning({ type: 'question' })
         setPanelVisible(demo.family === 'phonetics')
         setResetRevision((revision) => revision + 1)
         setMessage('')
@@ -600,8 +1003,11 @@ function PracticeSession({
             dispatch({ type: 'reset' })
         } else dispatch({ type: 'move', delta, total: questions.length })
         emit('questionChange')
+        if (isSentenceCheck) rootRef.current?.focus({ preventScroll: true })
     }
     function reset(): void {
+        if (isAudioListening) audioReadingSequence.reset()
+        listeningAdvance.cancel()
         feedbackSound.current?.stop()
         cancelRemember()
         setSpellingQuestionTransition(null)
@@ -609,6 +1015,7 @@ function PracticeSession({
         stopPracticeMedia()
         timer.reset()
         dispatch({ type: 'reset' })
+        dispatchWordMeaning({ type: 'question' })
         setWordRemember(
             createWordRememberSession(
                 isWordPronunciation
@@ -640,6 +1047,26 @@ function PracticeSession({
         toolbarPreferences.update('word', wordMode, nextOptions)
         answerFocus.request()
     }
+    function changeWordMeaningVariant(variant: WordMeaningVariant): void {
+        if (
+            !isWordMeaning ||
+            blocked ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready ||
+            variant === wordMeaning.variant
+        )
+            return
+        stopPracticeMedia()
+        activeOral.reset()
+        dispatchWordMeaning({ type: 'variant', value: variant })
+        dispatch({ type: 'restart-answer' })
+        setResetRevision((revision) => revision + 1)
+        setPanelVisible(false)
+        setMessage('')
+        setEvent(undefined)
+        rootRef.current?.focus({ preventScroll: true })
+        if (variant === 'fill') answerFocus.request()
+    }
     async function toggleFullscreen(): Promise<void> {
         try {
             if (document.fullscreenElement) await document.exitFullscreen()
@@ -661,10 +1088,13 @@ function PracticeSession({
     }
     function advanceQuestion(): void {
         if (session.index === questions.length - 1) {
+            prepareListeningNavigation('manual')
             finishSession()
         } else move(1)
     }
     function finishSession(): void {
+        if (isAudioListening) audioReadingSequence.cancel()
+        listeningAdvance.cancel()
         stopPracticeMedia()
         activeOral.reset()
         setPanelVisible(false)
@@ -752,7 +1182,27 @@ function PracticeSession({
         if (!started) cancelRemember()
     }
     function readAloud(): void {
-        if (readingAudio.togglePlayback()) return
+        if (isOralExercise) {
+            if (wordOral.stage === 'recording' || wordOral.stage === 'evaluating') return
+            wordOral.pause()
+        }
+        if (isSentenceReading || (demo.family === 'sentence' && mode === 'listen')) {
+            if (sentencePlaybackActive) pauseListeningPlayback()
+            else playListeningPlayback()
+            return
+        }
+        if (isAudioListening) audioReadingSequence.reset()
+        listeningAdvance.cancel()
+        const readingHandled = readingAudio.togglePlayback()
+        if (
+            isTypingPractice ||
+            ((isSentenceTranslation || isSentenceCheck || isSentenceBlocks) && readingHandled)
+        ) {
+            // 本地题库已有朗读源；切读关闭时手动播放也在题图展示真实状态。
+            setMessage('')
+            return
+        }
+        if (readingHandled) return
         const media = mediaController.current
         if (media) {
             if (media.snapshot().playRequested) media.pause()
@@ -765,6 +1215,20 @@ function PracticeSession({
                 : '发音素材未接入，暂不能朗读。',
         )
     }
+    function readExampleAloud(example: WordCardExample): void {
+        if (
+            demo.family !== 'word' ||
+            blocked ||
+            session.finished ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready
+        )
+            return
+        const current = question?.wordExamples?.find((item) => item.id === example.id)
+        if (!current || current.readingSource !== example.readingSource) return
+        const available = readingAudio.toggleSourcePlayback(current.readingSource, readingVisit)
+        setMessage(available ? '' : '当前例句暂无朗读音源。')
+    }
     function primary(): void {
         if (!question) return
         const action = resolvePracticePrimary({
@@ -773,17 +1237,31 @@ function PracticeSession({
             phase: session.phase,
             oralStage: activeOral.stage,
             quickOral: overlay === 'oral',
+            ...(isWordMeaning ? { wordMeaning } : {}),
         })
         if (action === 'next') next()
         else if (action === 'oral-start') activeOral.start()
         else if (action === 'oral-stop') activeOral.stopAndEvaluate()
         else if (action === 'oral-complete') {
             activeOral.reset()
-            if (isWordInput) feedbackSound.current?.stop()
+            if (usesOralAssessmentDialog) feedbackSound.current?.stop()
             setOverlay(null)
-        } else if (action === 'reveal') dispatch({ type: 'phase', phase: 'revealed' })
-        else if (action === 'submit') {
-            if (hasPracticeAnswerInput(mode)) {
+        } else if (action === 'reveal-translation') {
+            dispatchWordMeaning({ type: 'reveal-translation' })
+            rootRef.current?.focus({ preventScroll: true })
+        } else if (action === 'reveal') {
+            dispatch({ type: 'phase', phase: 'revealed' })
+            if (isSentenceCheck) {
+                emit('answerReveal')
+                setPanelVisible(false)
+                rootRef.current?.focus({ preventScroll: true })
+            }
+        } else if (action === 'submit') {
+            if (isSentenceBlocks) {
+                submitSentenceBlocks()
+                return
+            }
+            if (hasAnswerInput) {
                 answerInput.current?.submit()
                 return
             }
@@ -797,7 +1275,7 @@ function PracticeSession({
         }
     }
     function submitPracticeAnswer(value: string): void {
-        if (!question || blocked || !snapshot.ready || !hasPracticeAnswerInput(mode)) return
+        if (!question || blocked || !snapshot.ready || !hasAnswerInput) return
         if (session.phase === 'correct' || session.phase === 'revealed' || session.finished) return
         const judgment = judgeWordSpelling(value, question.english, values.ignoreCase)
         if (judgment === 'empty') {
@@ -805,7 +1283,7 @@ function PracticeSession({
             return
         }
         dispatch({
-            type: isWordInput ? 'submit-spelling' : 'submit-answer',
+            type: isWordInput || isWordTyping ? 'submit-spelling' : 'submit-answer',
             value,
             target: question.english,
             ignoreCase: values.ignoreCase,
@@ -815,6 +1293,100 @@ function PracticeSession({
             rootRef.current?.focus({ preventScroll: true })
         }
         emit(judgment)
+    }
+    function presentSentenceBlocksJudgment(judgment: SentenceBlocksJudgment): void {
+        if (judgment === 'empty') {
+            setMessage('请先选择词块。')
+            return
+        }
+        readingAudio.pause()
+        setMessage('')
+        if (judgment === 'correct') setPanelVisible(false)
+        rootRef.current?.focus({ preventScroll: true })
+        emit(judgment)
+    }
+    function changeSentenceBlocks(edit: SentenceBlockEdit): void {
+        if (
+            !isSentenceBlocks ||
+            !question ||
+            blocked ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready
+        )
+            return
+        if (session.finished || isPracticeAnswerVisible(session.phase)) return
+        const next = editSentenceBlocks(question.tokens, session.blocks, edit)
+        if (next === session.blocks) return
+        dispatch({ type: 'edit-sentence-blocks', edit, tokens: question.tokens })
+        setMessage('')
+        rootRef.current?.focus({ preventScroll: true })
+        if (
+            edit.type === 'toggle' &&
+            !session.blocks.includes(edit.id) &&
+            next.length === question.tokens.length
+        )
+            presentSentenceBlocksJudgment(judgeSentenceBlocks(question.tokens, next))
+        else emit('typing')
+    }
+    function submitSentenceBlocks(): void {
+        if (
+            !isSentenceBlocks ||
+            !question ||
+            blocked ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready
+        )
+            return
+        if (session.finished || isPracticeAnswerVisible(session.phase)) return
+        dispatch({ type: 'submit-sentence-blocks', tokens: question.tokens })
+        presentSentenceBlocksJudgment(judgeSentenceBlocks(question.tokens, session.blocks))
+    }
+    function submitSentenceInput(submission: SentenceAnswerSubmission): void {
+        if (!isSentenceInput || !question || blocked || !snapshot.ready) return
+        if (session.finished || isPracticeAnswerVisible(session.phase)) return
+        const layout = createSentenceAnswerLayout(question.english)
+        if (!isSentenceAnswerComplete(layout, submission.values)) return
+        const judgment = judgeSentenceAnswerValues(layout, submission.values, values.ignoreCase)
+        if (judgment === 'empty') return
+        // 判题反馈优先，撤销尚未开始的切题朗读并暂停当前声音，避免和对错提示重叠。
+        readingAudio.pause()
+        // 按段判题，空段和末段多词不能因拼接/trim后文本相同而误判正确。
+        if (isSentenceTyping)
+            dispatch({
+                type: 'submit-sentence-typing',
+                values: submission.values,
+                target: question.english,
+                ignoreCase: values.ignoreCase,
+            })
+        else {
+            dispatch({ type: 'input', value: submission.value })
+            dispatch({ type: 'phase', phase: judgment })
+        }
+        setMessage('')
+        if (judgment === 'correct') {
+            setPanelVisible(false)
+            rootRef.current?.focus({ preventScroll: true })
+        }
+        emit(judgment)
+    }
+    function executeKeyboardCommand(command: PracticeCommand): void {
+        const returnToSentence =
+            isSentenceGame &&
+            (mode === 'listen' || mode === 'read') &&
+            (command === 'question.previous' || command === 'question.next') &&
+            snapshot.ready &&
+            !blocked &&
+            !pause.isPaused() &&
+            !session.finished &&
+            !(command === 'question.next' && session.index === questions.length - 1)
+        executeCommand(command)
+        if (!returnToSentence) return
+        // 阅读回焦列表，让空格走播放／暂停命令，避免再次激活此前聚焦的自动切题按钮。
+        const root = rootRef.current
+        const target = isSentenceReading
+            ? (root?.querySelector<HTMLElement>('[data-sentence-reading-viewport]') ?? root)
+            : root
+        target?.focus({ preventScroll: true })
     }
     function executeCommand(command: PracticeCommand): void {
         if (pause.isPaused()) return
@@ -845,6 +1417,10 @@ function PracticeSession({
             return
         }
         if (command === 'practice.contextual') {
+            if (isWordMeaning && wordMeaning.variant === 'context' && overlay !== 'oral') {
+                primary()
+                return
+            }
             if (
                 overlay !== 'oral' &&
                 mode !== 'oral' &&
@@ -871,16 +1447,7 @@ function PracticeSession({
             if (overlay === 'oral' || mode === 'oral') {
                 if (activeOral.stage === 'result') activeOral.rerecord()
                 else primary()
-            } else if (
-                canShowQuickOral(
-                    demo.family,
-                    mode,
-                    session.phase,
-                    Boolean(question.english.trim()),
-                    values.showEvaluation,
-                )
-            )
-                open('oral')
+            } else if (quickOralEnabled) open('oral')
             return
         }
         if (overlay === 'oral') return
@@ -953,9 +1520,38 @@ function PracticeSession({
             >
                 <div
                     inert={blocked}
-                    data-word-input-layout={isWordInput || undefined}
+                    data-word-input-layout={isWordAnswerMode || isWordTyping || undefined}
+                    data-practice-four-row-layout={
+                        isImmersiveListening || isSentenceResult
+                            ? demo.family === 'audio'
+                                ? 'audio-listening'
+                                : 'sentence-listening'
+                            : isSentenceBlocks
+                              ? demo.family === 'audio'
+                                  ? 'audio-blocks'
+                                  : 'sentence-blocks'
+                              : isSentenceCheck
+                                ? demo.family === 'audio'
+                                    ? 'audio-check'
+                                    : 'sentence-check'
+                                : isTypingPractice
+                                  ? isSentenceTyping
+                                      ? demo.family === 'audio'
+                                          ? 'audio-typing'
+                                          : 'sentence-typing'
+                                      : 'word-typing'
+                                  : isOralExercise
+                                    ? isSentenceOral
+                                        ? demo.family === 'audio'
+                                            ? 'audio-oral'
+                                            : 'sentence-oral'
+                                        : 'word-oral'
+                                    : isWordAnswerMode
+                                      ? 'word-input'
+                                      : undefined
+                    }
                     className={
-                        isWordInput
+                        isFourRowLayout || isSentenceReading
                             ? 'flex h-dvh min-w-0 flex-col overflow-hidden pb-[calc(100px+env(safe-area-inset-bottom))]'
                             : footerItems.length > 0
                               ? 'flex min-h-dvh min-w-0 flex-col pb-[calc(100px+env(safe-area-inset-bottom))]'
@@ -1041,11 +1637,14 @@ function PracticeSession({
                     <main
                         aria-label="练习内容"
                         data-toolbar-ready={toolbarPreferences.ready}
-                        data-word-input-scroll={isWordInput || undefined}
+                        data-word-input-scroll={isWordAnswerMode || isWordTyping || undefined}
+                        data-practice-content-scroll={isFourRowLayout || undefined}
                         className={
-                            isWordInput
-                                ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain'
-                                : 'relative min-w-0 flex-1'
+                            isSentenceReading
+                                ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
+                                : isFourRowLayout
+                                  ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain'
+                                  : 'relative min-w-0 flex-1'
                         }
                     >
                         <PracticeTimerContext.Provider value={timer}>
@@ -1104,13 +1703,51 @@ function PracticeSession({
                                 ) : null}
                             </fieldset>
                         </PracticeTimerContext.Provider>
+                        {usesPlaybackControls && (
+                            <SentenceListeningControls
+                                family={demo.family === 'audio' ? 'audio' : 'sentence'}
+                                variant={isSentenceReading ? 'reading' : 'listening'}
+                                options={listeningPlayback}
+                                paused={
+                                    !readingAudio.playRequested &&
+                                    !(isAudioListening && audioReadingPhase === 'waiting') &&
+                                    (!listeningPlayback.autoAdvance ||
+                                        (isAudioListening && audioReadingPhase === 'cancelled'))
+                                }
+                                blocked={
+                                    blocked ||
+                                    session.finished ||
+                                    !snapshot.ready ||
+                                    !toolbarPreferences.ready
+                                }
+                                nextChapterAvailable={onNextChapter !== undefined}
+                                onToggle={toggleListeningControl}
+                                onPause={pauseListeningPlayback}
+                                onPlay={playListeningPlayback}
+                            >
+                                {isSentenceReading && (
+                                    <SentenceReadingDisplay
+                                        values={readingDisplay}
+                                        blocked={
+                                            blocked ||
+                                            session.finished ||
+                                            !snapshot.ready ||
+                                            !toolbarPreferences.ready
+                                        }
+                                        onChange={setReadingDisplay}
+                                    />
+                                )}
+                            </SentenceListeningControls>
+                        )}
                         <PracticeContent
                             key={
-                                demo.family === 'word' && mode === 'pronounce'
-                                    ? `word-pronunciation:${wordOrderRevision}`
-                                    : isWordSpelling
-                                      ? 'word-spelling'
-                                      : `${question.id}:${resetRevision}`
+                                isSentenceReading
+                                    ? 'sentence-reading'
+                                    : demo.family === 'word' && mode === 'pronounce'
+                                      ? `word-pronunciation:${wordOrderRevision}`
+                                      : isWordSpelling
+                                        ? 'word-spelling'
+                                        : `${question.id}:${resetRevision}`
                             }
                             demo={demo}
                             mode={mode}
@@ -1127,10 +1764,14 @@ function PracticeSession({
                                         : (additionalOptions?.imageVisible ?? true)
                             }
                             {...(wordMode ? { wordOptions } : {})}
+                            {...(isWordMeaning ? { wordMeaning } : {})}
                             {...(sentenceMode ? { sentenceOptions } : {})}
                             {...(audioMode ? { audioOptions } : {})}
                             {...(additionalOptions ? { additionalOptions } : {})}
                             blocked={blocked}
+                            listeningBlind={isImmersiveListening && listeningPlayback.blind}
+                            sentenceReadingDisplay={readingDisplay}
+                            sentenceReadingRevision={resetRevision}
                             paused={pause.paused || overlay === 'exit'}
                             questions={questions}
                             cardBusy={wordDeckBusy}
@@ -1152,25 +1793,25 @@ function PracticeSession({
                             }}
                             onInput={(value): void => {
                                 dispatch({ type: 'input', value })
-                                if (isWordInput) emit('typing')
+                                if (isWordAnswerMode || isTypingPractice || isSentenceTranslation)
+                                    emit('typing')
                             }}
                             onAnswerSubmit={submitPracticeAnswer}
+                            onSentenceSubmit={submitSentenceInput}
+                            onSentenceNavigate={(): void => {
+                                if (isSentenceTranslation && !blocked && snapshot.ready)
+                                    emit('typing')
+                            }}
                             onAnswerController={registerAnswerInput}
                             spellingQuestionRevision={resetRevision}
                             spellingQuestionTransition={spellingQuestionTransition}
                             onBlock={(id): void => dispatch({ type: 'block', id })}
+                            onSentenceBlockEdit={changeSentenceBlocks}
                             onNote={(id): void => {
                                 setNoteTarget(id)
-                                if (isWordPronunciation) chapterNotes.open(id)
-                                open('note')
+                                open('note', id)
                             }}
-                            oralEnabled={canShowQuickOral(
-                                demo.family,
-                                mode,
-                                session.phase,
-                                Boolean(question.english.trim()),
-                                values.showEvaluation,
-                            )}
+                            oralEnabled={quickOralEnabled}
                             onOral={(): void => executeCommand('practice.oral')}
                             onKnown={startRemember}
                             remembering={rememberAction !== null}
@@ -1180,57 +1821,86 @@ function PracticeSession({
                             onReveal={(): void => executeCommand('practice.primary')}
                             onPrimary={(): void => executeCommand('practice.primary')}
                             oralController={oral}
+                            oralAssessmentController={wordOral}
+                            oralAssessmentTarget={wordOralTarget}
+                            oralAssessmentWave={
+                                <LearningAudioWave
+                                    style={
+                                        wordOral.playing ? values.readingWave : values.recordingWave
+                                    }
+                                    active={
+                                        !wordOral.blocked &&
+                                        (wordOral.stage === 'recording' || wordOral.playing)
+                                    }
+                                />
+                            }
                             onMediaController={registerMedia}
                             onPlaybackStateChange={reportContentPlayback}
                             onReadAloud={readAloud}
+                            onExampleReadAloud={readExampleAloud}
                             reading={readingView}
                         />
-                        {isWordInput && (
+                        {isTypingPractice && (
+                            <section
+                                aria-label="本轮指法统计"
+                                className="mx-auto mb-4 mt-auto flex w-full min-w-0 shrink-0 justify-center px-4 pt-8"
+                            >
+                                <PracticeAnswerStatistics
+                                    variant="typing"
+                                    statistics={session.spellingStatistics}
+                                />
+                            </section>
+                        )}
+                        {isWordAnswerMode && (
                             <WordSpellingResult
                                 statistics={isWordSpelling ? session.spellingStatistics : null}
                                 disabled={blocked}
-                                oralEnabled={canShowQuickOral(
-                                    demo.family,
-                                    mode,
-                                    session.phase,
-                                    Boolean(question.english.trim()),
-                                    values.showEvaluation,
-                                )}
+                                oralEnabled={quickOralEnabled}
                                 onOral={(): void => executeCommand('practice.oral')}
+                                controls={
+                                    isWordMeaning ? (
+                                        <WordMeaningVariantSwitch
+                                            value={wordMeaning.variant}
+                                            disabled={
+                                                blocked ||
+                                                !snapshot.ready ||
+                                                !toolbarPreferences.ready
+                                            }
+                                            onChange={changeWordMeaningVariant}
+                                        />
+                                    ) : undefined
+                                }
                             />
                         )}
-                        {!isWordInput &&
-                            !(demo.family === 'sentence' && mode === 'listen') &&
-                            canShowQuickOral(
-                                demo.family,
-                                mode,
-                                session.phase,
-                                Boolean(question.english.trim()),
-                                values.showEvaluation,
-                            ) && (
-                                <div className="my-4 flex justify-center">
-                                    <TldButton
-                                        data-practice-quick-oral
-                                        data-practice-command="practice.oral"
-                                        size="compact"
-                                        variant="secondary"
-                                        onClick={(): void => executeCommand('practice.oral')}
-                                    >
-                                        快捷口语评测
-                                    </TldButton>
-                                </div>
-                            )}
+                        {!usesOralAssessmentDialog && !isSentenceReading && quickOralEnabled && (
+                            <div className="my-4 flex justify-center">
+                                <TldButton
+                                    data-practice-quick-oral
+                                    data-practice-command="practice.oral"
+                                    size="compact"
+                                    variant="secondary"
+                                    onClick={(): void => executeCommand('practice.oral')}
+                                >
+                                    快捷口语评测
+                                </TldButton>
+                            </div>
+                        )}
                     </main>
                     <PracticeFooter
                         items={footerItems}
                         onAction={executeCommand}
                         blocked={blocked || !snapshot.ready || rememberAction !== null}
                         floating={isWordPronunciation}
+                        {...(isSentenceReading
+                            ? { playback: { active: sentencePlaybackActive, onToggle: readAloud } }
+                            : {})}
                     />
                     <PracticeAnswerPanel
                         portalRoot={rootRef}
                         open={panelVisible}
                         phonetics={demo.family === 'phonetics'}
+                        sentenceTranslation={isSentenceTranslation && !isTranslationResult}
+                        sentenceAnswer={isSentenceGame}
                         question={question}
                         values={values}
                         blocked={blocked}
@@ -1245,14 +1915,15 @@ function PracticeSession({
                         </p>
                     )}
 
-                    {message && (
-                        <p
-                            role="status"
-                            className="pointer-events-none absolute bottom-[100px] left-4 right-4 z-[1] text-center text-caption text-secondary"
-                        >
-                            {message}
-                        </p>
-                    )}
+                    {message &&
+                        !(isTypingPractice && message === '发音素材未接入，暂不能朗读。') && (
+                            <p
+                                role="status"
+                                className="pointer-events-none absolute bottom-[100px] left-4 right-4 z-[1] text-center text-caption text-secondary"
+                            >
+                                {message}
+                            </p>
+                        )}
                 </div>
                 <PracticeFeedback
                     values={values}
@@ -1312,7 +1983,7 @@ function PracticeSession({
                 question={question}
                 onClose={(): void => setOverlay(null)}
             />
-            {usesPracticeContentDialog(demo.family) ? (
+            {usesPracticeContentDialog(demo.family, mode) ? (
                 <PracticeContentDialog
                     open={overlay === 'content'}
                     questions={questions}
@@ -1352,7 +2023,7 @@ function PracticeSession({
                 }}
             />
             <PracticeNotesPanel
-                open={overlay === 'note' && isWordPronunciation}
+                open={overlay === 'note' && usesChapterNotes}
                 questions={sourceQuestions}
                 controller={chapterNotes}
                 onClose={(): void => {
@@ -1367,9 +2038,9 @@ function PracticeSession({
                     overlay !== 'report' &&
                     overlay !== 'finish' &&
                     overlay !== 'exit' &&
-                    !(overlay === 'oral' && isWordInput) &&
-                    !(overlay === 'note' && isWordPronunciation) &&
-                    !(overlay === 'content' && usesPracticeContentDialog(demo.family)) &&
+                    !(overlay === 'oral' && usesOralAssessmentDialog) &&
+                    !(overlay === 'note' && usesChapterNotes) &&
+                    !(overlay === 'content' && usesPracticeContentDialog(demo.family, mode)) &&
                     !(overlay === 'mode' && isSelectablePracticeFamily(demo.family))
                 }
                 onOpenChange={(value): void => {
@@ -1464,7 +2135,7 @@ function PracticeSession({
                         <TldButton onClick={reset}>确认重置</TldButton>
                     </div>
                 )}
-                {overlay === 'oral' && !isWordInput && (
+                {overlay === 'oral' && !usesOralAssessmentDialog && (
                     <OralDemoPanel
                         waveStyle={values.recordingWave}
                         controller={oral}
@@ -1478,7 +2149,7 @@ function PracticeSession({
                 )}
             </TldDialog>
             <OralAssessmentDialog
-                open={isWordInput && overlay === 'oral'}
+                open={usesOralAssessmentDialog && overlay === 'oral'}
                 target={wordOralTarget}
                 controller={wordOral}
                 onOpenChange={(value): void => {

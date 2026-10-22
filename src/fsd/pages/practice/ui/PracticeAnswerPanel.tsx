@@ -13,6 +13,8 @@ import { usePracticePanelMotion } from './usePracticePanelMotion'
 export function PracticeAnswerPanel({
     open,
     phonetics,
+    sentenceTranslation = false,
+    sentenceAnswer = false,
     question,
     values,
     blocked,
@@ -21,12 +23,15 @@ export function PracticeAnswerPanel({
 }: {
     readonly open: boolean
     readonly phonetics: boolean
+    readonly sentenceTranslation?: boolean
+    readonly sentenceAnswer?: boolean
     readonly question: PracticeQuestion
     readonly values: LearningPreferences
     readonly blocked: boolean
     readonly onClose: () => void
     readonly portalRoot: RefObject<HTMLElement | null>
 }): ReactElement | null {
+    const compactTranslation = sentenceTranslation && !sentenceAnswer
     const panelRef = useRef<HTMLDivElement>(null)
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
     useEffect((): void => {
@@ -49,12 +54,19 @@ export function PracticeAnswerPanel({
             className={
                 phonetics
                     ? 'fixed inset-x-0 top-[96px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[720px] overflow-y-auto rounded-2xl bg-surface design:top-[211px]'
-                    : 'fixed inset-x-0 top-[76px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[1000px] overflow-y-auto rounded-2xl border border-strong bg-surface p-4 shadow-xl md:p-6'
+                    : sentenceAnswer
+                      ? 'fixed inset-x-0 top-[76px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-max min-w-[min(430px,calc(100%-32px))] max-w-[calc(100%-32px)] overflow-y-auto rounded-2xl border border-strong bg-surface px-4 py-4 shadow-xl md:px-8 md:py-6'
+                      : compactTranslation
+                        ? "fixed inset-x-0 top-[88px] z-[55] mx-auto max-h-[calc(100dvh-200px)] min-h-[173px] w-[calc(100%-32px)] max-w-[333px] overflow-y-auto rounded-xl border border-practice-control-text/30 bg-practice-background p-[19px] before:pointer-events-none before:absolute before:inset-0 before:rounded-[inherit] before:bg-practice-control-text/10 before:content-[''] design:top-[125px]"
+                        : 'fixed inset-x-0 top-[76px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[1000px] overflow-y-auto rounded-2xl border border-strong bg-surface p-4 shadow-xl md:p-6'
             }
         >
-            <section aria-label={phonetics ? '音标详情' : '当前题答案'}>
-                {phonetics ? (
-                    <h2 className="sr-only">音标讲解</h2>
+            <section
+                className={compactTranslation ? 'relative' : ''}
+                aria-label={phonetics ? '音标详情' : '当前题答案'}
+            >
+                {phonetics || compactTranslation || sentenceAnswer ? (
+                    <h2 className="sr-only">{phonetics ? '音标讲解' : '当前题答案'}</h2>
                 ) : (
                     <div className="mb-4 flex items-center justify-between gap-4">
                         <h2 className="text-card-title">{phonetics ? '音标讲解' : '当前题答案'}</h2>
@@ -65,6 +77,19 @@ export function PracticeAnswerPanel({
                 )}
                 {phonetics ? (
                     <PhoneticsExplanation />
+                ) : compactTranslation ? (
+                    <>
+                        <AnnotatedText
+                            question={question}
+                            values={values}
+                            annotated
+                            titleFirstWord
+                            variant="sentence-translate-answer"
+                        />
+                        <p className="mt-[15px] break-words text-center text-[20px] font-medium leading-7 text-practice-text">
+                            {question.translation}
+                        </p>
+                    </>
                 ) : (
                     <div className="space-y-4 text-center">
                         <AnnotatedText
@@ -72,8 +97,11 @@ export function PracticeAnswerPanel({
                             values={values}
                             annotated
                             density="reading"
+                            variant={sentenceAnswer ? 'sentence-answer' : 'default'}
                         />
-                        <p className="text-body text-secondary">{question.phonetic}</p>
+                        {!sentenceAnswer && (
+                            <p className="text-body text-secondary">{question.phonetic}</p>
+                        )}
                         <p className="text-body text-practice-text">{question.translation}</p>
                     </div>
                 )}

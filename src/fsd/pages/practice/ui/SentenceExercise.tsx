@@ -1,6 +1,9 @@
 'use client'
 
+import { Fragment } from 'react'
 import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import { getSentenceGameLabel } from '../model/sentence-game-family'
+import type { SentenceGameFamily } from '../model/sentence-game-family'
 import { getPreviewAppearance } from '../../../features/learning-settings'
 import type { LearningPreferences } from '../../../features/learning-settings'
 import type { PracticeQuestion, PracticeSession, PracticeToken } from '../model/practice-demo'
@@ -9,7 +12,8 @@ import { isPracticeAnswerVisible } from '../model/practice-visibility'
 import { AnnotatedText } from './AnnotatedText'
 import sentenceAsset from '../assets/reading-scene.png'
 import { PracticeReadingOverlay } from './PracticeReadingOverlay'
-import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
+import { SentenceAnswerInput } from './SentenceAnswerInput'
+import type { SentenceAnswerSubmission } from '../model/sentence-answer-input'
 import type { PracticeReadingView } from './PracticeReadingOverlay'
 import type { WordSpellingInputController } from '../model/word-spelling-input'
 
@@ -24,15 +28,18 @@ interface BlockStyle extends CSSProperties {
 }
 
 export interface SentenceExerciseProps {
+    readonly family?: SentenceGameFamily
     readonly question: PracticeQuestion
     readonly mode: SentenceExerciseMode
     readonly session: PracticeSession
     readonly values: LearningPreferences
     readonly imageVisible: boolean
-    readonly translationVisible?: boolean
+    readonly showWordHint?: boolean | undefined
+    readonly translationVisible?: boolean | undefined
     readonly blocked: boolean
     readonly onInput: (value: string) => void
-    readonly onAnswerSubmit?: ((value: string) => void) | undefined
+    readonly onNavigate?: (() => void) | undefined
+    readonly onSentenceSubmit?: ((submission: SentenceAnswerSubmission) => void) | undefined
     readonly onAnswerController?:
         ((controller: WordSpellingInputController | null) => void) | undefined
     readonly onBlock: (id: string) => void
@@ -43,7 +50,7 @@ export interface SentenceExerciseProps {
 interface SentenceSlotProps {
     readonly top: number
     readonly exactLayout: boolean
-    readonly kind: 'media' | 'english' | 'translation' | 'input' | 'reveal' | 'tray' | 'candidates'
+    readonly kind: 'media' | 'english' | 'translation' | 'reveal' | 'tray' | 'candidates'
     readonly offset?: number
     readonly children: ReactNode
 }
@@ -57,7 +64,7 @@ function SentenceSlot({
 }: SentenceSlotProps): ReactElement {
     const style: SlotStyle = {
         '--sentence-slot-top': `${top - 75}px`,
-        '--sentence-flow-gap': kind === 'media' ? '0px' : kind === 'input' ? '72px' : '32px',
+        '--sentence-flow-gap': kind === 'media' ? '0px' : '32px',
         '--sentence-slot-offset': exactLayout ? `${offset}px` : '0px',
     }
     const innerClassName =
@@ -65,13 +72,11 @@ function SentenceSlot({
             ? 'w-full max-w-[430px] design:translate-x-[var(--sentence-slot-offset)]'
             : kind === 'english' || kind === 'translation'
               ? 'w-full max-w-[900px] text-center design:translate-x-[var(--sentence-slot-offset)]'
-              : kind === 'input'
-                ? 'w-full max-w-[900px] design:translate-x-[var(--sentence-slot-offset)]'
-                : kind === 'tray'
-                  ? 'w-full max-w-[794px] design:translate-x-[var(--sentence-slot-offset)]'
-                  : kind === 'candidates'
-                    ? 'flex w-fit max-w-full flex-wrap items-center justify-center gap-3 md:gap-5 design:max-w-[794px] design:translate-x-[var(--sentence-slot-offset)] design:gap-[40px]'
-                    : 'w-fit design:translate-x-[var(--sentence-slot-offset)]'
+              : kind === 'tray'
+                ? 'w-full max-w-[794px] design:translate-x-[var(--sentence-slot-offset)]'
+                : kind === 'candidates'
+                  ? 'flex w-fit max-w-full flex-wrap items-center justify-center gap-3 md:gap-5 design:max-w-[794px] design:translate-x-[var(--sentence-slot-offset)] design:gap-[40px]'
+                  : 'w-fit design:translate-x-[var(--sentence-slot-offset)]'
     return (
         <div
             data-sentence-slot-top={top}
@@ -142,16 +147,205 @@ function SentenceBlock({
     )
 }
 
+interface SentenceTranslationExerciseProps extends Pick<
+    SentenceExerciseProps,
+    | 'family'
+    | 'question'
+    | 'session'
+    | 'values'
+    | 'imageVisible'
+    | 'showWordHint'
+    | 'translationVisible'
+    | 'blocked'
+    | 'onInput'
+    | 'onNavigate'
+    | 'onSentenceSubmit'
+    | 'onAnswerController'
+    | 'reading'
+> {
+    readonly exactLayout: boolean
+}
+
+/** 中译英使用自然流：基准尺寸保持原稿位置，长词/多行向下撑开，避免反向覆盖中文。 */
+function SentenceTranslationExercise({
+    family = 'sentence',
+    question,
+    session,
+    values,
+    imageVisible,
+    showWordHint,
+    translationVisible,
+    blocked,
+    onInput,
+    onNavigate,
+    onSentenceSubmit,
+    onAnswerController,
+    reading,
+    exactLayout,
+}: SentenceTranslationExerciseProps): ReactElement {
+    const appearance = getPreviewAppearance(values)
+    return (
+        <section
+            aria-label={`${getSentenceGameLabel(family)}练习`}
+            data-practice-sentence-family={family}
+            data-reference-node="546:33717"
+            className={
+                exactLayout
+                    ? 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[261px]'
+                    : 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6'
+            }
+        >
+            {imageVisible && (
+                <div className="w-full max-w-[430px]">
+                    <div
+                        data-practice-reading-surface
+                        className="relative overflow-hidden rounded-[20px]"
+                    >
+                        <img
+                            data-practice-media
+                            src={sentenceAsset.src}
+                            alt={`${getSentenceGameLabel(family)}练习示例插图`}
+                            className="block h-auto w-full rounded-[20px] object-cover"
+                            style={{ aspectRatio: '430 / 242' }}
+                        />
+                        <PracticeReadingOverlay reading={reading} />
+                    </div>
+                </div>
+            )}
+            {(translationVisible ?? true) && (
+                <p
+                    data-practice-translation
+                    className={
+                        exactLayout
+                            ? 'mt-6 max-w-full break-words text-center text-[20px] font-medium leading-7 text-practice-text md:text-[24px] md:leading-[34px] design:relative design:-left-[14px] design:text-[30px] design:leading-[42px]'
+                            : 'mt-6 max-w-full break-words text-center text-[20px] font-medium leading-7 text-practice-text md:text-[24px] md:leading-[34px] design:text-[30px] design:leading-[42px]'
+                    }
+                >
+                    {question.translation}
+                </p>
+            )}
+            <div
+                className={
+                    exactLayout
+                        ? 'mt-10 w-full min-w-0 max-w-[900px] design:relative design:-left-[0.5px] design:mt-[31px]'
+                        : 'mt-10 w-full min-w-0 max-w-[900px]'
+                }
+            >
+                <SentenceAnswerInput
+                    target={question.english}
+                    initialValue={session.input}
+                    showWordHint={showWordHint ?? true}
+                    onChange={onInput}
+                    onNavigate={onNavigate}
+                    onSubmit={onSentenceSubmit}
+                    onController={onAnswerController}
+                    ignoreCase={values.ignoreCase}
+                    phase={session.phase}
+                    blocked={blocked}
+                    referenceLayout={exactLayout}
+                    displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
+                    borderStyle={appearance.borderStyle}
+                />
+            </div>
+        </section>
+    )
+}
+
+type SentenceCheckExerciseProps = Pick<
+    SentenceExerciseProps,
+    'family' | 'question' | 'values' | 'imageVisible' | 'blocked' | 'onReveal' | 'reading'
+>
+
+/** 自查题面自然向下排布；揭晓后由PracticeContent复用完整听力题面。 */
+function SentenceCheckExercise({
+    family = 'sentence',
+    question,
+    values,
+    imageVisible,
+    blocked,
+    onReveal,
+    reading,
+}: SentenceCheckExerciseProps): ReactElement {
+    const appearance = getPreviewAppearance(values)
+    const referenceLayout = imageVisible && values.fontSize === '默认'
+    const words = question.english.trim().split(/\s+/)
+    return (
+        <section
+            aria-label={`${getSentenceGameLabel(family)}理解自查`}
+            data-practice-check-family={family}
+            data-sentence-check-prompt
+            data-reference-node="546:33970"
+            className={
+                referenceLayout
+                    ? 'relative mx-auto flex w-full min-w-0 flex-1 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[170px]'
+                    : 'relative mx-auto flex w-full min-w-0 flex-1 flex-col items-center px-4 pb-12 pt-16 md:px-6'
+            }
+        >
+            {imageVisible && (
+                <div
+                    data-practice-reading-surface
+                    className="relative w-full max-w-[430px] overflow-hidden rounded-[20px]"
+                >
+                    <img
+                        data-practice-media
+                        src={sentenceAsset.src}
+                        alt={`${getSentenceGameLabel(family)}练习共用示意插图`}
+                        width={430}
+                        height={242}
+                        className="block aspect-[430/242] h-auto w-full object-cover"
+                    />
+                    <PracticeReadingOverlay reading={reading} />
+                </div>
+            )}
+            <p
+                data-practice-english
+                data-sentence-check-english
+                style={
+                    values.fontSize === '默认'
+                        ? undefined
+                        : { fontSize: appearance.fontSize, lineHeight: 1.4 }
+                }
+                className={
+                    imageVisible
+                        ? 'mt-8 flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:mt-10 md:gap-x-5 md:text-[34px] design:mt-[45px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
+                        : 'flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:gap-x-5 md:text-[34px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
+                }
+            >
+                {words.map((word, index) => (
+                    <Fragment key={`${question.id}:${index}`}>
+                        {index > 0 ? ' ' : null}
+                        <span className="min-w-0 max-w-full">
+                            {index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word}
+                        </span>
+                    </Fragment>
+                ))}
+            </p>
+            <button
+                type="button"
+                data-sentence-check-reveal
+                disabled={blocked}
+                onClick={onReveal}
+                className="mt-8 inline-flex h-[58px] w-[186px] max-w-full shrink-0 cursor-pointer items-center justify-center rounded-lg bg-sentence-reveal p-[10px] text-[18px] font-normal leading-[25px] text-practice-text outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-40 design:mt-[47px]"
+            >
+                空格显示答案
+            </button>
+        </section>
+    )
+}
+
 export function SentenceExercise({
+    family = 'sentence',
     question,
     mode,
     session,
     values,
     imageVisible,
+    showWordHint,
     translationVisible,
     blocked,
     onInput,
-    onAnswerSubmit,
+    onNavigate,
+    onSentenceSubmit,
     onAnswerController,
     onBlock,
     onReveal,
@@ -162,6 +356,37 @@ export function SentenceExercise({
     const answerVisible = isPracticeAnswerVisible(session.phase)
     const exactLayout =
         imageVisible && values.fontSize === '默认' && values.grammarFontSize === '默认'
+    if (mode === 'check' && !answerVisible)
+        return (
+            <SentenceCheckExercise
+                family={family}
+                question={question}
+                values={values}
+                imageVisible={imageVisible}
+                blocked={blocked}
+                onReveal={onReveal}
+                reading={reading}
+            />
+        )
+    if (mode === 'translate' && !answerVisible)
+        return (
+            <SentenceTranslationExercise
+                family={family}
+                question={question}
+                session={session}
+                values={values}
+                imageVisible={imageVisible}
+                showWordHint={showWordHint}
+                translationVisible={translationVisible}
+                blocked={blocked}
+                onInput={onInput}
+                onNavigate={onNavigate}
+                onSentenceSubmit={onSentenceSubmit}
+                onAnswerController={onAnswerController}
+                reading={reading}
+                exactLayout={exactLayout}
+            />
+        )
     const candidates = question.tokens.slice().sort((left, right): number => {
         const leftIndex = readingCandidateOrder.indexOf(left.id)
         const rightIndex = readingCandidateOrder.indexOf(right.id)
@@ -172,7 +397,8 @@ export function SentenceExercise({
     })
     return (
         <section
-            aria-label="句子练习"
+            aria-label={`${getSentenceGameLabel(family)}练习`}
+            data-practice-sentence-family={family}
             data-reference-node={reference.node}
             className={
                 exactLayout
@@ -189,7 +415,7 @@ export function SentenceExercise({
                         <img
                             data-practice-media
                             src={sentenceAsset.src}
-                            alt="句子练习示例插图"
+                            alt={`${getSentenceGameLabel(family)}练习示例插图`}
                             className="block h-auto w-full rounded-[20px] object-cover"
                             style={{ aspectRatio: '430 / 242' }}
                         />
@@ -239,31 +465,6 @@ export function SentenceExercise({
                         </p>
                     </SentenceSlot>
                 )}
-            {reference.inputLineTop !== null && (
-                <SentenceSlot
-                    top={reference.inputLineTop}
-                    exactLayout={exactLayout}
-                    kind="input"
-                    offset={-0.5}
-                >
-                    <div className={exactLayout ? 'design:-translate-y-full' : ''}>
-                        <PracticeWordSlotsInput
-                            target={question.english}
-                            value={session.input}
-                            onChange={onInput}
-                            onSubmit={onAnswerSubmit}
-                            onController={onAnswerController}
-                            ignoreCase={values.ignoreCase}
-                            phase={session.phase}
-                            blocked={blocked}
-                            displayFontSize={
-                                values.fontSize === '默认' ? undefined : appearance.fontSize
-                            }
-                            borderStyle={appearance.borderStyle}
-                        />
-                    </div>
-                </SentenceSlot>
-            )}
             {reference.revealTop !== null && (
                 <SentenceSlot top={reference.revealTop} exactLayout={exactLayout} kind="reveal">
                     <button

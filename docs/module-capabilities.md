@@ -1,6 +1,10 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
-- 通用模拟口语评测：`features/oral-assessment` 对外提供四阶段弹窗、目标／结果契约与可取消控制器，首个消费者为单词拼写答对后入口。页面注入设置声纹和现有提示音，不横向依赖其他 feature；不采集麦克风、不请求评分、不生成录音。Figma资源和属性已读取，状态用例已补但未执行；PC、平板、H5待用户验收。见[源码与范围记录](practice-oral-assessment-development.md)。
+- 三类练习游戏已验收：2026-10-22用户确认单词六模式、句子七模式、音频七模式本阶段UI与本地演示开发完成、验收通过，授权main提交／推送。实际测试、构建与PC运行时验证范围及后续接口边界以[验收检查点](checkpoints/2026-10-22-practice-games-development-complete.md)为准；下方首版或分支待验收记录保留历史范围。
+
+- 音频沉浸听力：`audio:listen`复用既有句子听力题面、五控件及真实ended后1000ms自动推进，十条样例／WAV、章节笔记、内容列表及模拟口语沿同一owner装配；播放选项按族隔离，音频设置仍按`audio:listen`独立缓存。切题提示音播完再朗读，手动接管取消自动等待且不另加延迟；无需复制播放器、发音素材或创建接口。当前已在main并获用户验收，详见[音频开发记录](practice-audio-games-development.md)。
+
+- 通用模拟口语评测：`features/oral-assessment` 对外提供共用四态正文、弹窗容器、目标／结果契约与可取消控制器，由单词拼写／默写／句中练义／指法与句子、音频沉浸听力的弹窗入口，以及单词口语页面直接复用。页面注入设置声纹和现有提示音，不横向依赖其他 feature；不采集麦克风、不请求评分、不生成录音。页面／弹窗统一四档配色和文案，单词口语重录依次展示40/70/85/96固定样例。状态与装配用例已补但未执行；按用户要求只做格式及差异核对，PC、平板、H5与Electron待验收。见[源码与范围记录](practice-oral-assessment-development.md)。
 
 - 练习共用音效：`features/learning-settings`持有37份原始本地声音及公开注册表／设置试听，`shared/lib/sound-player`提供按需创建、可复用短音效、代次隔离和清理；练习通过feature根入口消费，设置不反向导入page。四组音色／音量与切题／评价开关沿原v1偏好，已删除旧完成音色并迁移到默认落幕。首批完整接线为单词拼读／拼写，公共切题／完成事件沿同一入口可复用。MP3经现有Web／Electron resolver返回audio/mpeg及单区间，不新增IPC、权限、依赖或外部请求。回归用例已补但按用户要求未执行测试、构建或试听，细节见[素材记录](practice-feedback-assets.md)。
 
@@ -227,3 +231,9 @@ VIP分类扩展：`pages/vip-membership` 私有实现联创权益、免费体验
 ## 原版反馈动画与声纹（2026-10-19）
 
 features/learning-settings拥有五种LearningAudioWave、7份答对和1份章节完成Lottie注册表与资源，设置和练习仅经根入口复用。shared/lib/animation新增createLottiePlayback、LottiePreview、useAnimationActivity和loadSiriWave，按需加载精确原版依赖，局部实例清理且不改变CSP、路由、存储键或Electron bridge。CI增加settings-effects:smoke实际生产Web/Electron播放与清理专项。
+
+
+2026-10-22口语播放补充：`word:oral`提供十个有对应单词WAV的模拟题；`word-demo-reading`与指法共用现有文件。`features/oral-assessment`新增可选`OralAssessmentPlayback`端口，由页面的`usePracticeReading`提供真实示例朗读；页面／弹窗共用真实播放状态，等待不动画、ended／error复位，不再依模拟录音秒数结束回放。录音／评分仍模拟，旧无端口消费者保留演示。提示音顺序、取消和缺项规则见[口语开发记录](practice-oral-assessment-development.md#2026-10-22-十题与示例朗读回放)。未运行测试／build或多端播放验收。
+
+
+2026-10-22单词朗读补齐：六个`word`模式都拥有当前本地目标词音源，共19词；句中练义另有十条整句、解析背面三十条例句各有独立音源。复用句子朗读的播放前置等待、同一媒体宿主及visit取消；目标词／例句切换不叠加播放器，不新增接口、依赖、路由或录音采集。用户录音回放仍待接口对接。源文件与待验收边界见[单词开发记录](practice-word-games-development.md#2026-10-22-六模式缺失朗读全部补齐)，本轮未运行测试／build／实际播放。

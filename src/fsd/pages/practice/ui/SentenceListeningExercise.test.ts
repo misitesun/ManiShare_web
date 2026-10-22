@@ -9,8 +9,10 @@ import {
 } from '../../../features/learning-settings'
 import { getDemoQuestions } from '../model/practice-demo'
 import { SentenceListeningExercise } from './SentenceListeningExercise'
+import type { ImmersiveListeningFamily } from '../model/sentence-listening-playback'
 
 interface ListeningFixtureProps {
+    readonly family?: ImmersiveListeningFamily
     readonly imageVisible?: boolean
     readonly translationVisible?: boolean
     readonly blocked?: boolean
@@ -20,15 +22,17 @@ interface ListeningFixtureProps {
 function ignore(): void {}
 
 function ListeningFixture({
+    family = 'sentence',
     imageVisible = true,
     translationVisible = true,
     blocked = false,
     oralEnabled = true,
 }: ListeningFixtureProps): ReactElement {
     const { values } = useLearningSettingsSnapshot()
-    const question = getDemoQuestions('sentence')[0]
+    const question = getDemoQuestions(family, 'listen')[0]
     if (!question) throw new Error('缺少听力示例题')
     return createElement(SentenceListeningExercise, {
+        family,
         question,
         values,
         imageVisible,
@@ -76,4 +80,17 @@ test('阻断时笔记和口语均禁用，首屏不申请媒体或权限', (): v
     const html = renderListening({ blocked: true })
     assert.equal(html.match(/<button[^>]*disabled=""/g)?.length, 2)
     assert.doesNotMatch(html, /<audio|<video|autoplay/)
+})
+
+test('音频听力通过同一题面提供笔记与口语，不渲染原技术播放器或句子身份', (): void => {
+    const html = renderListening({ family: 'audio' })
+    assert.match(html, /aria-label="音频沉浸听力"/)
+    assert.match(html, /data-practice-listening="audio"/)
+    assert.match(html, /data-audio-listening=""/)
+    assert.match(html, /data-reference-node="546:37454"/)
+    assert.doesNotMatch(html, /data-sentence-listening=""|句子练习共用示意插图/)
+    assert.match(html, /data-practice-translation/)
+    assert.equal(html.match(/data-practice-quick-oral/g)?.length, 1)
+    assert.equal(html.match(/<button/g)?.length, 2)
+    assert.doesNotMatch(html, /<audio|<video|<input|technical-tone|完整|拆分/)
 })

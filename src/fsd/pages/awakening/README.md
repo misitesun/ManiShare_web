@@ -1,5 +1,7 @@
 # 言灵觉醒
 
+- 下一章来源（2026-10-21）：根入口新增纯函数`getNextAwakeningPracticeChapter(courseId, chapterId, demoId)`及返回类型`AwakeningPracticeChapter`，先校验课程／章节／演示组合，再返回本地顺序紧邻章节的ID、序号和既有练习入口；非法、不匹配或末章返回null。由app消费并注入练习页自动下节回调，不建立page间横向依赖，不增加请求、正式题库或权限规则；VIP锁标仍仅本地展示。补充回归用例未执行，按本轮用户要求仅格式和静态diff检查，各端实际跳转待验收。
+
 - 章节来源：点击章节时传`onStartPractice(demoId,mode,chapter.id)`；模式窗暂存原章节ID，开始才传递。根入口`isAwakeningPracticeSource`校验课程/章节/演示组合，区分同为句子游戏的第1、4章。ID只来自本页13张本地示例，不当成后台题库ID；app据此生成`sourceChapter`和章节草稿scope，无新增请求或存储。
 
 - 职责：`/awakening/` 静态课程目录，三排独立可切换选项和触底分页；复用 AppLayout 与 TldPaginationStatus。

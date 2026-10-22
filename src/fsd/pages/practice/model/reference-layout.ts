@@ -1,5 +1,28 @@
+import type { ImmersiveListeningFamily } from './sentence-listening-playback'
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
 import { isPracticeAnswerVisible } from './practice-visibility'
+import type { WordMeaningVariant } from './word-meaning'
+
+export interface WordMeaningReference {
+    readonly node: string
+    readonly viewport: { readonly width: number; readonly height: number }
+    readonly top: number
+    readonly mediaWidth: number
+    readonly mediaHeight: number
+    readonly sentenceGap: number
+}
+
+/** 两个1920×1080原稿的同一题图槽；top相对75px顶栏后的内容区。 */
+export function getWordMeaningReference(variant: WordMeaningVariant): WordMeaningReference {
+    return {
+        node: variant === 'fill' ? '546:31574' : '546:31673',
+        viewport: { width: 1920, height: 1080 },
+        top: 108,
+        mediaWidth: 430,
+        mediaHeight: 242,
+        sentenceGap: variant === 'fill' ? 96 : 48,
+    }
+}
 
 export type SentenceExerciseMode = 'translate' | 'check' | 'blocks'
 
@@ -47,10 +70,12 @@ export interface SentenceListeningReference {
     }
 }
 
-/** 546:33602 的全局 CSS px；文字节点框高不作为 CSS 行高。 */
-export function getSentenceListeningReference(): SentenceListeningReference {
+/** 句子与音频听力共用布局；节点保留各自来源，文字框高不作为 CSS 行高。 */
+export function getSentenceListeningReference(
+    family: ImmersiveListeningFamily = 'sentence',
+): SentenceListeningReference {
     return {
-        node: '546:33602',
+        node: family === 'audio' ? '546:37454' : '546:33602',
         viewport: { width: 1920, height: 1080 },
         media: { x: 745, y: 183, width: 430, height: 242 },
         annotation: {
@@ -174,6 +199,8 @@ export function getPracticeReference(
         keyboardWidth: 848,
         keyboardHeight: 315,
     }
+    if (family === 'audio' && mode === 'listen')
+        return { ...base, node: getSentenceListeningReference('audio').node }
     if (family === 'typing')
         return { ...base, node: '546:41770', top: 306, textGap: 0, keyboardGap: 91 }
     if (mode === 'typing' && family === 'picture')
@@ -226,6 +253,10 @@ export function getPracticeReference(
             mediaHeight: 281,
             textGap: 24,
         }
+    if (family === 'word' && mode === 'meaning') {
+        const meaning = getWordMeaningReference('fill')
+        return { ...base, node: meaning.node, top: meaning.top, textGap: meaning.sentenceGap }
+    }
     if (family === 'word')
         return {
             ...base,

@@ -105,6 +105,23 @@ test('答案面板能力沿导航覆盖，原稿底栏只在原位置绘制独�
     assert.deepEqual(panel?.shortcuts, ['ArrowDown', 'ArrowUp'])
 })
 
+test('句子与音频听力保留上下答案提示，阅读、自查、指法和口语保留手动能力且无独立答案项', (): void => {
+    for (const family of ['sentence', 'audio'] as const) {
+        for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+            const items = getPracticeFooter(context(family, 'listen', phase))
+            assert.equal(items.filter((item) => item.id === 'panel').length, 1)
+            const panel = items.find((item) => item.id === 'panel')
+            assert.equal(panel?.label, '答案')
+            assert.equal(panel?.action, 'practice.panel.toggle')
+            assert.deepEqual(panel?.shortcuts, ['ArrowDown', 'ArrowUp'])
+        }
+        for (const mode of ['read', 'check', 'typing', 'oral'] as const) {
+            assert.equal(supportsPracticePanel(family, mode), true)
+            assert.equal(ids(family, mode).includes('panel'), false)
+        }
+    }
+})
+
 test('输入与结果提示分别使用提交和下一题，答后不保留跳格提示', (): void => {
     for (const family of ['sentence', 'audio', 'video', 'picture'] as const) {
         const input = getPracticeFooter(context(family, 'translate'))
@@ -124,6 +141,10 @@ test('输入与结果提示分别使用提交和下一题，答后不保留跳�
         )
         assert.deepEqual(input.find((item) => item.id === 'primary')?.shortcuts, ['Enter'])
         assert.equal(input.find((item) => item.id === 'primary')?.label, '提交')
+        assert.deepEqual(
+            input.find((item) => item.id === 'input')?.shortcuts,
+            family === 'sentence' || family === 'audio' ? ['Space', '← / →'] : ['← / →'],
+        )
         for (const phase of ['revealed', 'correct'] as const) {
             const result = getPracticeFooter(context(family, 'translate', phase))
             assert.equal(
@@ -138,7 +159,6 @@ test('输入与结果提示分别使用提交和下一题，答后不保留跳�
         }
     }
     for (const [family, mode] of [
-        ['word', 'meaning'],
         ['word', 'typing'],
         ['sentence', 'blocks'],
         ['guess', 'guess'],
@@ -209,4 +229,29 @@ test('有效配置驱动提示，冲突键位不被宣称可用且边界仅禁�
     assert.equal(formatPracticeShortcut('Alt + ArrowLeft'), 'Alt+←')
     assert.equal(formatPracticeShortcut('Shift + ArrowRight'), 'Shift+→')
     assert.equal(formatPracticeShortcut('Space'), '空格')
+})
+
+test('音频七模式不出现知识操作，分段输入的空格跳格提示与句子一致', (): void => {
+    for (const mode of [
+        'listen',
+        'read',
+        'check',
+        'translate',
+        'blocks',
+        'typing',
+        'oral',
+    ] as const)
+        for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+            assert.equal(supportsPracticeKnowledge('audio', mode), false)
+            assert.ok(
+                getPracticeFooter(context('audio', mode, phase)).every(
+                    (item) => item.id !== 'mastered' && item.id !== 'unfamiliar',
+                ),
+            )
+        }
+    assert.deepEqual(
+        getPracticeFooter(context('audio', 'translate')).find((item) => item.id === 'input')
+            ?.shortcuts,
+        ['Space', '← / →'],
+    )
 })

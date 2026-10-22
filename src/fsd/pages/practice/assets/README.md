@@ -1,5 +1,17 @@
 # 练习页设计资源
 
+## 句子拼块撤回与清空（2026-10-22，已同步本地main）
+
+`sentence-blocks-undo.svg`来自Figma `z7SIwUb9ep0j0ZaEwFrxJl`／`546:34534`，`sentence-blocks-clear.svg`来自`546:34530`，均通过`download_figma_images`导出并原样保留30×30根尺寸。仅`SentenceBlocksExercise`消费，托盘右上12px、间距10px；图标不随H5／平板的40px触控区域拉伸，沿现有dialog-icon主题filter。设计整页1920×1080导出仅存main ignored `.next/figma-sentence-blocks-20261022`供只读核对，不参与实现。题图、词块主题token和答对后的听力／笔记／口语图标直接复用既有资源；不重画SVG、不新增主题色。两份原SVG已按用户确认定向同步本地main，按用户要求未做运行视觉验收。此记录覆盖下方历史拼块“两题／占位提交／旧结果布局”的描述。
+
+## 句子阅读显示箭头（2026-10-22）
+
+`sentence-reading-display-arrow.svg`由用户确认的Figma `z7SIwUb9ep0j0ZaEwFrxJl`／`1696:8760`通过`download_figma_images`导出，保留20×20根尺寸及原始图形。仅`SentenceReadingDisplay`在“显示”文字后使用，间距2px，沿既有dialog-icon主题filter；替代原CSS小箭头，不改其他控件资源。完整设计导出仅在ignored `dist/design-review/sentence-reading-20261022`用于只读设计核对，不参与页面实现。本资源已随用户确认的句子阅读修正同步到本地main；按用户要求未做实现后运行验收。
+
+## 阅读全览播放资源（2026-10-21）
+
+用户Downloads的`Frame.svg`／`Frame (1).svg`原样复制为`sentence-reading-play.svg`／`sentence-reading-pause.svg`，保留28×28根尺寸及viewBox。临时黑底渲染核对为圆圈三角／圆圈双竖线，生产SVG不修改图形或颜色。`PracticeFooter.playback`仅由句子阅读注入状态，按播放或自动切题（含1.5秒等待）切换，白色图形沿dialog-icon主题filter；其他模式默认图形不改。右上三项复用沉浸听力24px原图及开启态，笔记复用`sentence-listening-note.svg`原20px资源，不重复复制。用户确认句子预览后已同步main，保留音频等现有消费者和资源；本次未做项目运行验收。
+
 ## 笔记侧栏（2026-10-20）
 
 `notes/`八份素材直接取自Figma `z7SIwUb9ep0j0ZaEwFrxJl` 的 `546:35888/36010`：标题`546:35990`（30×30）、关闭`546:35983`（24×24）、空态图`546:35995`（原图1536×1024，设计槽156×104）、书写`546:36134`、编辑`546:36147`、删除`546:36150`、修饰键`546:35999`及回车`546:36005`（后五项均18×18）。全部由`PracticeNotesPanel`静态导入，SVG根宽高不覆盖；关闭沿既有图标filter适配浅色，原彩色功能图标保留。两份完整画板预览只在ignored `dist/figma-inspection/practice-notes-20261020`作设计核对，不作为业务资源或渲染结果。
@@ -19,7 +31,7 @@
 - word-toolbar-clock.svg / word-toolbar-options.svg：546:31247 / 546:31274，均保留18×18原始根尺寸，用于六模式左上角计时与六边形局部设置。
 - word-toolbar-popover-arrow.svg：546:31458，导出SVG根尺寸11×6（设计几何10.39×6）；用原轮廓mask和语义表面色绘制，深浅主题箭头与浮层同色，不重画路径。工具栏来源为546:31237、31334、31470、31574、31762、31837，相关控件未使用整屏截图。
 
-- word-woman-e23d5f.png：546:31277，保留接口给出的裁剪变换；单词卡500×281。
+- word-woman-e23d5f.png：546:31277，原文件2784×1392保持；单词六模式运行时统一在16:9封面容器内以`object-cover`等比裁切，拼读／拼写最大宽500px，其余430px，平板／H5随可用宽度等比缩小。稿面500×281为整数参考，不作为实际显示比例。
 - reading-scene.png：546:33666；句子游戏题图。
 - picture-scene.png：2655:11089；看图听力，原图已含静态遮罩/目标描边。
 - greeting-scene.png：2651:10419，同2651:10098的浴室场景；文件名沿首次导出，非另造问候题图，原稿指法Nice to meet you与此图是设计占位组合。
@@ -62,4 +74,10 @@
 
 ## 句子沉浸听力
 
-SentenceListeningExercise复用reading-scene.png（546:33666），显示430×242。sentence-listening-note.svg来自546:33713，原根20×20；sentence-listening-oral.svg来自546:33660，原根28×28，保留导出图形和根尺寸，沿既有dialog-icon filter适配浅色主题。两份专用SVG随听力专用组件／测试留在practice页面内部；公共标注和几何按共用能力维护。546:33709中文尾部及546:33667右上组动作待确认，本轮不生成按钮。
+开启态补齐（2026-10-21）：用户下载目录`☁️ManiShare (1)`提供`盲听打开.svg`、`自动切题.svg`、`章节循环.svg`、`播放.svg`、`自动下节.svg`，原样复制为`sentence-listening-blind-on.svg`、`sentence-listening-auto-advance-on.svg`、`sentence-listening-chapter-loop-on.svg`、`sentence-listening-play.svg`、`sentence-listening-auto-next-chapter-on.svg`。五份均为原始24×24／viewBox 0 0 24 24，未改写根尺寸、图形或颜色；绿色开启态不应用白色图标的主题反相filter，盲听眼睛与播放三角为白色图形，继续沿原filter适配主题。当前`SentenceListeningControls`按真实开关／播放状态选择对应资源，以图形本身呈现状态，替代初版仅切换绿色背景与描边的表现；提示使用项目Tooltip，资源继续属于practice。
+
+SentenceListeningExercise复用reading-scene.png（546:33666），显示430×242。sentence-listening-note.svg来自546:33713，原根20×20；sentence-listening-oral.svg来自546:33660，原根28×28，保留导出图形和根尺寸，沿既有dialog-icon filter适配浅色主题。专用SVG随听力专用组件／测试留在practice页面内部；公共标注和几何按共用能力维护。546:33709中文尾部动作仍待确认。
+
+2026-10-21用户确认右上五控件语义后，从Figma原稿546:33667实例的Frame 2147236746子组逐个按1×SVG导出：`sentence-listening-blind.svg`（源组件子节点3318:3304）、`sentence-listening-auto-advance.svg`（3318:3308）、`sentence-listening-chapter-loop.svg`（3318:3311）、`sentence-listening-pause.svg`（3318:3316）、`sentence-listening-auto-next-chapter.svg`（3318:3319）。全部保留原始24×24根尺寸／viewBox与图形，不描摹用户截图；`SentenceListeningControls`按此顺序消费，以原有dialog-icon filter适配主题、按钮背景与描边表示开关状态。组基准204×34@(1716,95)，H5／平板扩大按钮触控目标，图标仍24px；资源不提升到全局目录。
+
+2026-10-21音频听力复用：`reading-scene.png`、`sentence-listening-note.svg`、听力五控件的关闭／开启态SVG及口语入口由句子／音频沉浸听力共同消费，仍属于practice同一page。通过family区分语义与设计节点，不复制、重绘或提升为全站资源；原24px图标与题图比例保持，本轮未执行视觉或运行时验收。

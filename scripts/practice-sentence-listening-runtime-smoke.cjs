@@ -533,12 +533,13 @@ async function runSentenceListeningChecks(window, origin, label) {
         )
         await settle(window)
         result.interactions.push('原生鼠标笔记打开/编辑/关闭重开保留；口语点击与V复用既有命令')
-        for (const [demo, mode] of [
-            ['sentence-basic', 'translate'],
-            ['sentence-basic', 'check'],
-            ['sentence-basic', 'blocks'],
-            ['sentence-basic', 'read'],
-            ['audio-basic', 'listen'],
+        for (const [demo, mode, dedicatedListeningVariant] of [
+            ['sentence-basic', 'translate', false],
+            ['sentence-basic', 'check', false],
+            ['sentence-basic', 'blocks', false],
+            ['sentence-basic', 'read', false],
+            ['audio-basic', 'listen', true],
+            ['audio-basic', 'translate', false],
         ]) {
             await visit(window, origin, demo, mode)
             assert.equal(
@@ -547,9 +548,9 @@ async function runSentenceListeningChecks(window, origin, label) {
                     () =>
                         !!document.querySelector('[data-annotation-variant="sentence-listening"]'),
                 ),
-                false,
+                dedicatedListeningVariant,
             )
-            result.consumers.push({ demo, mode, dedicatedListeningVariant: false })
+            result.consumers.push({ demo, mode, dedicatedListeningVariant })
         }
         assert.deepEqual(result.businessRequests, [])
         assert.deepEqual(result.permissionRequests, [])

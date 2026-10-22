@@ -380,7 +380,10 @@ test('面板上下键按模式能力和可见状态解析，不依赖答题阶�
     for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
         for (const entry of [
             { family: 'word', mode: 'spell' },
+            { family: 'word', mode: 'typing' },
             { family: 'phonetics', mode: 'pronounce' },
+            { family: 'sentence', mode: 'listen' },
+            { family: 'audio', mode: 'listen' },
         ] as const) {
             assert.equal(
                 resolvePracticeShortcut(
@@ -421,8 +424,79 @@ test('面板上下键按模式能力和可见状态解析，不依赖答题阶�
             )
 })
 
-test('阅读保留滚动，所有作答模式的内容空格统一发出编辑意图', (): void => {
-    for (const family of ['sentence', 'audio', 'guess', 'text-reader'] as const)
+test('句子与音频阅读、自查、指法和口语禁用上下答案快捷键，保留主流程、切题和朗读', (): void => {
+    for (const family of ['sentence', 'audio'] as const)
+        for (const mode of ['read', 'check', 'typing', 'oral'] as const)
+            for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+                for (const panelVisible of [false, true]) {
+                    const active = context({
+                        family,
+                        mode,
+                        phase,
+                        panelVisible,
+                        answerInputCommands: mode === 'typing',
+                    })
+                    for (const key of ['ArrowDown', 'ArrowUp'])
+                        for (const target of ['content', 'answer-input'] as const)
+                            assert.equal(resolvePracticeShortcut(input(key), active, target), null)
+                    assert.equal(
+                        resolvePracticeShortcut(
+                            input('ArrowLeft', { shiftKey: true }),
+                            active,
+                            'content',
+                        ),
+                        'question.previous',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(
+                            input('ArrowRight', { shiftKey: true }),
+                            active,
+                            'content',
+                        ),
+                        'question.next',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(input('L', { shiftKey: true }), active, 'content'),
+                        'practice.readAloud',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(input(' '), active, 'content'),
+                        mode === 'read' ? 'practice.readAloud' : 'practice.contextual',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(input('Enter'), active, 'content'),
+                        'practice.primary',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(input('Escape'), active, 'content'),
+                        'practice.dismiss',
+                    )
+                }
+})
+
+test('句子与音频口语准备、录音、评分和结果阶段均不响应上下答案键', (): void => {
+    for (const family of ['sentence', 'audio'] as const)
+        for (const oralStage of ['idle', 'recording', 'evaluating', 'result', 'error'] as const)
+            for (const panelVisible of [false, true])
+                for (const scope of ['question', 'oral'] as const)
+                    for (const key of ['ArrowDown', 'ArrowUp'])
+                        assert.equal(
+                            resolvePracticeShortcut(
+                                input(key),
+                                context({ family, mode: 'oral', oralStage, panelVisible, scope }),
+                                'content',
+                            ),
+                            null,
+                        )
+})
+
+test('句子和音频阅读空格朗读，其他阅读保留滚动，作答内容空格统一发出编辑意图', (): void => {
+    for (const family of ['sentence', 'audio'] as const)
+        assert.equal(
+            resolvePracticeShortcut(input(' '), context({ family, mode: 'read' }), 'content'),
+            'practice.readAloud',
+        )
+    for (const family of ['guess', 'text-reader'] as const)
         assert.equal(
             resolvePracticeShortcut(input(' '), context({ family, mode: 'read' }), 'content'),
             null,
@@ -537,4 +611,31 @@ test('口语作用域只解析当前阶段流程，评测中不重入也不透�
         assert.equal(resolvePracticeShortcut(input('l', { ctrlKey: true }), oral, 'content'), null)
         assert.equal(resolvePracticeShortcut(input('Enter'), oral, 'answer-input'), null)
     }
+})
+
+test('音频全部模式及题态不开放掌握和不熟快捷键，阅读空格只控制本题朗读', (): void => {
+    for (const mode of [
+        'listen',
+        'read',
+        'check',
+        'translate',
+        'blocks',
+        'typing',
+        'oral',
+    ] as const)
+        for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+            for (const target of ['content', 'answer-input'] as const)
+                for (const key of ['J', 'K'])
+                    assert.equal(
+                        resolvePracticeShortcut(
+                            input(key, { shiftKey: true }),
+                            context({ family: 'audio', mode, phase, answerInputCommands: true }),
+                            target,
+                        ),
+                        null,
+                    )
+    assert.equal(
+        resolvePracticeShortcut(input(' '), context({ family: 'audio', mode: 'read' }), 'content'),
+        'practice.readAloud',
+    )
 })

@@ -60,6 +60,7 @@ export function PracticeToolbarOptions({
 }: PracticeToolbarOptionsProps): ReactElement {
     const rootRef = useRef<HTMLDivElement>(null)
     const triggerRef = useRef<HTMLButtonElement>(null)
+    const focusOnOpen = useRef(false)
     const panelRef = useRef<HTMLDivElement>(null)
     const floatingRef = useRef<HTMLDivElement>(null)
     const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
@@ -129,7 +130,7 @@ export function PracticeToolbarOptions({
 
     useEffect(() => {
         if (!open || (portal && !positioned)) return
-        if (popover.shouldFocusOnOpen())
+        if (focusOnOpen.current && popover.shouldFocusOnOpen())
             panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
         function closeOutside(event: PointerEvent): void {
             if (
@@ -246,11 +247,15 @@ export function PracticeToolbarOptions({
             className="relative shrink-0"
             onBlur={(event): void => {
                 const next = event.relatedTarget
-                const sameAnswer =
+                const practiceRoot = event.currentTarget.closest('[data-practice-phase]')
+                const samePractice =
                     next instanceof Element &&
-                    next.matches('[data-practice-answer-input]') &&
-                    event.currentTarget.closest('[data-practice-phase]')?.contains(next)
-                if (sameAnswer) return
+                    practiceRoot?.contains(next) &&
+                    (next === practiceRoot ||
+                        next.matches(
+                            '[data-practice-answer-input],[data-sentence-reading-viewport]',
+                        ))
+                if (samePractice) return
                 if (
                     !event.currentTarget.contains(event.relatedTarget) &&
                     !panelRef.current?.contains(event.relatedTarget)
@@ -258,6 +263,13 @@ export function PracticeToolbarOptions({
                     onOpenChange(false)
             }}
             onKeyDown={(event): void => {
+                if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return
+                if (event.key === 'ArrowDown' && event.target === triggerRef.current) {
+                    event.preventDefault()
+                    focusOnOpen.current = true
+                    if (open) panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+                    else popover.openByKeyboard()
+                }
                 if (event.key === 'Tab' && open && portal) {
                     const buttons = Array.from(
                         panelRef.current?.querySelectorAll<HTMLButtonElement>('button:enabled') ??
@@ -287,7 +299,10 @@ export function PracticeToolbarOptions({
                 aria-expanded={open}
                 aria-controls={open ? id : undefined}
                 className="flex size-10 cursor-pointer items-center justify-center rounded-[4px] bg-practice-control-surface outline-offset-2 focus-visible:outline-2 focus-visible:outline-focus xl:size-[26px]"
-                onClick={popover.toggle}
+                onClick={(event): void => {
+                    focusOnOpen.current = event.detail === 0
+                    popover.toggle()
+                }}
             >
                 <img
                     src={optionsAsset.src}

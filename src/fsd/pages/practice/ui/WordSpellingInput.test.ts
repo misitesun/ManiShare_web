@@ -6,6 +6,7 @@ import { getDemoWordPhonetics } from '../model/word-phonetics-demo'
 import type { WordPhoneticMode } from '../model/word-phonetics'
 import { createWordSpellingLayout } from '../model/word-spelling-input'
 import { WordSpellingInput } from './WordSpellingInput'
+import { PracticeAnswerInput } from './PracticeAnswerInput'
 
 function rejectAction(): never {
     throw new Error('预渲染不得提交、注册控制器或改写输入')
@@ -78,4 +79,38 @@ test('阻断期间字母位和原生输入均禁用，不伪造通过或错误�
     assert.match(html, /<input[^>]*disabled=""/)
     assert.ok((html.match(/<button\b[^>]*>/g) ?? []).every((tag) => tag.includes('disabled=""')))
     assert.doesNotMatch(html, /data-spelling-letter="incorrect"/)
+})
+
+test('句中行内与默写的整词回退共用字母、错误颜色和逐位底线渲染', (): void => {
+    const layout = createWordSpellingLayout('woman', 'syllables')
+    const render = (inline: boolean): string =>
+        renderToStaticMarkup(
+            createElement(PracticeAnswerInput, {
+                layout,
+                initialValue: 'wowww',
+                feedback: { value: 'wowww', wrong: [2, 3, 4] },
+                blocked: false,
+                ignoreCase: true,
+                showWordHint: false,
+                presentation: inline ? 'inline' : 'spelling',
+                onChange: rejectAction,
+            }),
+        )
+    const spelling = render(false)
+    const inline = render(true)
+    for (const html of [spelling, inline]) {
+        assert.equal((html.match(/<input\b/g) ?? []).length, 1)
+        assert.equal((html.match(/data-spelling-position="\d+"/g) ?? []).length, 5)
+        assert.match(html, /data-answer-cursor="2"/)
+        assert.match(html, /data-spelling-errors="2,3,4"/)
+        assert.equal((html.match(/data-spelling-letter="incorrect"/g) ?? []).length, 3)
+    }
+    assert.deepEqual(
+        inline.match(/<span data-spelling-letter=[^>]*>[^<]*<\/span>/g),
+        spelling.match(/<span data-spelling-letter=[^>]*>[^<]*<\/span>/g),
+    )
+    assert.deepEqual(
+        inline.match(/<span data-spelling-cursor-active=[^>]*>/g),
+        spelling.match(/<span data-spelling-cursor-active=[^>]*>/g),
+    )
 })

@@ -83,6 +83,53 @@ const assets: PracticeFeedbackSoundAssets = {
     'chapterComplete:落幕（默认）': { src: '/fixtures/complete-one.wav' },
 }
 
+test('自查答案出现复用答对音色、开关和音量，独立于切题设置', (): void => {
+    for (const correctTone of ['清音（默认）', '清悦']) {
+        const preferences = {
+            ...values,
+            correctTone,
+            correctVolume: 25,
+            transitionSound: false,
+        }
+        const selection = getPracticeFeedbackSoundSelection(preferences, 'answerReveal')
+        const correct = getPracticeFeedbackSoundSelection(preferences, 'correct')
+        assert.equal(selection.key, correct.key)
+        assert.equal(selection.enabled, correct.enabled)
+        assert.equal(selection.volume, correct.volume)
+        assert.equal(selection.enabled, true)
+        assert.equal(selection.volume, 0.25)
+        assert.equal(
+            getPracticeFeedbackSoundSelection(
+                { ...preferences, correctSound: false },
+                'answerReveal',
+            ).enabled,
+            false,
+        )
+    }
+})
+
+test('自查揭晓只播放一次答对素材，关闭答对音效会停止且不补播', async (): Promise<void> => {
+    const audio = new AudioStub()
+    const controller = createPracticeFeedbackSoundController(assets, (): AudioStub => audio)
+    const event = { id: 1, kind: 'answerReveal' } as const
+    controller.consume(event, values)
+    controller.consume(event, values)
+    assert.equal(audio.src, '/fixtures/correct-clear.wav')
+    assert.equal(audio.volume, 0.7)
+    assert.equal(audio.playCount, 1)
+    await Promise.resolve()
+    controller.updatePreferences({ ...values, correctSound: false })
+    assert.equal(controller.getSnapshot().phase, 'stopped')
+    assert.equal(audio.src, '')
+    controller.updatePreferences(values)
+    controller.consume(event, values)
+    assert.equal(audio.playCount, 1)
+    controller.consume({ id: 2, kind: 'answerReveal' }, { ...values, correctSound: false })
+    assert.equal(controller.getSnapshot().phase, 'disabled')
+    assert.equal(audio.playCount, 1)
+    controller.dispose()
+})
+
 test('同源打字限流并复用，结果声与卡牌操作不会被打字或随后的切题截断', (): void => {
     let time = 0
     const audios: AudioStub[] = []
@@ -278,7 +325,7 @@ test('播放受浏览器限制时提供手势重试提示，不报告已播放',
     controller.dispose()
 })
 
-test('七种原版答对动画和完成动画独立门控，其他事件与未知类型不擅自庆祝', (): void => {
+test('答对与自查揭晓共用七种原版动画和开关，完成及其他事件保持独立', (): void => {
     for (const [type, expected] of [
         ['lottie-0', 'lottie-0'],
         ['lottie-1', 'lottie-1'],
@@ -287,29 +334,32 @@ test('七种原版答对动画和完成动画独立门控，其他事件与未�
         ['lottie-5', 'lottie-5'],
         ['lottie-6', 'lottie-6'],
         ['lottie-7', 'lottie-7'],
-    ]) {
+    ])
+        for (const kind of ['correct', 'answerReveal'] as const)
+            assert.equal(
+                getPracticeFeedbackAnimation(
+                    { ...values, correctEffectType: type ?? '' },
+                    { id: 1, kind },
+                ),
+                expected,
+            )
+    for (const kind of ['correct', 'answerReveal'] as const) {
+        assert.equal(
+            getPracticeFeedbackAnimation({ ...values, correctEffect: false }, { id: 2, kind }),
+            null,
+        )
+        assert.equal(
+            getPracticeFeedbackAnimation({ ...values, correctEffectType: '未知' }, { id: 3, kind }),
+            null,
+        )
         assert.equal(
             getPracticeFeedbackAnimation(
-                { ...values, correctEffectType: type ?? '' },
-                { id: 1, kind: 'correct' },
+                { ...values, correctSound: false, correctEffectType: 'lottie-0' },
+                { id: 4, kind },
             ),
-            expected,
+            'lottie-0',
         )
     }
-    assert.equal(
-        getPracticeFeedbackAnimation(
-            { ...values, correctEffect: false },
-            { id: 2, kind: 'correct' },
-        ),
-        null,
-    )
-    assert.equal(
-        getPracticeFeedbackAnimation(
-            { ...values, correctEffectType: '未知' },
-            { id: 3, kind: 'correct' },
-        ),
-        null,
-    )
     assert.equal(getPracticeFeedbackAnimation(values, { id: 4, kind: 'questionChange' }), null)
     assert.equal(
         getPracticeFeedbackAnimation(values, { id: 5, kind: 'chapterComplete' }),

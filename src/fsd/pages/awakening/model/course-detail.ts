@@ -45,6 +45,11 @@ export interface AwakeningPracticeEntry {
     readonly selectorFamily: SelectablePracticeFamily | null
 }
 
+export interface AwakeningPracticeChapter extends AwakeningPracticeEntry {
+    readonly chapterId: string
+    readonly number: number
+}
+
 const practiceEntries: Record<AwakeningChapterKind, AwakeningPracticeEntry> = {
     0: {
         demoId: 'sentence-basic',
@@ -138,6 +143,20 @@ export function isAwakeningPracticeSource(
                 chapter.id === chapterId && getAwakeningPracticeEntry(chapter).demoId === demoId,
         )
     )
+}
+
+/** 只沿已校验的本地预览课程顺序前进，不猜测正式章节、题库或权限。 */
+export function getNextAwakeningPracticeChapter(
+    courseId: string,
+    chapterId: string,
+    demoId: string,
+): AwakeningPracticeChapter | null {
+    if (!isAwakeningPracticeSource(courseId, chapterId, demoId)) return null
+    const index = awakeningChapters.findIndex((chapter) => chapter.id === chapterId)
+    const chapter = awakeningChapters[index + 1]
+    return chapter
+        ? { ...getAwakeningPracticeEntry(chapter), chapterId: chapter.id, number: chapter.number }
+        : null
 }
 
 export function hasAwakeningCourseDetail(id: string | undefined): boolean {

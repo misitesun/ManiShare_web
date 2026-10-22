@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react'
 import oralIcon from '../assets/sentence-listening-oral.svg'
 
-/** 单词作答正确态共用入口；阶段与快捷键由练习会话拥有。 */
+/** 单词作答与句子听力共用入口；阶段与快捷键由练习会话拥有。 */
 export function PracticeOralAssessmentButton({
     onClick,
     disabled = false,

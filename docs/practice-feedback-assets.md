@@ -4,6 +4,14 @@
 
 更新于2026-10-20。用户确认完整迁入新版哇学社练习交互声音，并先接单词拼读／拼写及设置试听；另明确删除“章节完成音效1”，以“落幕（默认）”作为课程完成默认音色。下列音效是已建立本地映射、尚待用户试听的实现记录，不代表真实设备解码验收通过。2026-10-19的声音空映射与9项完成音色说明由本记录覆盖。
 
+## 理解自查答案出现提示音（2026-10-22）
+
+句子与音频游戏的理解自查共用`PracticePage.primary`揭晓入口。首次通过空格／Enter或显示答案操作揭晓时发出`answerReveal`，声音与单词默写答对完全同源：由`correctTone`选择清音／清悦，遵守`correctSound`及`correctVolume`；不使用切题音效或切题开关。事件沿原`PracticeFeedbackSoundController`播放和去重，不新增资源、请求、设置或播放器。
+
+按用户追加要求，揭晓同时复用单词答对特效：`getPracticeFeedbackAnimation`将`answerReveal`与`correct`映射到同一`correctEffect`开关及`correctEffectType`样式，沿现有`PracticeFeedback`的事件ID去重、单次播放、减少动态效果及后台／卸载清理，不新增动画资源。音效和特效开关保持独立。
+
+揭晓仍为`revealed`，不计为答对；再次操作按原流程下一题，不重复发出揭晓事件。已有暂停、后台、阻断层与卸载清理保持。已补音色／开关／音量、动画映射／门控、事件去重及两来源主流程回归，但按用户要求未运行测试、构建、试听或视觉验收，只做定向格式化和静态差异核对；PC、平板／H5及Electron实际效果待用户验收，未提交／推送Git。
+
 ## 1. 当前归属与来源
 
 - 真实资源归`features/learning-settings/assets/sounds`，共37份、1348980字节。音源注册表为[feedback-sounds.ts](../src/fsd/features/learning-settings/model/feedback-sounds.ts)，经feature根入口供设置与练习共用；每个音色映射到独立的原文件。

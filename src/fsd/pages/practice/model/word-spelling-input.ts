@@ -34,7 +34,7 @@ export interface WordSpellingLayout {
 
 export interface WordSpellingInputState {
     readonly letters: readonly string[]
-    /** 最近提交后尚待重新填入的错位；删除字母不移除其纠错身份。 */
+    /** 最近提交后尚待重填的错位，以及纠错期间删除形成的空位。 */
     readonly wrong: readonly number[]
     readonly cursor: number
     readonly attempts: number
@@ -250,6 +250,21 @@ export function resetEmptyWordSpellingCursor(
     return { ...state, cursor: 0, wrong: [] }
 }
 
+/** 纠错期间清空已填位也须重填；保持位置有序，供空格与自动推进共用。 */
+function clearWordSpellingInputPositions(
+    state: WordSpellingInputState,
+    positions: readonly number[],
+): WordSpellingInputState {
+    return resetEmptyWordSpellingCursor({
+        ...state,
+        letters: state.letters.map((letter, index) => (positions.includes(index) ? '' : letter)),
+        wrong: state.wrong.length
+            ? [...new Set([...state.wrong, ...positions])].sort((left, right) => left - right)
+            : state.wrong,
+        cursor: positions[0] ?? state.cursor,
+    })
+}
+
 /** 原生选区按已填缓冲定位；删除保留待纠错身份，重新填入后仍能跳到下一错位。 */
 export function clearWordSpellingInputSelection(
     state: WordSpellingInputState,
@@ -265,11 +280,7 @@ export function clearWordSpellingInputSelection(
     })
     const first = removed[0]
     if (first === undefined) return state
-    return resetEmptyWordSpellingCursor({
-        ...state,
-        letters: state.letters.map((letter, index) => (removed.includes(index) ? '' : letter)),
-        cursor: first,
-    })
+    return clearWordSpellingInputPositions(state, removed)
 }
 
 export function typeWordSpellingInput(
@@ -317,10 +328,7 @@ export function deleteWordSpellingInput(state: WordSpellingInputState): WordSpel
             cursor: previous.at(-1) ?? state.cursor,
         }
     }
-    return resetEmptyWordSpellingCursor({
-        ...state,
-        letters: state.letters.map((letter, index) => (index === state.cursor ? '' : letter)),
-    })
+    return clearWordSpellingInputPositions(state, [state.cursor])
 }
 
 /** 空格逐字编辑，与单词、音节和音标的视觉分段无关。 */

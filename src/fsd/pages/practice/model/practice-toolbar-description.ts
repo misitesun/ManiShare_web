@@ -18,7 +18,10 @@ export function getPracticeToolbarDescription(
     return rows
         .map((row) => {
             if (row === 'split') return '完整/拆分保存句子显示选择，拆分题面待后续精修。'
-            if (row === 'copy') return '默写/抄写保存输入方式选择，抄写题面待后续精修。'
+            if (row === 'copy')
+                return family === 'audio'
+                    ? '默写隐藏词形提示，抄写显示词形提示。'
+                    : '默写/抄写保存输入方式选择，抄写题面待后续精修。'
             if (row === 'imageVisible') return '图片控制当前题图显示。'
             if (row === 'translationVisible') return '翻译控制当前题中文显示。'
             if (row === 'keyboardVisible') return '键盘控制虚拟键盘显示。'

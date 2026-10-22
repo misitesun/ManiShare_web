@@ -4,6 +4,7 @@ import { useCallback, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { gsap, useGSAP } from '../../../shared/lib/animation'
 import type { PracticePhase, PracticeQuestion } from '../model/practice-demo'
+import type { WordCardExample } from '../model/word-card-analysis'
 import type { WordPhoneticMode } from '../model/word-phonetics'
 import { createWordSpellingLayout } from '../model/word-spelling-input'
 import type { WordSpellingInputController } from '../model/word-spelling-input'
@@ -38,6 +39,7 @@ export interface WordAnswerCardProps {
     readonly ignoreCase?: boolean
     readonly onNotice: (message: string) => void
     readonly onPlay?: (() => void) | undefined
+    readonly onExamplePlay?: ((example: WordCardExample) => void) | undefined
     readonly displayFontSize?: number | undefined
     readonly borderStyle?: 'solid' | 'dashed' | undefined
     readonly reading?: PracticeReadingView | undefined
@@ -165,8 +167,9 @@ function WordSpellingCard(props: WordAnswerCardProps): ReactElement {
                             disabled={props.blocked}
                             borderDepth="front"
                             onBack={(): void => setAnalysisOpen(false)}
-                            onExamplePlay={(): void =>
-                                props.onNotice('例句音源未接入，暂不能朗读。')
+                            onExamplePlay={
+                                props.onExamplePlay ??
+                                ((): void => props.onNotice('当前例句暂无朗读音源。'))
                             }
                         />
                     </div>
@@ -284,16 +287,15 @@ function WordAnswerCardFace({
                 {visibleImage && (
                     <div
                         data-practice-reading-surface
-                        className="relative w-full overflow-hidden rounded-[20px]"
+                        className="relative aspect-video w-full overflow-hidden rounded-[20px]"
                     >
                         <img
                             data-practice-media
                             src={wordAsset.src}
                             alt="单词练习共用示意图"
                             width={430}
-                            height={revealed ? 240 : 242}
-                            style={{ aspectRatio: revealed ? '430/240' : '430/242' }}
-                            className="block h-auto w-full rounded-[20px] object-fill"
+                            height={242}
+                            className="absolute inset-0 block h-full w-full object-cover"
                         />
                         <PracticeReadingOverlay reading={reading} />
                     </div>
@@ -424,7 +426,7 @@ function WordAnswerCardFace({
                 {visibleImage && (
                     <div
                         data-practice-reading-surface
-                        className="relative overflow-hidden rounded-t-[20px]"
+                        className="relative aspect-video w-full overflow-hidden rounded-t-[20px]"
                     >
                         <img
                             data-practice-media
@@ -432,7 +434,7 @@ function WordAnswerCardFace({
                             alt="单词练习共用示意图"
                             width={500}
                             height={281}
-                            className="block aspect-[500/281] h-auto w-full rounded-t-[20px]"
+                            className="absolute inset-0 block h-full w-full object-cover"
                         />
                         <PracticeReadingOverlay reading={reading} />
                     </div>

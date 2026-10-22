@@ -206,7 +206,8 @@ async function clickMediaAction(window, kind, label) {
 
 async function checkTechnicalMedia(window, origin, kind) {
     const demo = kind === 'audio' ? 'audio-basic' : 'video-basic'
-    await navigate(window, origin, '?demo=' + demo + '&mode=listen&keep=practice-smoke')
+    const mode = kind === 'audio' ? 'read' : 'listen'
+    await navigate(window, origin, '?demo=' + demo + '&mode=' + mode + '&keep=practice-smoke')
     await waitFor(
         window,
         (selector) => {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from
 import type { CSSProperties, ReactElement, RefObject } from 'react'
 import { gsap, useGSAP } from '../../../shared/lib/animation'
 import { copyText } from '../../../shared/lib/clipboard'
+import { PracticeInputBridge } from './PracticeInputBridge'
 import {
     createWordSpellingInputState,
     clearWordSpellingInputSelection,
@@ -44,7 +45,9 @@ export interface PracticeAnswerInputProps {
     readonly onSegmentPulse?: ((id: string) => void) | undefined
     readonly inputRef?: RefObject<HTMLInputElement | null> | undefined
     readonly label?: string | undefined
-    readonly presentation?: 'spelling' | 'words'
+    readonly presentation?: 'spelling' | 'words' | 'inline' | 'typing'
+    /** 行内题面保留原有底线设置，其他表现继续使用各自的默认渲染。 */
+    readonly borderStyle?: 'solid' | 'dashed' | undefined
     readonly renderSlots?: ((view: PracticeAnswerInputView) => ReactElement) | undefined
     readonly feedback?: { readonly value: string; readonly wrong: readonly number[] } | undefined
     readonly onCursorChange?: ((cursor: number) => void) | undefined
@@ -63,6 +66,8 @@ function feedbackPositions(positions: readonly number[], length: number): readon
 /** 全部练习作答共用原生输入桥与推进模型；视觉分组不拥有定位权限。 */
 export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactElement {
     const { layout, blocked, showWordHint, displayFontSize, onController } = props
+    const inline = props.presentation === 'inline'
+    const typing = props.presentation === 'typing'
     const id = useId()
     const rootRef = useRef<HTMLDivElement>(null)
     const internalInputRef = useRef<HTMLInputElement>(null)
@@ -355,10 +360,12 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
 
     // 横线顶部 = 上留白 + 片段10px + 1em字母行 + (6px下移 - 4px线高)。
     // 62px目标距离对应上留白max(0px, 50px - 1em)；大字号超出时自然撑高。
+    // 行内表现继承句子字号、移除字卡顶部留白；字母槽与逻辑光标仍走同一渲染。
     return (
         <div
             ref={rootRef}
             data-practice-controlled-answer
+            data-practice-answer-presentation={props.presentation ?? 'spelling'}
             data-word-spelling-input={props.presentation === 'words' ? undefined : true}
             data-spelling-mode={layout.split ? 'segments' : 'letters'}
             data-spelling-errors={state.wrong.join(',')}
@@ -368,15 +375,19 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
                 if (event.pointerType === 'mouse') event.preventDefault()
             }}
             className={
-                props.presentation === 'words'
-                    ? 'relative mx-auto w-full min-w-0 max-w-full select-none cursor-text text-inherit font-medium leading-[1.2]'
-                    : 'relative mx-auto w-full min-w-0 max-w-full select-none cursor-text pt-[max(0px,calc(50px_-_1em))] text-[24px] font-medium leading-none md:text-[30px]'
+                inline
+                    ? 'relative inline-flex min-w-0 max-w-full select-none cursor-text items-baseline align-baseline text-inherit font-normal leading-none [font-size:inherit]'
+                    : typing
+                      ? 'relative mx-auto w-full min-w-0 max-w-full select-none cursor-text text-inherit font-medium leading-none [font-size:inherit]'
+                      : props.presentation === 'words'
+                        ? 'relative mx-auto w-full min-w-0 max-w-full select-none cursor-text text-inherit font-medium leading-[1.2]'
+                        : 'relative mx-auto w-full min-w-0 max-w-full select-none cursor-text pt-[max(0px,calc(50px_-_1em))] text-[24px] font-medium leading-none md:text-[30px]'
             }
         >
             <label htmlFor={id} className="sr-only">
                 {props.label ?? '练习答案'}
             </label>
-            <input
+            <PracticeInputBridge
                 ref={inputRef}
                 id={id}
                 data-practice-answer-input
@@ -502,7 +513,6 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
                         )
                     }
                 }}
-                className="pointer-events-none absolute left-0 top-0 h-px w-px cursor-text border-0 bg-transparent p-0 text-[16px] opacity-0 outline-none disabled:cursor-default"
             />
             {props.renderSlots ? (
                 props.renderSlots({
@@ -515,12 +525,20 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
             ) : (
                 <div
                     aria-hidden="true"
-                    className="flex min-w-0 max-w-full flex-wrap items-end justify-center gap-x-5 gap-y-4 overflow-x-auto px-1 pb-3"
+                    className={
+                        inline || typing
+                            ? 'flex min-w-0 max-w-full flex-wrap items-baseline justify-center gap-x-5 gap-y-4 px-1 pb-3'
+                            : 'flex min-w-0 max-w-full flex-wrap items-end justify-center gap-x-5 gap-y-4 overflow-x-auto px-1 pb-3'
+                    }
                 >
                     {layout.words.map((word) => (
                         <span
                             key={word.id}
-                            className="inline-flex max-w-full flex-wrap items-end justify-center gap-y-3"
+                            className={
+                                inline
+                                    ? 'inline-flex max-w-full flex-wrap items-baseline justify-center gap-y-3'
+                                    : 'inline-flex max-w-full flex-wrap items-end justify-center gap-y-3'
+                            }
                         >
                             {word.prefix && <span>{word.prefix}</span>}
                             {word.segments.map((segment) => (
@@ -528,9 +546,13 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
                                     key={segment.id}
                                     data-word-spelling-segment={segment.id}
                                     className={
-                                        layout.split
-                                            ? 'relative mx-1 inline-flex shrink-0 items-end rounded-[4px] px-0.5 pt-2.5'
-                                            : 'relative inline-flex shrink-0 items-end pt-2.5'
+                                        inline
+                                            ? 'relative mx-1 inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-y-3 rounded-[4px] px-0.5'
+                                            : typing
+                                              ? 'relative inline-flex min-w-0 max-w-full flex-wrap items-end gap-y-3'
+                                              : layout.split
+                                                ? 'relative mx-1 inline-flex shrink-0 items-end rounded-[4px] px-0.5 pt-2.5'
+                                                : 'relative inline-flex shrink-0 items-end pt-2.5'
                                     }
                                 >
                                     <span
@@ -563,7 +585,11 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
                                                     event.preventDefault()
                                                 }
                                                 onClick={focusLetter}
-                                                className="relative inline-flex shrink-0 cursor-pointer items-end border-0 bg-transparent p-0 leading-none outline-none disabled:cursor-default"
+                                                className={
+                                                    inline
+                                                        ? 'relative inline-flex shrink-0 cursor-pointer items-baseline border-0 bg-transparent p-0 leading-none outline-none disabled:cursor-default'
+                                                        : 'relative inline-flex shrink-0 cursor-pointer items-end border-0 bg-transparent p-0 leading-none outline-none disabled:cursor-default'
+                                                }
                                             >
                                                 <span
                                                     data-spelling-letter={
@@ -588,13 +614,17 @@ export function PracticeAnswerInput(props: PracticeAnswerInputProps): ReactEleme
                                                 <span
                                                     data-spelling-cursor-active={active}
                                                     className={
-                                                        layout.split
+                                                        inline && props.borderStyle === 'dashed'
                                                             ? active
-                                                                ? 'pointer-events-none absolute -bottom-[6px] left-0 h-1 w-full bg-practice-answer'
-                                                                : 'pointer-events-none absolute -bottom-[6px] left-0 h-1 w-full bg-practice-text/50'
-                                                            : active
-                                                              ? 'pointer-events-none absolute -bottom-[6px] left-[10%] h-1 w-[80%] rounded-[2px] bg-practice-answer'
-                                                              : 'pointer-events-none absolute -bottom-[6px] left-[10%] h-1 w-[80%] rounded-[2px] bg-practice-text/50'
+                                                                ? 'pointer-events-none absolute -bottom-[6px] left-0 h-1 w-full border-t-4 border-dashed border-practice-answer'
+                                                                : 'pointer-events-none absolute -bottom-[6px] left-0 h-1 w-full border-t-4 border-dashed border-practice-text/50'
+                                                            : layout.split
+                                                              ? active
+                                                                  ? 'pointer-events-none absolute -bottom-[6px] left-0 h-1 w-full bg-practice-answer'
+                                                                  : 'pointer-events-none absolute -bottom-[6px] left-0 h-1 w-full bg-practice-text/50'
+                                                              : active
+                                                                ? 'pointer-events-none absolute -bottom-[6px] left-[10%] h-1 w-[80%] rounded-[2px] bg-practice-answer'
+                                                                : 'pointer-events-none absolute -bottom-[6px] left-[10%] h-1 w-[80%] rounded-[2px] bg-practice-text/50'
                                                     }
                                                 />
                                             </button>

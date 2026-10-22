@@ -93,9 +93,11 @@ export function PracticeModeToolbar<TRow extends ModeToolbarRow>({
                                 onChange={(checked): void => {
                                     onValueChange(row, checked)
                                     onNotice(
-                                        row === 'split'
-                                            ? '句子显示方式已选择，拆分题面待后续精修。'
-                                            : '输入方式已选择，抄写题面待后续精修。',
+                                        family === 'audio' && row === 'copy'
+                                            ? ''
+                                            : row === 'split'
+                                              ? '句子显示方式已选择，拆分题面待后续精修。'
+                                              : '输入方式已选择，抄写题面待后续精修。',
                                     )
                                 }}
                             />

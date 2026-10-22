@@ -26,6 +26,7 @@ interface KeyFaceProps {
 function hasKeyLabel(code: string): boolean {
     return (
         code.startsWith('Key') ||
+        code === 'Backspace' ||
         code === 'CapsLock' ||
         code === 'Space' ||
         code === 'Minus' ||
@@ -163,7 +164,7 @@ function KeyLabel({
                     y={y + height / 2 + 1}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    fontSize={code === 'CapsLock' ? 9 : 12}
+                    fontSize={code === 'CapsLock' || code === 'Backspace' ? 9 : 12}
                     fontWeight={600}
                     className="fill-practice-keyboard-label"
                 >

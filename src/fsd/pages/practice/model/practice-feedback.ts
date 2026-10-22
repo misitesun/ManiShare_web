@@ -28,6 +28,7 @@ export type PracticeFeedbackPreferences = Pick<
 export type PracticeFeedbackKind =
     | 'typing'
     | 'correct'
+    | 'answerReveal'
     | 'incorrect'
     | 'questionChange'
     | 'chapterComplete'
@@ -109,9 +110,10 @@ export function getPracticeFeedbackSoundSelection(
                 volume: values.typingVolume / 100,
             }
         case 'correct':
+        case 'answerReveal':
             return {
                 key: `correct:${values.correctTone}`,
-                label: `答对音效 · ${values.correctTone}`,
+                label: `${kind === 'answerReveal' ? '答案出现提示音' : '答对音效'} · ${values.correctTone}`,
                 enabled: values.correctSound,
                 volume: values.correctVolume / 100,
             }
@@ -315,6 +317,7 @@ export function getPracticeFeedbackAnimation(
     event: PracticeFeedbackEvent,
 ): PracticeAnimationKind | null {
     if (event.kind === 'chapterComplete') return values.completionEffect ? 'chapter-complete' : null
-    if (event.kind !== 'correct' || !values.correctEffect) return null
+    if ((event.kind !== 'correct' && event.kind !== 'answerReveal') || !values.correctEffect)
+        return null
     return resolveCorrectAnimationId(values.correctEffectType)
 }

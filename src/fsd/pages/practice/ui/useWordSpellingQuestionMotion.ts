@@ -39,7 +39,7 @@ export function useWordSpellingQuestionMotion(
             const incoming = incomingRef.current
             const outgoing = outgoingRef.current
             if (!root || !rotor || !incoming) return
-            function settle(): void {
+            const settle = (): void => {
                 gsap.set(root, { perspective: 'none' })
                 gsap.set(rotor, { rotationY: 0, transformStyle: 'flat' })
                 gsap.set(incoming, { rotationY: 0, visibility: 'visible' })

@@ -5,6 +5,7 @@ import type { ReactElement } from 'react'
 import { gsap, useGSAP } from '../../../shared/lib/animation'
 import { TldProgressBar } from '../../../shared/ui/tld-progress-bar'
 import {
+    createPracticeEntryLoadingCompletion,
     getPracticeEntryLoadingProgress,
     practiceEntryLoadingDurationMs,
 } from '../model/practice-entry-loading'
@@ -23,25 +24,30 @@ export function PracticeLoadingScreen({ onComplete }: PracticeLoadingScreenProps
             const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
             const clock = { elapsed: 0 }
             let active = true
+            const completion = createPracticeEntryLoadingCompletion((): void => {
+                active = false
+                setProgress(100)
+                onComplete()
+            })
             const update = (): void => {
                 if (active)
                     setProgress(motion.matches ? 0 : getPracticeEntryLoadingProgress(clock.elapsed))
             }
             rootRef.current?.focus({ preventScroll: true })
             motion.addEventListener('change', update)
+            // 进入过渡不等待真实数据；动画帧被嵌入浏览器暂停也须按原两秒时长退出。
+            const timeout = window.setTimeout(completion.finish, practiceEntryLoadingDurationMs)
             const animation = gsap.to(clock, {
                 elapsed: practiceEntryLoadingDurationMs,
                 duration: practiceEntryLoadingDurationMs / 1000,
                 ease: 'none',
                 onUpdate: update,
-                onComplete: (): void => {
-                    if (!active) return
-                    setProgress(100)
-                    onComplete()
-                },
+                onComplete: completion.finish,
             })
             return (): void => {
                 active = false
+                completion.cancel()
+                window.clearTimeout(timeout)
                 motion.removeEventListener('change', update)
                 animation.kill()
             }

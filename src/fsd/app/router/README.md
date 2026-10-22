@@ -1,5 +1,7 @@
 # Client 路由装配
 
+- 听力自动下节（2026-10-21）：`resolvePracticeNextChapterPath`经`pages/awakening`根`getNextAwakeningPracticeChapter`校验当前来源并读取紧邻章节，再经`pages/practice`根解析下一演示／模式；缺失、非法、不匹配或末章返回null。只更新既有`demo/mode/sourceChapter`查询并保留课程来源及其他参数，由Client路由给`PracticePage`注入可选`onNextChapter`后执行replace；页面不横向导入课程模块。同类跨章会话key包含来源scope，旧题号／媒体释放；不新增静态路由、后台题库、权限或请求。定向回归已补未运行，本轮仅格式与静态diff检查，实际导航由用户验收。
+
 - 练习退出通过`PracticePageRoute`注入`onExit`，`resolvePracticeExitPath`分别返回既有首页或来源课程路径；来源继续经`resolvePracticeBackPath`白名单校验，缺失/非法时回`/awakening/`。页面在退场完成后发出目的地意图，app负责Client push。不新增URL参数、路由集合或后台请求。
 
 - 职责：每个路由单独装配页面、路径回调与局部 Suspense；共享 App Shell 与 Provider。

@@ -3,6 +3,7 @@
 import { useId, useRef } from 'react'
 import type { ReactElement } from 'react'
 import type { PracticeQuestion } from '../model/practice-demo'
+import type { WordCardExample } from '../model/word-card-analysis'
 import type { WordPhoneticMode } from '../model/word-phonetics'
 import { getWordCardOutlineRadius } from '../model/word-card-outline'
 import wordAsset from '../assets/word-woman-e23d5f.png'
@@ -35,7 +36,7 @@ export interface WordPronunciationCardProps {
     analysisOpen?: boolean
     onAnalysis: () => void
     onAnalysisClose: () => void
-    onExamplePlay: () => void
+    onExamplePlay: (example: WordCardExample) => void
     onAdd: () => void
     displayFontSize?: number | undefined
     disabled?: boolean
@@ -148,7 +149,7 @@ function WordPronunciationCardFront({
                     {showImage && (
                         <div
                             data-practice-reading-surface
-                            className="relative overflow-hidden rounded-t-[20px]"
+                            className="relative aspect-video w-full overflow-hidden rounded-t-[20px]"
                         >
                             <img
                                 data-practice-media
@@ -157,7 +158,7 @@ function WordPronunciationCardFront({
                                 width={500}
                                 height={281}
                                 draggable={false}
-                                className="block aspect-[500/281] h-auto w-full rounded-t-[20px] object-fill"
+                                className="absolute inset-0 block h-full w-full object-cover"
                             />
                             <PracticeReadingOverlay reading={reading} />
                         </div>
@@ -203,7 +204,7 @@ function WordPronunciationCardFront({
                                         : 'm-0 max-w-full break-words text-center text-[18px] font-normal leading-[normal] text-practice-muted'
                                 }
                             >
-                                <span className={hideTranslation ? 'invisible' : undefined}>
+                                <span className={hideTranslation ? 'invisible' : ''}>
                                     {question.translation}
                                 </span>
                             </p>

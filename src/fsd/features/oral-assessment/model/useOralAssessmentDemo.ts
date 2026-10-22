@@ -14,6 +14,9 @@ export interface OralAssessmentDemoController extends OralAssessmentDemoState {
     readonly reset: () => void
     readonly pause: () => void
     readonly replay: () => void
+    readonly replayAudio?: boolean
+    readonly replayPending?: boolean
+    readonly replayError?: boolean
 }
 
 function getServerSnapshot(): OralAssessmentDemoState {
@@ -45,5 +48,8 @@ export function useOralAssessmentDemo(
         reset: store.reset,
         pause: store.pause,
         replay: store.replay,
+        replayAudio: options.playback !== undefined,
+        replayPending: options.playback?.status === 'pending',
+        replayError: options.playback?.status === 'error',
     }
 }

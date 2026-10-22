@@ -1,7 +1,9 @@
 import type { ShortcutPreferences } from '../../../features/learning-settings'
+import { isSentenceGameFamily } from './sentence-game-family'
 import type { PracticeCommand } from './practice-command-types'
 import { getPracticeCommandBindings } from './practice-bindings'
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
+import type { WordMeaningState } from './word-meaning'
 
 export type PracticeFooterPreferences = ShortcutPreferences
 
@@ -16,6 +18,7 @@ export interface PracticeFooterContext {
     readonly values: PracticeFooterPreferences
     readonly oralStage?: PracticeFooterOralStage
     readonly panelVisible?: boolean
+    readonly wordMeaning?: WordMeaningState
 }
 
 export interface PracticeFooterItem {
@@ -127,7 +130,7 @@ const layouts: Readonly<
         ],
         meaning: [
             'previous',
-            'input',
+            'primary',
             'mastered',
             'read',
             'panel',
@@ -225,6 +228,23 @@ function finished(context: PracticeFooterContext): boolean {
 }
 
 function primaryItems(context: PracticeFooterContext): readonly PracticeFooterItem[] {
+    if (
+        context.family === 'word' &&
+        context.mode === 'meaning' &&
+        context.wordMeaning?.variant === 'context'
+    )
+        return [
+            {
+                ...action(
+                    'primary',
+                    context.wordMeaning.translationVisible ? '下一题' : '显示中文',
+                    'practice.contextual',
+                    context,
+                    'primary',
+                ),
+                shortcuts: bindings(context, 'practice.contextual', 'practice.primary'),
+            },
+        ]
     if (context.mode === 'oral') {
         const stage = context.oralStage ?? 'idle'
         if (stage === 'result')
@@ -278,7 +298,10 @@ function primaryItems(context: PracticeFooterContext): readonly PracticeFooterIt
         {
             ...item,
             shortcuts:
-                next || reveal || (context.family === 'word' && context.mode === 'spell')
+                next ||
+                reveal ||
+                (context.family === 'word' &&
+                    (context.mode === 'spell' || context.mode === 'meaning'))
                     ? bindings(context, 'practice.primary', 'practice.contextual')
                     : item.shortcuts,
         },
@@ -332,7 +355,18 @@ function slotItems(
         case 'input':
             return finished(context)
                 ? []
-                : [{ id: 'input', label: '跳格', shortcuts: ['← / →'], kind: 'hint', size: 'hint' }]
+                : [
+                      {
+                          id: 'input',
+                          label: '跳格',
+                          shortcuts:
+                              isSentenceGameFamily(context.family) && context.mode === 'translate'
+                                  ? ['Space', '← / →']
+                                  : ['← / →'],
+                          kind: 'hint',
+                          size: 'hint',
+                      },
+                  ]
         case 'panel':
             return supportsPracticePanel(context.family, context.mode)
                 ? [
@@ -372,5 +406,11 @@ function slotItems(
 }
 
 export function getPracticeFooter(context: PracticeFooterContext): readonly PracticeFooterItem[] {
-    return (layouts[context.family][context.mode] ?? []).flatMap((slot) => slotItems(slot, context))
+    const slots: readonly FooterSlot[] =
+        context.family === 'word' &&
+        context.mode === 'meaning' &&
+        context.wordMeaning?.variant === 'context'
+            ? ['previous', 'mastered', 'read', 'primary', 'unfamiliar', 'navigation', 'next']
+            : (layouts[context.family][context.mode] ?? [])
+    return slots.flatMap((slot) => slotItems(slot, context))
 }

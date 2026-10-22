@@ -84,8 +84,12 @@ test('句子答错仍使用各模式编辑布局，不进入揭晓解析', (): v
         assert.equal(incorrect.annotationTop, null)
     }
     const translate = renderSentence('translate', 'incorrect')
-    assert.match(translate, /<input/)
-    assert.match(translate, /value="Keep my draft"/)
+    assert.equal((translate.match(/<input\b/g) ?? []).length, 1)
+    assert.deepEqual(
+        Array.from(translate.matchAll(/data-sentence-slot-value="([^"]*)"/g), (match) => match[1]),
+        ['Keep', 'my', 'draft', ''],
+    )
+    assert.match(translate, /<input\b[^>]*value="my"/)
     assert.doesNotMatch(translate, /aria-label="逐词解析"/)
     const blocks = renderSentence('blocks', 'incorrect')
     assert.match(blocks, /aria-label="撤回 read"/)
@@ -115,9 +119,22 @@ test('理解自查未揭晓时只有英文题面与揭晓入口，不预先显�
         assert.equal(reference.translationTop, null)
         const markup = renderSentence('check', phase)
         assert.match(markup, /data-practice-english/)
-        assert.match(markup, />显示答案<\/button>/)
+        assert.match(markup, />空格显示答案<\/button>/)
         assert.doesNotMatch(markup, /data-practice-translation/)
         assert.doesNotMatch(markup, /<input/)
     }
     assert.match(renderSentence('check', 'revealed'), /data-practice-translation/)
+})
+
+test('音频听力使用独立设计节点并复用句子听力几何，不更改单词和句子默认入口', (): void => {
+    const sentence = getSentenceListeningReference()
+    const audio = getSentenceListeningReference('audio')
+    assert.equal(sentence.node, '546:33602')
+    assert.equal(audio.node, '546:37454')
+    assert.deepEqual({ ...audio, node: sentence.node }, sentence)
+    const common = getPracticeReference('audio', 'listen', 'answering')
+    assert.equal(common.node, audio.node)
+    assert.equal(common.top + 75, audio.media.y)
+    assert.equal(common.mediaWidth, audio.media.width)
+    assert.equal(common.mediaHeight, audio.media.height)
 })

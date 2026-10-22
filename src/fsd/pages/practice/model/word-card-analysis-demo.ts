@@ -4,6 +4,7 @@ import type { WordCardExample } from './word-card-analysis'
 function example(id: string, english: string, translation: string): WordCardExample {
     return {
         id,
+        readingSource: `/practice-demo/word-reading/examples/${id}.wav`,
         english: parseDemoWordExample(english),
         translation: parseDemoWordExample(translation),
     }

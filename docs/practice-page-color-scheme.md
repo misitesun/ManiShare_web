@@ -1,5 +1,7 @@
 # 练习页配色方案
 
+2026-10-21句子听力样例：`PracticeToken.syntax`增加实际使用的`adverbial`，显示“状语”；配色资料没有给出该分类的已确认颜色，暂消费既有中性色，不新增或猜测主题token。首题`together`不沿旧设计误标为谓语，其他分类及消费者保持原配色。本轮未运行配色视觉验收。
+
 更新日期：2026-10-15。来源：用户本轮提供的词性 / 句子成分配色表图片。本文是练习内容配色规范；第一版已将实际fixture使用的8项词性/成分色纳入语义token，其余仍待数据覆盖；页面结构与当前静态 UI 范围见 [练习页开发文档](practice-page-development.md)。
 
 ## 1. 使用范围和边界
@@ -99,6 +101,8 @@
 
 ## 8. 沉浸听力公共变体（2026-10-19）
 
+2026-10-22句子听力修正：该题面设计无英文后的成分色填充，由`SentenceListeningExercise`显式关闭`AnnotatedText.listeningGrammarFill`。只移除句子family的填充层与填充边框，不改3px划线、成分文字、词性标签或全局偏好；音频family复用该变体时仍按`showGrammarFill`／`grammarBrightness`显示。阅读及默认消费者保持原行为。已按用户确认同步到本地main，未做视觉或运行验收。
+
 AnnotatedText的sentence-listening变体将既有四项词性色用作标签背景，标签文字由practice-pos-label固定黑字语义token提供；默认消费者仍按原方案显示。成分文字与独立3px划线保留各自基准色，未知成分保持中性待核对；仅单独填充节点按现有brightness/10示范方式调整透明度，关闭填充不移除划线。此轮没有扩充未定分类或更改原表色值。
 
 ## 9. 单词音标展示（2026-10-20）
@@ -113,3 +117,10 @@ AnnotatedText的sentence-listening变体将既有四项词性色用作标签背�
 - 拼写逐字输入：已输入字母与活动4px横线使用`practice-answer`，提交后的错位字母使用既有`danger`，未输入抄写提示和非活动线分别使用`practice-muted`与`practice-text/50`；默写仅隐藏未输入字形，几何保留。点击分段音标后的900ms对应片段底色由`practice-control-accent/25`提供，沿本产品绿色，不照搬哇学社蓝色。音标原静态分块底色保持`practice-phoneme`；不新增主题token或组件硬编码颜色。
 
 本轮只接展示与模拟分组；音标课程的目标音／错误／成功高亮仍使用其独立语义色，不受此次普通分块变更覆盖。按用户要求未运行测试、构建或PC视觉验收；平板／H5视觉及真机待用户验收。
+
+
+## 2026-10-22 口语评分专用四档
+
+`features/oral-assessment`页面和弹窗统一消费`oral-score-low/good/excellent/perfect`：dark为#FF4A4A／#FF984A／#4AB1FF／#00E175，light为#D83D49／#9A5B18／#246AA8／#078F64。低档指标条另用`oral-score-low-meter`（dark #E32129，light #C51E30）；评分卡配套surface、track、ring、glow和shadow语义。只影响评测，不改变全局danger／accent／success及用户正文、答题颜色。
+
+总分环、等级强调与三指标条沿总分档位，逐词数值／下划线沿各词分数。0–60、>60–80、>80–90、>90–100的边界和显示文案统一由feature模型决定；保留原机器等级映射现有提示音。深浅主题与PC／平板／H5实际视觉均未运行验收，不能据静态token声明配色已通过。

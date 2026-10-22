@@ -1,4 +1,8 @@
-import { getAwakeningCourseParams, isAwakeningPracticeSource } from '../../pages/awakening'
+import {
+    getAwakeningCourseParams,
+    isAwakeningPracticeSource,
+    getNextAwakeningPracticeChapter,
+} from '../../pages/awakening'
 import { resolvePracticeView } from '../../pages/practice'
 import type { PracticeExitDestination } from '../../pages/practice'
 import { awakeningCoursePath, routePaths } from '../config/routes'
@@ -41,6 +45,22 @@ export function resolvePracticeDraftScope(
         isAwakeningPracticeSource(sourceCourse, sourceChapter, demoId)
         ? `${sourceCourse}:${sourceChapter}`
         : `demo:${demoId}`
+}
+
+/** 独立演示、非法来源或课程末章均不提供自动下节入口。 */
+export function resolvePracticeNextChapterPath(search: string): string | null {
+    const query = new URLSearchParams(search)
+    const courseId = query.get('sourceCourse')
+    const chapterId = query.get('sourceChapter')
+    const current = resolvePracticeView(query.get('demo'), query.get('mode'))
+    if (courseId === null || chapterId === null || current.kind !== 'demo') return null
+    const next = getNextAwakeningPracticeChapter(courseId, chapterId, current.view.demo.id)
+    if (next === null || resolvePracticeView(next.demoId, next.defaultMode).kind !== 'demo')
+        return null
+    query.set('demo', next.demoId)
+    query.set('mode', next.defaultMode)
+    query.set('sourceChapter', next.chapterId)
+    return routePaths.practice + '?' + query.toString()
 }
 
 export function resolvePracticeBackPath(sourceCourse: string | null): string {

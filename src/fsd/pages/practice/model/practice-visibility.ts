@@ -1,7 +1,12 @@
 import type { PracticeFamily, PracticeMode, PracticePhase } from './practice-demo'
+import type { WordMeaningVariant } from './word-meaning'
 
 /** 仅真实文本作答模式；词块、纯展示和笔记编辑不属于此输入契约。 */
-export function hasPracticeAnswerInput(mode: PracticeMode): boolean {
+export function hasPracticeAnswerInput(
+    mode: PracticeMode,
+    wordMeaningVariant?: WordMeaningVariant,
+): boolean {
+    if (mode === 'meaning' && wordMeaningVariant === 'context') return false
     return ['spell', 'dictate', 'translate', 'meaning', 'guess', 'typing'].includes(mode)
 }
 
@@ -17,9 +22,12 @@ export function canShowQuickOral(
     phase: PracticePhase,
     hasTarget: boolean,
     enabled: boolean,
+    wordMeaningVariant?: WordMeaningVariant,
 ): boolean {
     if (!enabled || !hasTarget || mode === 'oral' || family.endsWith('-reader')) return false
     if (family === 'word' && mode === 'pronounce') return false
+    if (family === 'word' && mode === 'meaning')
+        return wordMeaningVariant === 'context' || phase === 'correct'
     if (mode === 'spell' || mode === 'dictate' || mode === 'typing') return phase === 'correct'
     if (mode === 'pronounce' || mode === 'listen' || mode === 'read') return true
     return isPracticeAnswerVisible(phase)
