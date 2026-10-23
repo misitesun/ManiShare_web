@@ -10,3 +10,5 @@
 - 验证：geometry.test.ts 覆盖网格、滚动、边框及小数尺寸；test/lint/build；PC 回归导师、场景、榜单周期与指标，平板/H5 待用户验收。
 
 `tone="practice-outline"` 是练习控件的显式轮廓变体：1px的practice-control-accent边框、固定4px圆角、透明内部，不渲染outline原有的品牌渐变和canvas内层；原outline及其他tone的默认外观保持不变，不新增shape API。它只绘制唯一选中轮廓，不拥有练习模式或选项状态。调用方保留按钮透明边框和真实尺寸，以data-highlight-key匹配已提交选择，容器使用relative isolate、文字使用relative z-20，轮廓层pointer-events-none/z-10。复用真实DOM测量、200ms滑动及reduced-motion；H5/平板触控尺寸仍由按钮owner负责。SSR测试确认新增tone与原有tone都延后浏览器测量，不在原点绘制占位；PC需核对首次进入/刷新、不同宽度目标间连续切换、文字层级及reduced-motion，平板/H5视觉与真机待用户验收。
+
+`tone="practice-segment"` 为视频播放设置保留灰色选中块的显式变体，使用现有`plan-selected`语义色及10px圆角，不渲染渐变或内层背景；默认tone及既有消费者保持原样。当前消费者仅`pages/practice/ui/VideoPlaybackOptions`，按`motion="rubber"`复用Tab的拉伸／收缩／回弹；鼠标／焦点跟随使用独立`surface`层，不修改已提交的业务值。容器、选项和内容继续遵循上述z-0／10／20规则。无新增主题token、依赖或公共状态；按用户要求只格式化与静态差异核对，未执行测试或视觉／设备验收，实际效果待用户确认。

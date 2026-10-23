@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import type { CSSProperties, ReactElement } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { getSentenceGameLabel } from '../model/sentence-game-family'
 import type { SentenceGameFamily } from '../model/sentence-game-family'
 import type { PracticePhase, PracticeQuestion } from '../model/practice-demo'
@@ -28,7 +28,8 @@ interface SentenceTypingStyle extends CSSProperties {
 }
 
 interface SentenceTypingExerciseProps {
-    readonly family?: SentenceGameFamily
+    readonly family?: SentenceGameFamily | 'video'
+    readonly media?: ReactNode
     readonly question: PracticeQuestion
     readonly phase: PracticePhase
     readonly input: string
@@ -49,6 +50,7 @@ interface SentenceTypingExerciseProps {
 /** 沿用单词指法布局与只读键盘，作答由中译英同一多段输入器持有。 */
 export function SentenceTypingExercise({
     family = 'sentence',
+    media,
     question,
     phase,
     input,
@@ -70,7 +72,8 @@ export function SentenceTypingExercise({
     const [keyboardInput, setKeyboardInput] = useState(() =>
         getSentenceAnswerEditingSnapshot(layout, createSentenceAnswerState(layout, input)),
     )
-    const reference = getPracticeReference('word', 'typing', phase)
+    const reference = getPracticeReference(family === 'video' ? 'video' : 'word', 'typing', phase)
+    const mediaVisible = media !== undefined || imageVisible
     const editable = phase === 'answering' || phase === 'incorrect'
     const style: SentenceTypingStyle = {
         '--sentence-typing-top': `${reference.top}px`,
@@ -82,12 +85,15 @@ export function SentenceTypingExercise({
         <article
             data-practice-typing-family={family}
             data-audio-typing-exercise={family === 'audio' || undefined}
+            data-video-typing-exercise={family === 'video' || undefined}
             data-sentence-typing-exercise
-            data-reference-layout="word:typing"
+            data-reference-layout={family === 'video' ? 'video:typing' : 'word:typing'}
             style={style}
             className="relative w-full min-w-0 shrink-0 px-4 pt-16 design:pt-[var(--sentence-typing-top)]"
         >
-            {imageVisible && (
+            {media !== undefined ? (
+                <div className="mx-auto flex w-full max-w-[600px] justify-center">{media}</div>
+            ) : imageVisible ? (
                 <div
                     data-practice-reading-surface
                     className="relative mx-auto aspect-video w-full max-w-[430px] overflow-hidden rounded-[20px]"
@@ -102,12 +108,12 @@ export function SentenceTypingExercise({
                     />
                     <PracticeReadingOverlay reading={reading} />
                 </div>
-            )}
+            ) : null}
             <div
                 data-sentence-typing-answer
                 style={displayFontSize === undefined ? undefined : { fontSize: displayFontSize }}
                 className={
-                    imageVisible
+                    mediaVisible
                         ? 'mx-auto mt-[var(--sentence-typing-text-gap)] flex min-h-[56px] w-full max-w-[848px] min-w-0 items-center justify-center text-[28px] font-medium leading-none tracking-[0.06em] md:text-[34px] design:text-[40px] [&_[data-sentence-word-hint]]:blur-[3px]'
                         : 'mx-auto flex min-h-[56px] w-full max-w-[848px] min-w-0 items-center justify-center text-[28px] font-medium leading-none tracking-[0.06em] md:text-[34px] design:text-[40px] [&_[data-sentence-word-hint]]:blur-[3px]'
                 }

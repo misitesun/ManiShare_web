@@ -28,7 +28,7 @@ interface BlockStyle extends CSSProperties {
 }
 
 export interface SentenceExerciseProps {
-    readonly family?: SentenceGameFamily
+    readonly family?: SentenceGameFamily | 'video'
     readonly question: PracticeQuestion
     readonly mode: SentenceExerciseMode
     readonly session: PracticeSession
@@ -45,6 +45,8 @@ export interface SentenceExerciseProps {
     readonly onBlock: (id: string) => void
     readonly onReveal: () => void
     readonly reading?: PracticeReadingView | undefined
+    readonly checkMedia?: ReactNode
+    readonly translationMedia?: ReactNode
 }
 
 interface SentenceSlotProps {
@@ -162,6 +164,7 @@ interface SentenceTranslationExerciseProps extends Pick<
     | 'onSentenceSubmit'
     | 'onAnswerController'
     | 'reading'
+    | 'translationMedia'
 > {
     readonly exactLayout: boolean
 }
@@ -181,6 +184,7 @@ function SentenceTranslationExercise({
     onSentenceSubmit,
     onAnswerController,
     reading,
+    translationMedia,
     exactLayout,
 }: SentenceTranslationExerciseProps): ReactElement {
     const appearance = getPreviewAppearance(values)
@@ -188,30 +192,34 @@ function SentenceTranslationExercise({
         <section
             aria-label={`${getSentenceGameLabel(family)}练习`}
             data-practice-sentence-family={family}
-            data-reference-node="546:33717"
+            data-video-translation-exercise={family === 'video' || undefined}
+            data-reference-node={family === 'video' ? undefined : '546:33717'}
             className={
-                exactLayout
-                    ? 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[261px]'
-                    : 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6'
+                family === 'video'
+                    ? 'relative mx-auto flex w-full min-w-0 shrink-0 flex-col items-center px-4 pb-12 pt-10 md:px-6 md:pt-12 design:pt-[85px]'
+                    : exactLayout
+                      ? 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[261px]'
+                      : 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6'
             }
         >
-            {imageVisible && (
-                <div className="w-full max-w-[430px]">
-                    <div
-                        data-practice-reading-surface
-                        className="relative overflow-hidden rounded-[20px]"
-                    >
-                        <img
-                            data-practice-media
-                            src={sentenceAsset.src}
-                            alt={`${getSentenceGameLabel(family)}练习示例插图`}
-                            className="block h-auto w-full rounded-[20px] object-cover"
-                            style={{ aspectRatio: '430 / 242' }}
-                        />
-                        <PracticeReadingOverlay reading={reading} />
+            {translationMedia ??
+                (imageVisible && (
+                    <div className="w-full max-w-[430px]">
+                        <div
+                            data-practice-reading-surface
+                            className="relative overflow-hidden rounded-[20px]"
+                        >
+                            <img
+                                data-practice-media
+                                src={sentenceAsset.src}
+                                alt={`${getSentenceGameLabel(family)}练习示例插图`}
+                                className="block h-auto w-full rounded-[20px] object-cover"
+                                style={{ aspectRatio: '430 / 242' }}
+                            />
+                            <PracticeReadingOverlay reading={reading} />
+                        </div>
                     </div>
-                </div>
-            )}
+                ))}
             {(translationVisible ?? true) && (
                 <p
                     data-practice-translation
@@ -253,7 +261,14 @@ function SentenceTranslationExercise({
 
 type SentenceCheckExerciseProps = Pick<
     SentenceExerciseProps,
-    'family' | 'question' | 'values' | 'imageVisible' | 'blocked' | 'onReveal' | 'reading'
+    | 'family'
+    | 'question'
+    | 'values'
+    | 'imageVisible'
+    | 'blocked'
+    | 'onReveal'
+    | 'reading'
+    | 'checkMedia'
 >
 
 /** 自查题面自然向下排布；揭晓后由PracticeContent复用完整听力题面。 */
@@ -265,38 +280,43 @@ function SentenceCheckExercise({
     blocked,
     onReveal,
     reading,
+    checkMedia,
 }: SentenceCheckExerciseProps): ReactElement {
     const appearance = getPreviewAppearance(values)
-    const referenceLayout = imageVisible && values.fontSize === '默认'
+    const videoMedia = checkMedia !== undefined
+    const referenceLayout = (imageVisible || videoMedia) && values.fontSize === '默认'
     const words = question.english.trim().split(/\s+/)
     return (
         <section
             aria-label={`${getSentenceGameLabel(family)}理解自查`}
             data-practice-check-family={family}
             data-sentence-check-prompt
-            data-reference-node="546:33970"
+            data-reference-node={videoMedia ? undefined : '546:33970'}
             className={
                 referenceLayout
-                    ? 'relative mx-auto flex w-full min-w-0 flex-1 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[170px]'
+                    ? videoMedia
+                        ? 'relative mx-auto flex w-full min-w-0 flex-1 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[105px]'
+                        : 'relative mx-auto flex w-full min-w-0 flex-1 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[170px]'
                     : 'relative mx-auto flex w-full min-w-0 flex-1 flex-col items-center px-4 pb-12 pt-16 md:px-6'
             }
         >
-            {imageVisible && (
-                <div
-                    data-practice-reading-surface
-                    className="relative w-full max-w-[430px] overflow-hidden rounded-[20px]"
-                >
-                    <img
-                        data-practice-media
-                        src={sentenceAsset.src}
-                        alt={`${getSentenceGameLabel(family)}练习共用示意插图`}
-                        width={430}
-                        height={242}
-                        className="block aspect-[430/242] h-auto w-full object-cover"
-                    />
-                    <PracticeReadingOverlay reading={reading} />
-                </div>
-            )}
+            {checkMedia ??
+                (imageVisible && (
+                    <div
+                        data-practice-reading-surface
+                        className="relative w-full max-w-[430px] overflow-hidden rounded-[20px]"
+                    >
+                        <img
+                            data-practice-media
+                            src={sentenceAsset.src}
+                            alt={`${getSentenceGameLabel(family)}练习共用示意插图`}
+                            width={430}
+                            height={242}
+                            className="block aspect-[430/242] h-auto w-full object-cover"
+                        />
+                        <PracticeReadingOverlay reading={reading} />
+                    </div>
+                ))}
             <p
                 data-practice-english
                 data-sentence-check-english
@@ -306,9 +326,11 @@ function SentenceCheckExercise({
                         : { fontSize: appearance.fontSize, lineHeight: 1.4 }
                 }
                 className={
-                    imageVisible
-                        ? 'mt-8 flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:mt-10 md:gap-x-5 md:text-[34px] design:mt-[45px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
-                        : 'flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:gap-x-5 md:text-[34px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
+                    videoMedia
+                        ? 'mt-8 flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:mt-10 md:gap-x-5 md:text-[34px] design:mt-[109px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
+                        : imageVisible
+                          ? 'mt-8 flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:mt-10 md:gap-x-5 md:text-[34px] design:mt-[45px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
+                          : 'flex max-w-[900px] flex-wrap justify-center gap-x-4 gap-y-2 break-words text-center text-[28px] font-medium leading-[1.4] text-practice-answer md:gap-x-5 md:text-[34px] design:gap-x-[24px] design:text-[40px] design:leading-[56px]'
                 }
             >
                 {words.map((word, index) => (
@@ -350,12 +372,17 @@ export function SentenceExercise({
     onBlock,
     onReveal,
     reading,
+    checkMedia,
+    translationMedia,
 }: SentenceExerciseProps): ReactElement {
     const appearance = getPreviewAppearance(values)
     const reference = getSentenceExerciseReference(mode, session.phase)
     const answerVisible = isPracticeAnswerVisible(session.phase)
     const exactLayout =
-        imageVisible && values.fontSize === '默认' && values.grammarFontSize === '默认'
+        family !== 'video' &&
+        imageVisible &&
+        values.fontSize === '默认' &&
+        values.grammarFontSize === '默认'
     if (mode === 'check' && !answerVisible)
         return (
             <SentenceCheckExercise
@@ -366,6 +393,7 @@ export function SentenceExercise({
                 blocked={blocked}
                 onReveal={onReveal}
                 reading={reading}
+                checkMedia={checkMedia}
             />
         )
     if (mode === 'translate' && !answerVisible)
@@ -384,6 +412,7 @@ export function SentenceExercise({
                 onSentenceSubmit={onSentenceSubmit}
                 onAnswerController={onAnswerController}
                 reading={reading}
+                translationMedia={translationMedia}
                 exactLayout={exactLayout}
             />
         )

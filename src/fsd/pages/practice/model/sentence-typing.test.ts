@@ -25,6 +25,17 @@ test('句子与音频指法各自共用所属题库的十题音源，单词题�
     }
 })
 
+test('视频指法共用同一视频的十条记录，不附加逐句独立音源', (): void => {
+    const questions = getDemoQuestions('video', 'typing')
+    assert.equal(questions.length, 10)
+    assert.deepEqual(questions, getDemoQuestions('video', 'listen'))
+    assert.deepEqual(questions, getDemoQuestions('video', 'check'))
+    for (const question of questions) {
+        assert.ok(question.id.startsWith('video:'))
+        assert.equal(question.readingSource, undefined)
+    }
+})
+
 test('句子指法仅完整分段提交计数，纠错正确去重，切题保留统计而重练清零', (): void => {
     const submission = {
         type: 'submit-sentence-typing',

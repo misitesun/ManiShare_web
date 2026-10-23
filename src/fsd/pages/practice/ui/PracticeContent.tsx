@@ -53,6 +53,8 @@ import type { WordCardNavigation, WordPronunciationDeckController } from '../mod
 import { WordAnswerCard } from './WordAnswerCard'
 import { PracticeWordPhonetics } from './PracticeWordPhonetics'
 import { SentenceExercise } from './SentenceExercise'
+import { VideoExerciseCover } from './VideoExerciseCover'
+import type { VideoListeningPlayback } from '../model/video-listening-playback'
 import { isSentenceGameFamily } from '../model/sentence-game-family'
 import { SentenceBlocksExercise } from './SentenceBlocksExercise'
 import type { SentenceBlockEdit } from '../model/sentence-blocks'
@@ -121,6 +123,7 @@ export interface PracticeContentProps {
     readonly onReadAloud?: () => void
     readonly onExampleReadAloud?: ((example: WordCardExample) => void) | undefined
     readonly reading?: PracticeReadingView | undefined
+    readonly videoExercisePlayback?: VideoListeningPlayback | undefined
     readonly questions?: readonly PracticeQuestion[]
     readonly cardBusy?: boolean
     readonly isCardBlocked?: () => boolean
@@ -179,6 +182,7 @@ export function PracticeContent({
     onReadAloud,
     onExampleReadAloud,
     reading,
+    videoExercisePlayback,
     questions,
     cardBusy = false,
     isCardBlocked = cardNotBlocked,
@@ -194,6 +198,40 @@ export function PracticeContent({
     const appearance = getPreviewAppearance(values)
     const localOptions = demo.family === 'word' ? wordOptions : undefined
     const sentenceGameFamily = isSentenceGameFamily(demo.family) ? demo.family : undefined
+    const isVideoCheck = demo.family === 'video' && mode === 'check'
+    const isVideoTyping = demo.family === 'video' && mode === 'typing'
+    const isVideoOral = demo.family === 'video' && mode === 'oral'
+    const isVideoBlocks = demo.family === 'video' && mode === 'blocks'
+    const isVideoTranslation = demo.family === 'video' && mode === 'translate'
+    const typingFamily = isVideoTyping ? 'video' : sentenceGameFamily
+    const blocksFamily = isVideoBlocks ? 'video' : sentenceGameFamily
+    const videoExerciseMedia =
+        videoExercisePlayback &&
+        (isVideoCheck || isVideoTyping || isVideoOral || isVideoBlocks || isVideoTranslation) ? (
+            <VideoExerciseCover
+                controller={videoExercisePlayback}
+                mode={
+                    isVideoTranslation
+                        ? 'translate'
+                        : isVideoBlocks
+                          ? 'blocks'
+                          : isVideoOral
+                            ? 'oral'
+                            : isVideoTyping
+                              ? 'typing'
+                              : 'check'
+                }
+                blocked={
+                    blocked ||
+                    (isVideoOral &&
+                        (oralAssessmentController?.stage === 'recording' ||
+                            oralAssessmentController?.stage === 'evaluating'))
+                }
+                maskSubtitles={values.maskSubtitles}
+                onToggle={onReadAloud ?? videoExercisePlayback.toggle}
+            />
+        ) : undefined
+    const checkFamily = isVideoCheck || isVideoTranslation ? 'video' : sentenceGameFamily
     const sentenceGameOptions = demo.family === 'audio' ? audioOptions : sentenceOptions
     const sentenceTranslation =
         demo.family === 'sentence' && sentenceOptions && isSentenceToolbarMode(mode)
@@ -222,14 +260,11 @@ export function PracticeContent({
             : undefined
     const inputMode = hasPracticeAnswerInput(mode)
     const answerVisible = isPracticeAnswerVisible(session.phase)
-    const annotated =
-        mode === 'listen' ||
-        (answerVisible &&
-            !(
-                demo.family === 'video' &&
-                mode === 'blocks' &&
-                additionalOptions?.sentenceAnalysisVisible === false
-            ))
+    const hideAnswerCover =
+        answerVisible &&
+        ((checkFamily !== undefined && (mode === 'check' || mode === 'translate')) ||
+            (blocksFamily !== undefined && mode === 'blocks'))
+    const annotated = mode === 'listen' || answerVisible
     const showEnglish =
         !reader && (mode === 'typing' || !(inputMode || mode === 'blocks') || answerVisible)
     const mediaIsVideo = demo.family === 'video' || demo.family === 'video-reader'
@@ -246,18 +281,19 @@ export function PracticeContent({
                   : sentenceAsset.src
     const style: ContentStyle = { '--practice-reference-top': `${reference.top}px` }
     if (
-        (demo.family === 'word' || sentenceGameFamily !== undefined) &&
+        (demo.family === 'word' || sentenceGameFamily !== undefined || isVideoOral) &&
         mode === 'oral' &&
         oralAssessmentController &&
         oralAssessmentTarget
     )
         return (
             <WordOralAssessmentExercise
-                family={sentenceGameFamily ?? 'word'}
+                family={isVideoOral ? 'video' : (sentenceGameFamily ?? 'word')}
                 target={oralAssessmentTarget}
                 controller={oralAssessmentController}
-                imageVisible={imageVisible}
-                translationVisible={showTranslation}
+                imageVisible={isVideoOral ? false : imageVisible}
+                {...(isVideoOral ? { media: videoExerciseMedia } : {})}
+                translationVisible={additionalTranslation ?? showTranslation}
                 reading={reading}
                 wave={oralAssessmentWave}
             />
@@ -281,16 +317,21 @@ export function PracticeContent({
                 onPlay={onReadAloud ?? ((): void => onNotice('单词音源未接入，暂不能朗读。'))}
             />
         )
-    if (sentenceGameFamily && mode === 'typing')
+    if (typingFamily && mode === 'typing')
         return (
             <SentenceTypingExercise
-                family={sentenceGameFamily}
+                family={typingFamily}
                 question={question}
                 phase={session.phase}
                 input={session.input}
                 blocked={blocked}
-                imageVisible={imageVisible}
-                copy={sentenceGameOptions?.copy ?? true}
+                imageVisible={isVideoTyping ? false : imageVisible}
+                {...(isVideoTyping ? { media: videoExerciseMedia } : {})}
+                copy={
+                    isVideoTyping
+                        ? (additionalOptions?.copy ?? true)
+                        : (sentenceGameOptions?.copy ?? true)
+                }
                 translationVisible={showTranslation}
                 ignoreCase={values.ignoreCase}
                 borderStyle={appearance.borderStyle}
@@ -325,19 +366,31 @@ export function PracticeContent({
         )
     if (
         ((demo.family === 'sentence' || demo.family === 'audio') && mode === 'listen') ||
-        (sentenceGameFamily !== undefined &&
-            (((mode === 'translate' || mode === 'blocks') && session.phase === 'correct') ||
+        (blocksFamily !== undefined && mode === 'blocks' && answerVisible) ||
+        (checkFamily !== undefined &&
+            ((mode === 'translate' && session.phase === 'correct') ||
                 (mode === 'check' && answerVisible)))
     )
         return (
             <SentenceListeningExercise
-                family={demo.family === 'audio' ? 'audio' : 'sentence'}
+                family={
+                    isVideoCheck || isVideoBlocks || isVideoTranslation
+                        ? 'video'
+                        : demo.family === 'audio'
+                          ? 'audio'
+                          : 'sentence'
+                }
+                annotated={!isVideoBlocks || additionalOptions?.sentenceAnalysisVisible !== false}
                 plainEnglish={mode === 'listen'}
                 blind={listeningBlind}
                 question={question}
                 values={values}
-                imageVisible={imageVisible}
-                translationVisible={showTranslation}
+                imageVisible={imageVisible && !hideAnswerCover}
+                translationVisible={
+                    isVideoCheck || isVideoBlocks || isVideoTranslation
+                        ? (additionalTranslation ?? showTranslation)
+                        : showTranslation
+                }
                 blocked={blocked}
                 reading={reading}
                 onNote={(): void => onNote(question.id)}
@@ -352,35 +405,49 @@ export function PracticeContent({
                 onNote={(): void => onNote(question.id)}
             />
         )
-    if (sentenceGameFamily && mode === 'blocks')
+    if (blocksFamily && mode === 'blocks')
         return (
             <SentenceBlocksExercise
-                family={sentenceGameFamily}
+                family={blocksFamily}
                 question={question}
                 session={session}
                 values={values}
-                imageVisible={imageVisible}
-                translationVisible={showTranslation}
+                imageVisible={isVideoBlocks ? false : imageVisible}
+                {...(isVideoBlocks ? { media: videoExerciseMedia } : {})}
+                translationVisible={additionalTranslation ?? showTranslation}
                 blocked={blocked}
                 onEdit={onSentenceBlockEdit}
                 reading={reading}
             />
         )
-    if (sentenceGameFamily && (mode === 'translate' || mode === 'check'))
+    if (checkFamily && (mode === 'translate' || mode === 'check'))
         return (
             <SentenceExercise
-                family={sentenceGameFamily}
+                family={checkFamily}
                 question={question}
                 mode={mode}
                 session={session}
                 values={values}
-                imageVisible={imageVisible}
-                showWordHint={sentenceGameOptions?.copy ?? true}
-                {...(sentenceTranslation !== undefined || audioTranslation !== undefined
-                    ? { translationVisible: sentenceTranslation ?? audioTranslation }
+                imageVisible={!isVideoTranslation && imageVisible && !hideAnswerCover}
+                showWordHint={
+                    isVideoTranslation
+                        ? (additionalOptions?.copy ?? true)
+                        : (sentenceGameOptions?.copy ?? true)
+                }
+                {...(isVideoTranslation ||
+                sentenceTranslation !== undefined ||
+                audioTranslation !== undefined
+                    ? {
+                          translationVisible:
+                              additionalTranslation ?? sentenceTranslation ?? audioTranslation,
+                      }
                     : {})}
                 blocked={blocked}
                 reading={reading}
+                {...(isVideoCheck ? { checkMedia: videoExerciseMedia } : {})}
+                {...(isVideoTranslation && !answerVisible
+                    ? { translationMedia: videoExerciseMedia }
+                    : {})}
                 onInput={onInput}
                 onSentenceSubmit={onSentenceSubmit}
                 onNavigate={onSentenceNavigate}

@@ -137,25 +137,54 @@ test('全空不提交且末段回首段，非末段空格只跳段', (): void =>
     assert.deepEqual(result.state.values, ['g', '', '', ''])
 })
 
-test('各段已有内容时，非末段空格仍只移动，直到末段才提交', (): void => {
+test('首次各段填齐后，任意活动段按空格均直接提交一次', (): void => {
     const filled = editSentenceAnswerSlot(
         createSentenceAnswerState(layout),
         layout,
         'give me a hand',
     )
-    let current = selectSentenceAnswerSlot(filled, 0)
-    for (const next of [1, 2, 3]) {
+    for (const index of [0, 1, 2, 3]) {
+        const current = selectSentenceAnswerSlot(filled, index)
         const result = spaceSentenceAnswer(current, layout, true)
-        assert.equal(result.submission, null)
-        assert.equal(result.state.attempts, 0)
-        assert.equal(result.state.activeIndex, next)
+        assert.equal(result.state.attempts, 1)
+        assert.equal(result.state.completed, true)
+        assert.equal(result.state.activeIndex, index)
         assert.deepEqual(result.state.values, ['give', 'me', 'a', 'hand'])
-        current = result.state
+        assert.deepEqual(result.submission?.values, ['give', 'me', 'a', 'hand'])
+        const repeated = spaceSentenceAnswer(result.state, layout, true)
+        assert.equal(repeated.submission, null)
+        assert.equal(repeated.state.attempts, 1)
     }
-    const submitted = spaceSentenceAnswer(current, layout, true)
-    assert.equal(submitted.state.attempts, 1)
-    assert.equal(submitted.state.completed, true)
-    assert.deepEqual(submitted.submission?.values, ['give', 'me', 'a', 'hand'])
+})
+
+test('先填后两段再补第一段时，空格直接提交整句，仍按实际文字判断正误', (): void => {
+    const sentence = createSentenceAnswerLayout('he writes stories')
+    for (const firstValue of ['he', 'wrong']) {
+        const second = spaceSentenceAnswer(createSentenceAnswerState(sentence), sentence, true)
+        assert.equal(second.submission, null)
+        assert.equal(second.state.activeIndex, 1)
+        const enteredSecond = editSentenceAnswerSlot(second.state, sentence, 'writes')
+        const third = spaceSentenceAnswer(enteredSecond, sentence, true)
+        assert.equal(third.submission, null)
+        const enteredThird = editSentenceAnswerSlot(third.state, sentence, 'stories')
+        const back = spaceSentenceAnswer(enteredThird, sentence, true)
+        assert.equal(back.submission, null)
+        assert.equal(back.state.activeIndex, 0)
+        assert.equal(back.state.attempts, 0)
+        assert.deepEqual(back.state.values, ['', 'writes', 'stories'])
+        const completed = editSentenceAnswerSlot(back.state, sentence, firstValue)
+        const submitted = spaceSentenceAnswer(completed, sentence, true)
+        assert.deepEqual(submitted.submission?.values, [firstValue, 'writes', 'stories'])
+        assert.equal(submitted.state.activeIndex, 0)
+        assert.equal(submitted.state.attempts, 1)
+        assert.equal(submitted.state.completed, firstValue === 'he')
+        assert.deepEqual(submitted.state.feedback, [
+            firstValue === 'he' ? 'correct' : 'incorrect',
+            'correct',
+            'correct',
+        ])
+        assert.equal(isSentenceAnswerNavigation(completed, submitted), false)
+    }
 })
 
 test('只有后段有输入时，末段空格回到首个空段，不判错或增加提交次数', (): void => {

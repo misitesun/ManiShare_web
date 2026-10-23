@@ -4,6 +4,7 @@ import { getPreviewAppearance } from '../../../features/learning-settings'
 import type { LearningPreferences } from '../../../features/learning-settings'
 import type { PracticeQuestion } from '../model/practice-demo'
 import type { SentenceReadingDisplayOptions } from '../model/sentence-reading-display'
+import type { VideoSubtitleOptions } from '../model/video-listening-playback'
 import { PracticeWordPhonetics } from './PracticeWordPhonetics'
 const posLabels = { pronoun: '代词', verb: '动词', noun: '名词', adverb: '副词' }
 const syntaxLabels = {
@@ -25,6 +26,7 @@ export function AnnotatedText({
     readingDisplay,
     listeningGrammarFill = true,
     listeningEnglishTone = 'answer',
+    videoDisplay,
 }: {
     readonly question: PracticeQuestion
     readonly values: LearningPreferences
@@ -38,6 +40,8 @@ export function AnnotatedText({
         | 'sentence-answer'
         | 'sentence-reading'
         | 'sentence-translate-answer'
+        | 'video-listening'
+    readonly videoDisplay?: VideoSubtitleOptions
     readonly readingDisplay?: SentenceReadingDisplayOptions
     readonly listeningGrammarFill?: boolean
     readonly listeningEnglishTone?: 'answer' | 'foreground'
@@ -47,6 +51,10 @@ export function AnnotatedText({
     const grammarStyle =
         values.grammarFontSize === '默认' ? undefined : { fontSize: appearance.grammarFontSize }
     const sentenceAnswer = variant === 'sentence-answer'
+    if (variant === 'video-listening' && videoDisplay)
+        return (
+            <VideoListeningAnnotation question={question} values={values} display={videoDisplay} />
+        )
     if (variant === 'sentence-translate-answer')
         return (
             <SentenceTranslationAnnotation
@@ -174,6 +182,112 @@ export function AnnotatedText({
                     )}
                     {!sentenceAnswer && (
                         <span className="text-[14px] text-secondary">{token.meaning}</span>
+                    )}
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function VideoListeningAnnotation({
+    question,
+    values,
+    display,
+}: {
+    readonly question: PracticeQuestion
+    readonly values: LearningPreferences
+    readonly display: VideoSubtitleOptions
+}): ReactElement {
+    const appearance = getPreviewAppearance(values)
+    const grammarStyle =
+        values.grammarFontSize === '默认' ? undefined : { fontSize: appearance.grammarFontSize }
+    return (
+        <div
+            data-annotation-variant="video-listening"
+            aria-label="视频逐词解析"
+            className="flex max-w-full flex-wrap justify-center gap-x-6 gap-y-4"
+        >
+            {question.tokens.map((token, index) => (
+                <div key={token.id} className="flex min-w-0 max-w-full flex-col items-center">
+                    {display.phonetics && (
+                        <span className="max-w-full break-words text-[12px] leading-5 text-practice-muted md:text-[14px]">
+                            <PracticeWordPhonetics phonetic={token.phonetic} />
+                        </span>
+                    )}
+                    {display.partOfSpeech && (
+                        <span
+                            className={
+                                token.pos === 'pronoun'
+                                    ? 'mt-[6px] rounded-[4px] bg-practice-pos-pronoun'
+                                    : token.pos === 'verb'
+                                      ? 'mt-[6px] rounded-[4px] bg-practice-pos-verb'
+                                      : token.pos === 'noun'
+                                        ? 'mt-[6px] rounded-[4px] bg-practice-pos-noun'
+                                        : 'mt-[6px] rounded-[4px] bg-practice-pos-adverb'
+                            }
+                        >
+                            <span
+                                style={grammarStyle}
+                                className="block min-w-[38px] px-[5px] text-center text-[14px] leading-[22px] text-practice-pos-label"
+                            >
+                                {posLabels[token.pos]}
+                            </span>
+                        </span>
+                    )}
+                    {display.english && (
+                        <span
+                            className={
+                                token.syntax === 'subject'
+                                    ? 'mt-2 text-practice-syntax-subject'
+                                    : token.syntax === 'predicate'
+                                      ? 'mt-2 text-practice-syntax-predicate'
+                                      : token.syntax === 'object'
+                                        ? 'mt-2 text-practice-syntax-object'
+                                        : token.syntax === 'complement'
+                                          ? 'mt-2 text-practice-syntax-complement'
+                                          : 'mt-2 text-practice-muted'
+                            }
+                        >
+                            <span
+                                data-practice-english
+                                className={
+                                    index === 0
+                                        ? 'block break-words text-[18px] font-medium capitalize leading-7 text-foreground md:text-[20px]'
+                                        : 'block break-words text-[18px] font-medium leading-7 text-foreground md:text-[20px]'
+                                }
+                                style={
+                                    values.fontSize === '默认'
+                                        ? undefined
+                                        : { fontSize: appearance.fontSize }
+                                }
+                            >
+                                {token.text}
+                            </span>
+                            <span aria-hidden="true" className="mt-0.5 block h-0.5 bg-current" />
+                        </span>
+                    )}
+                    {display.meaning && (
+                        <span className="mt-2 text-[14px] leading-[26px] text-foreground md:text-[16px]">
+                            {token.meaning}
+                        </span>
+                    )}
+                    {display.english && values.showGrammarText && (
+                        <span
+                            style={grammarStyle}
+                            className={
+                                token.syntax === 'subject'
+                                    ? 'text-[14px] leading-[23px] text-practice-syntax-subject'
+                                    : token.syntax === 'predicate'
+                                      ? 'text-[14px] leading-[23px] text-practice-syntax-predicate'
+                                      : token.syntax === 'object'
+                                        ? 'text-[14px] leading-[23px] text-practice-syntax-object'
+                                        : token.syntax === 'complement'
+                                          ? 'text-[14px] leading-[23px] text-practice-syntax-complement'
+                                          : 'text-[14px] leading-[23px] text-practice-muted'
+                            }
+                        >
+                            {syntaxLabels[token.syntax]}
+                        </span>
                     )}
                 </div>
             ))}

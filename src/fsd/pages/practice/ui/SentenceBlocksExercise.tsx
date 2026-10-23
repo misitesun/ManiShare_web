@@ -1,6 +1,6 @@
 'use client'
 
-import type { CSSProperties, ReactElement } from 'react'
+import type { CSSProperties, ReactElement, ReactNode } from 'react'
 import { getSentenceGameLabel } from '../model/sentence-game-family'
 import type { SentenceGameFamily } from '../model/sentence-game-family'
 import { getPreviewAppearance } from '../../../features/learning-settings'
@@ -20,7 +20,7 @@ interface SentenceBlockStyle extends CSSProperties {
 }
 
 interface SentenceBlocksExerciseProps {
-    readonly family?: SentenceGameFamily
+    readonly family?: SentenceGameFamily | 'video'
     readonly question: PracticeQuestion
     readonly session: PracticeSession
     readonly values: LearningPreferences
@@ -29,6 +29,7 @@ interface SentenceBlocksExerciseProps {
     readonly blocked: boolean
     readonly onEdit: (edit: SentenceBlockEdit) => void
     readonly reading?: PracticeReadingView | undefined
+    readonly media?: ReactNode
 }
 
 interface BlockProps {
@@ -97,8 +98,10 @@ export function SentenceBlocksExercise({
     blocked,
     onEdit,
     reading,
+    media,
 }: SentenceBlocksExerciseProps): ReactElement {
     const appearance = getPreviewAppearance(values)
+    const mediaVisible = media !== undefined || imageVisible
     const selectedTokens = session.blocks.flatMap((id) => {
         const token = question.tokens.find((item) => item.id === id)
         return token ? [token] : []
@@ -113,31 +116,37 @@ export function SentenceBlocksExercise({
             aria-label={`${getSentenceGameLabel(family)}选词拼块`}
             data-practice-blocks-family={family}
             data-audio-blocks={family === 'audio' || undefined}
+            data-video-blocks={family === 'video' || undefined}
             data-sentence-blocks
-            data-reference-node="546:34436"
-            className="mx-auto flex w-full min-w-0 shrink-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:pb-[99px] design:pt-[82px]"
+            data-reference-node={family === 'video' ? undefined : '546:34436'}
+            className={
+                family === 'video'
+                    ? 'mx-auto flex w-full min-w-0 shrink-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:pb-8 design:pt-[85px]'
+                    : 'mx-auto flex w-full min-w-0 shrink-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:pb-[99px] design:pt-[82px]'
+            }
         >
-            {imageVisible && (
-                <div
-                    data-practice-reading-surface
-                    className="relative w-full max-w-[430px] overflow-hidden rounded-[20px]"
-                >
-                    <img
-                        data-practice-media
-                        src={scene.src}
-                        alt={`${getSentenceGameLabel(family)}练习共用示意插图`}
-                        width={430}
-                        height={242}
-                        className="block aspect-[430/242] h-auto w-full object-cover"
-                    />
-                    <PracticeReadingOverlay reading={reading} />
-                </div>
-            )}
+            {media ??
+                (imageVisible && (
+                    <div
+                        data-practice-reading-surface
+                        className="relative w-full max-w-[430px] overflow-hidden rounded-[20px]"
+                    >
+                        <img
+                            data-practice-media
+                            src={scene.src}
+                            alt={`${getSentenceGameLabel(family)}练习共用示意插图`}
+                            width={430}
+                            height={242}
+                            className="block aspect-[430/242] h-auto w-full object-cover"
+                        />
+                        <PracticeReadingOverlay reading={reading} />
+                    </div>
+                ))}
             {translationVisible && (
                 <p
                     data-practice-translation
                     className={
-                        imageVisible
+                        mediaVisible
                             ? 'mt-8 max-w-full break-words text-center text-[24px] font-normal leading-[34px] text-practice-text md:text-[32px] md:leading-[45px] design:mt-[50px] design:text-[40px] design:leading-[56px]'
                             : 'max-w-full break-words text-center text-[24px] font-normal leading-[34px] text-practice-text md:text-[32px] md:leading-[45px] design:text-[40px] design:leading-[56px]'
                     }
@@ -151,7 +160,11 @@ export function SentenceBlocksExercise({
             <div
                 data-sentence-blocks-tray
                 aria-label="已选择的词块，点击撤回"
-                className="relative mt-8 flex min-h-[163px] w-full max-w-[794px] flex-col items-center justify-center rounded-xl px-4 pb-[49px] pt-[50px] design:mt-[60px]"
+                className={
+                    family === 'video'
+                        ? 'relative mt-8 flex min-h-[163px] w-full max-w-[794px] flex-col items-center justify-center rounded-xl px-4 pb-[49px] pt-[50px] design:mt-10'
+                        : 'relative mt-8 flex min-h-[163px] w-full max-w-[794px] flex-col items-center justify-center rounded-xl px-4 pb-[49px] pt-[50px] design:mt-[60px]'
+                }
             >
                 <span
                     aria-hidden="true"
@@ -219,7 +232,11 @@ export function SentenceBlocksExercise({
                 data-sentence-blocks-candidates
                 role="group"
                 aria-label="候选词块"
-                className="mt-10 flex w-full max-w-[794px] flex-wrap items-center justify-center gap-3 md:gap-5 design:mt-[89px] design:gap-[40px]"
+                className={
+                    family === 'video'
+                        ? 'mt-10 flex w-full max-w-[794px] flex-wrap items-center justify-center gap-3 md:gap-5 design:mt-[60px] design:gap-[40px]'
+                        : 'mt-10 flex w-full max-w-[794px] flex-wrap items-center justify-center gap-3 md:gap-5 design:mt-[89px] design:gap-[40px]'
+                }
             >
                 {candidates.map((token) => (
                     <Block

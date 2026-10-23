@@ -144,8 +144,9 @@ export function resolvePracticeShortcut(
     if (
         supportsPracticePanel(family, mode) &&
         !(
-            isSentenceGameFamily(family) &&
-            (mode === 'read' || mode === 'check' || mode === 'typing' || mode === 'oral')
+            (isSentenceGameFamily(family) &&
+                (mode === 'read' || mode === 'check' || mode === 'typing' || mode === 'oral')) ||
+            (family === 'video' && (mode === 'check' || mode === 'typing' || mode === 'oral'))
         )
     ) {
         if (matches(event, 'practice.panel.hide', values) && context.panelVisible)

@@ -424,9 +424,11 @@ test('面板上下键按模式能力和可见状态解析，不依赖答题阶�
             )
 })
 
-test('句子与音频阅读、自查、指法和口语禁用上下答案快捷键，保留主流程、切题和朗读', (): void => {
-    for (const family of ['sentence', 'audio'] as const)
-        for (const mode of ['read', 'check', 'typing', 'oral'] as const)
+test('句子／音频对应模式及视频自查／指法／口语禁用上下答案键，保留主流程、切题和朗读', (): void => {
+    for (const family of ['sentence', 'audio', 'video'] as const)
+        for (const mode of family === 'video'
+            ? (['check', 'typing', 'oral'] as const)
+            : (['read', 'check', 'typing', 'oral'] as const))
             for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
                 for (const panelVisible of [false, true]) {
                     const active = context({

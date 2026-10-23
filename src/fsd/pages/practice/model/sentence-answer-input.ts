@@ -233,19 +233,25 @@ export function submitSentenceAnswer(
     }
 }
 
-/** 首次作答仍在末段提交；纠错后，后续已全部判对则当前位置可直接提交。 */
+/** 首次各段填齐即可在当前段空格提交；纠错后仍沿已确认尾段的快捷提交规则。 */
 export function spaceSentenceAnswer(
     state: SentenceAnswerState,
     layout: SentenceAnswerLayout,
     ignoreCase: boolean,
 ): SentenceAnswerResult {
     if (state.completed || state.values.length === 0) return { state, submission: null }
+    const complete = isSentenceAnswerComplete(layout, state.values)
+    const firstCompleteAnswer = state.attempts === 0 && complete
     const correctedBeforeConfirmedTail =
         state.attempts > 0 &&
         state.feedback[state.activeIndex] === 'pending' &&
-        isSentenceAnswerComplete(layout, state.values) &&
+        complete &&
         state.feedback.slice(state.activeIndex + 1).every((feedback) => feedback === 'correct')
-    if (state.activeIndex === state.values.length - 1 || correctedBeforeConfirmedTail)
+    if (
+        state.activeIndex === state.values.length - 1 ||
+        firstCompleteAnswer ||
+        correctedBeforeConfirmedTail
+    )
         return submitSentenceAnswer(state, layout, ignoreCase)
     return {
         state: advanceSentenceAnswerSlot(state),

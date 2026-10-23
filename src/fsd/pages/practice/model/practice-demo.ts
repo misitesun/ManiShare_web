@@ -8,6 +8,7 @@ import type { WordMeaningContent } from './word-meaning'
 import { wordMeaningQuestions } from './word-meaning-demo'
 import { sentenceListeningQuestions } from './sentence-listening-demo'
 import { audioGameQuestions } from './audio-game-demo'
+import { videoListeningQuestions } from './video-listening-demo'
 import { editSentenceBlocks, judgeSentenceBlocks } from './sentence-blocks'
 import type { SentenceBlockEdit } from './sentence-blocks'
 import { getWordDemoReadingSource } from './word-demo-reading'
@@ -360,6 +361,7 @@ export function getDemoQuestions(
     family: PracticeFamily,
     mode?: PracticeMode,
 ): readonly PracticeQuestion[] {
+    if (family === 'video') return videoListeningQuestions
     if (mode !== undefined && sentenceModes.includes(mode)) {
         if (family === 'sentence') return sentenceListeningQuestions
         if (family === 'audio') return audioGameQuestions

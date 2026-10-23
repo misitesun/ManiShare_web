@@ -15,6 +15,7 @@ interface PracticeFooterProps {
     readonly onAction: (action: PracticeCommand) => void
     readonly blocked?: boolean
     readonly floating?: boolean
+    readonly embedded?: boolean
     readonly playback?: PracticeFooterPlayback
 }
 
@@ -120,6 +121,7 @@ export function PracticeFooter({
     onAction,
     blocked = false,
     floating = false,
+    embedded = false,
     playback,
 }: PracticeFooterProps): ReactElement | null {
     if (items.length === 0) return null
@@ -129,9 +131,11 @@ export function PracticeFooter({
             data-practice-footer
             aria-label="练习底部操作"
             className={
-                floating
-                    ? 'pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-transparent px-3 pb-[env(safe-area-inset-bottom)] [&_button]:pointer-events-auto'
-                    : 'fixed inset-x-0 bottom-0 z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
+                embedded
+                    ? 'relative z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
+                    : floating
+                      ? 'pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-transparent px-3 pb-[env(safe-area-inset-bottom)] [&_button]:pointer-events-auto'
+                      : 'fixed inset-x-0 bottom-0 z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
             }
         >
             <div

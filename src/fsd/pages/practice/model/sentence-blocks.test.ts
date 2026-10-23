@@ -115,3 +115,43 @@ test('十道题的候选顺序稳定且保留全部ID，首题遵循设计稿', 
         )
     }
 })
+
+test('视频十条句段使用独立词块ID，原拼块流程仍能纠错、答对并在切题时清空', (): void => {
+    const questions = getDemoQuestions('video', 'blocks')
+    assert.equal(questions.length, 10)
+    assert.equal(questions, getDemoQuestions('video', 'listen'))
+    for (const question of questions) {
+        assert.ok(question.id.startsWith('video:'))
+        assert.equal(question.readingSource, undefined)
+        const candidates = getSentenceBlockCandidates(question)
+        assert.deepEqual(candidates, getSentenceBlockCandidates(question))
+        assert.deepEqual(
+            candidates.map((token) => token.id).sort(),
+            question.tokens.map((token) => token.id).sort(),
+        )
+        let state = initialPracticeSession
+        for (const token of candidates)
+            state = reducePracticeSession(state, {
+                type: 'edit-sentence-blocks',
+                edit: { type: 'toggle', id: token.id },
+                tokens: question.tokens,
+            })
+        assert.equal(state.phase, 'incorrect')
+        state = reducePracticeSession(state, {
+            type: 'edit-sentence-blocks',
+            edit: { type: 'clear' },
+            tokens: question.tokens,
+        })
+        for (const token of question.tokens)
+            state = reducePracticeSession(state, {
+                type: 'edit-sentence-blocks',
+                edit: { type: 'toggle', id: token.id },
+                tokens: question.tokens,
+            })
+        assert.equal(state.phase, 'correct')
+        const next = reducePracticeSession(state, { type: 'move', delta: 1, total: 10 })
+        assert.equal(next.index, 1)
+        assert.equal(next.phase, 'answering')
+        assert.deepEqual(next.blocks, [])
+    }
+})

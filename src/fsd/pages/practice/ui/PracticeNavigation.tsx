@@ -33,6 +33,7 @@ const navigationItems: Readonly<Record<PracticeNavigationAction, NavigationItem>
 
 interface PracticeNavigationProps {
     readonly draftOpen?: boolean
+    readonly contentOpen?: boolean
     readonly family: PracticeFamily
     readonly onAction: (action: PracticeNavigationAction) => void
 }
@@ -41,6 +42,7 @@ export function PracticeNavigation({
     family,
     onAction,
     draftOpen = false,
+    contentOpen,
 }: PracticeNavigationProps): ReactElement {
     const actions = getPracticeNavigationActions(family)
     const items: readonly TldDropdownMenuItem<PracticeNavigationAction>[] = actions.map(
@@ -55,6 +57,7 @@ export function PracticeNavigation({
                 />
             ),
             ...(action === 'draft' ? { expanded: draftOpen } : {}),
+            ...(action === 'content' && contentOpen !== undefined ? { expanded: contentOpen } : {}),
             ...(action === 'draft' && draftOpen ? { controls: 'practice-chapter-draft' } : {}),
         }),
     )
@@ -92,7 +95,13 @@ export function PracticeNavigation({
                             key={action}
                             type="button"
                             aria-label={item.label}
-                            aria-expanded={action === 'draft' ? draftOpen : undefined}
+                            aria-expanded={
+                                action === 'draft'
+                                    ? draftOpen
+                                    : action === 'content'
+                                      ? contentOpen
+                                      : undefined
+                            }
                             aria-controls={
                                 action === 'draft' && draftOpen
                                     ? 'practice-chapter-draft'
