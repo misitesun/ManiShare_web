@@ -134,8 +134,10 @@ export function resolvePracticeShortcut(
         event.key.length === 1
     )
         return null
-    for (const command of ['question.previous', 'question.next', 'practice.readAloud'] as const)
+    for (const command of ['question.previous', 'question.next', 'practice.readAloud'] as const) {
+        if (family === 'typing' && command === 'practice.readAloud') continue
         if (matches(event, command, values)) return command
+    }
     if (target === 'answer-input' && !answerCommands && plain && event.key.startsWith('Arrow'))
         return null
     if (supportsPracticeKnowledge(family, mode))

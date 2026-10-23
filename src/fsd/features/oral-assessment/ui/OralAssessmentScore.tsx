@@ -4,6 +4,7 @@ import {
     normalizeOralAssessmentScore,
 } from '../model/oral-assessment'
 import type { OralAssessmentResult } from '../model/oral-assessment'
+import { OralAssessmentScoreRing } from './OralAssessmentScoreRing'
 
 interface OralAssessmentScoreProps {
     readonly result: OralAssessmentResult
@@ -37,35 +38,7 @@ export function OralAssessmentScore({
                 }
             >
                 <div className="flex min-w-0 flex-col items-center px-4">
-                    <div className="relative size-[131px] shrink-0">
-                        <svg viewBox="0 0 131 131" className="size-full" aria-hidden="true">
-                            <circle cx="65.5" cy="65.5" r="52.5" className="fill-oral-score-ring" />
-                            <circle
-                                cx="65.5"
-                                cy="65.5"
-                                r="59"
-                                fill="none"
-                                className="stroke-oral-score-ring"
-                                strokeWidth="13"
-                            />
-                            <circle
-                                cx="65.5"
-                                cy="65.5"
-                                r="59"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="13"
-                                strokeLinecap="round"
-                                pathLength="100"
-                                strokeDasharray={`${score} 100`}
-                                transform="rotate(-90 65.5 65.5)"
-                            />
-                        </svg>
-                        <p className="absolute inset-0 m-0 flex items-center justify-center text-[24px] font-medium leading-[34px]">
-                            {score}
-                            <span className="text-[16px] font-normal">分</span>
-                        </p>
-                    </div>
+                    <OralAssessmentScoreRing score={score} />
                     <div className="relative mt-1 w-max max-w-full">
                         <span
                             aria-hidden="true"

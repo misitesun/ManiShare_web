@@ -1,5 +1,9 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- 独立指法与纯音标开发完成：2026-10-23用户确认两类游戏本阶段开发完成，并授权main提交、推送今日代码，包含视频三模式黄晶计分增量。十条混合指法数据、/æ/十词课程、复用卡堆、离线朗读与卡内单总分评测的最终范围见[今日完成检查点](checkpoints/2026-10-23-typing-phonetics-development-complete.md)。按用户要求未执行测试／构建及各端运行验收，正式题库、录音评分和学习记录仍未接入。
+
+- 音标卡内评测：`pages/practice`复用`features/oral-assessment`原四态控制器，由私有控制区替代该卡旧弹窗入口。根入口新增`OralAssessmentScoreRing`，默认供详细评分使用，compact供音标仅展示一个总分；录制及示例回放边界、其他模式默认不变。无新请求、采集、存储或主题token；按用户要求仅格式化和静态差异检查，测试／构建及各端运行验收未执行，见[纯音标开发记录](practice-phonetics-game-development.md)。
+
 - 三类练习游戏已验收：2026-10-22用户确认单词六模式、句子七模式、音频七模式本阶段UI与本地演示开发完成、验收通过，授权main提交／推送。实际测试、构建与PC运行时验证范围及后续接口边界以[验收检查点](checkpoints/2026-10-22-practice-games-development-complete.md)为准；下方首版或分支待验收记录保留历史范围。
 
 - 音频沉浸听力：`audio:listen`复用既有句子听力题面、五控件及真实ended后1000ms自动推进，十条样例／WAV、章节笔记、内容列表及模拟口语沿同一owner装配；播放选项按族隔离，音频设置仍按`audio:listen`独立缓存。切题提示音播完再朗读，手动接管取消自动等待且不另加延迟；无需复制播放器、发音素材或创建接口。当前已在main并获用户验收，详见[音频开发记录](practice-audio-games-development.md)。

@@ -169,6 +169,48 @@ function assertListeningResult(result: string, listening: string): void {
     )
 }
 
+test('纯指法固定抄写并由单一分段输入覆盖全部混合题，无图片中文或额外确认按钮', (): void => {
+    const questions = getDemoQuestions('typing', 'typing')
+    for (const [questionIndex, question] of questions.entries()) {
+        const html = renderContent({
+            family: 'typing',
+            mode: 'typing',
+            phase: 'answering',
+            questionIndex,
+            input: '',
+            imageVisible: true,
+            translationVisible: true,
+            copy: false,
+            oralEnabled: true,
+        })
+        assert.match(html, /data-standalone-typing-exercise="true"/)
+        assert.match(html, /data-reference-layout="typing:typing"/)
+        assert.match(html, /data-sentence-word-hint="true"/)
+        assert.equal((html.match(/<input[^>]*data-practice-answer-input/g) ?? []).length, 1)
+        assert.equal(
+            (html.match(/data-sentence-answer-slot="\d+"/g) ?? []).length,
+            question.english.split(/\s+/u).length,
+        )
+        assert.doesNotMatch(
+            html,
+            /data-practice-media|data-sentence-typing-translation|data-word-slot-input|确认输入|data-practice-quick-oral|朗读当前/,
+        )
+    }
+    const correct = renderContent({
+        family: 'typing',
+        mode: 'typing',
+        phase: 'correct',
+        questionIndex: 1,
+        oralEnabled: true,
+    })
+    assert.match(correct, /Nice to meet you\./)
+    assert.match(correct, /data-keyboard-active="false"/)
+    assert.doesNotMatch(
+        correct,
+        /<input\b|朗读当前|data-practice-quick-oral|data-sentence-typing-translation/,
+    )
+})
+
 test('单词与句子口语页直接装配同一评测正文，其他内容族口语保留原入口', (): void => {
     const html = renderContent({ family: 'word', mode: 'oral', phase: 'answering' })
     assert.match(html, /data-word-oral-assessment-exercise="true"/)
@@ -348,7 +390,10 @@ test('真实文本输入共用原生输入桥，句子中译英独立按段维�
         )
         assert.match(html, /data-practice-controlled-answer="true"/)
         if (
-            (family === 'sentence' || family === 'audio' || family === 'video') &&
+            (family === 'sentence' ||
+                family === 'audio' ||
+                family === 'video' ||
+                family === 'typing') &&
             (mode === 'translate' || mode === 'typing')
         ) {
             assert.match(html, /data-sentence-answer-input="true"/)
@@ -596,6 +641,26 @@ test('理解自查揭晓前保持原题面，揭晓后复用无封面的沉浸�
         assert.doesNotMatch(result, /data-sentence-check-prompt|data-sentence-check-reveal/)
     }
     assert.doesNotMatch(renderContent({ ...common, imageVisible: false }), /data-practice-media/)
+})
+
+test('音标拼读题面接入真实卡堆，内部口语保持原题面', (): void => {
+    for (const questionIndex of [0, 1, 2, 3, 9]) {
+        const html = renderContent({
+            family: 'phonetics',
+            mode: 'pronounce',
+            phase: 'answering',
+            questionIndex,
+        })
+        assert.match(html, /data-card-swap="true"|data-card-swap=""/)
+        assert.match(html, /aria-label="音标词卡堆"/)
+        assert.equal(html.match(/data-phonetics-question-id=/g)?.length, 10)
+        assert.match(html, /data-phonetics-reading-plan="phonics"/)
+    }
+    const oral = renderContent({ family: 'phonetics', mode: 'oral', phase: 'answering' })
+    assert.doesNotMatch(oral, /data-card-swap|data-phonetics-deck/)
+    const word = renderContent({ family: 'word', mode: 'pronounce', phase: 'answering' })
+    assert.match(word, /aria-label="单词拼读卡片堆"/)
+    assert.doesNotMatch(word, /data-phonetics-card/)
 })
 
 test('切读遮罩位于各族题图，卡堆仅当前卡展示，隐藏图片时一并隐藏', (): void => {

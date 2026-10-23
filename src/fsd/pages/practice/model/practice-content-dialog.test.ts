@@ -70,3 +70,9 @@ test('音频七模式接入同一共用内容弹窗', (): void => {
         ] as const)
             assert.equal(usesPracticeContentDialog(family, mode), true)
 })
+
+test('纯指法仅在自身单模式接入内容列表，保留未提供模式时的旧默认', (): void => {
+    assert.equal(usesPracticeContentDialog('typing'), false)
+    assert.equal(usesPracticeContentDialog('typing', 'typing'), true)
+    assert.equal(usesPracticeContentDialog('typing', 'oral'), false)
+})

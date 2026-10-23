@@ -47,6 +47,30 @@ test('十条数据只轮转四张展示卡，下一条不提前补成第五张',
     )
 })
 
+test('宽卡按500px参考宽度保持后卡露边比例，默认单词位姿不变', (): void => {
+    for (const width of [320, 680]) {
+        let previousRightEdge = width
+        for (const depth of [1, 2, 3]) {
+            const word = getCardSwapPresentationPose(depth, 0)
+            const card = getCardSwapPresentationPose(depth, 0, width)
+            assert.ok(Math.abs(card.x / width - word.x / 500) < 0.00001)
+            assert.equal(card.y, word.y)
+            assert.equal(card.z, word.z)
+            assert.equal(card.sx, 1)
+            assert.equal(card.sy, 1)
+            const projection = 900 / (900 - card.z)
+            const rightEdge = width / 2 + (width / 2 + card.x) * projection
+            assert.ok(rightEdge > previousRightEdge)
+            previousRightEdge = rightEdge
+        }
+    }
+    for (const width of [0, -1, Number.NaN, Number.POSITIVE_INFINITY])
+        assert.deepEqual(
+            getCardSwapPresentationPose(1, 0, width),
+            getCardSwapPresentationPose(1, 0),
+        )
+})
+
 test('连续再来补入真正后续题目，回插尾槽不会提前成为下一题', (): void => {
     const physical = [1, 2, 3, 0, 4, 5, 6, 7, 8, 9]
     const business = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]

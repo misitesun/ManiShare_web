@@ -1,4 +1,5 @@
 export const cardSwapPresentation = {
+    referenceWidth: 500,
     visible: 4,
     distance: 32,
     verticalDistance: 2,
@@ -23,14 +24,23 @@ export function getCardSwapMembershipIdentity(keys: readonly string[]): string {
     return JSON.stringify([...keys].sort())
 }
 
-/** React Bits 原位姿：深度由 perspective 投影，卡面不做横纵非等比缩放。 */
+/** 原位姿只按可选卡宽调整水平层距；默认500px保持单词表现，卡面不非等比缩放。 */
 export function getCardSwapPresentationPose(
     position: number,
     spread: number,
+    cardWidth: number = cardSwapPresentation.referenceWidth,
 ): CardSwapPresentationPose {
     const q = Math.max(0, Math.min(cardSwapPresentation.visible, position))
+    const width =
+        Number.isFinite(cardWidth) && cardWidth > 0
+            ? cardWidth
+            : cardSwapPresentation.referenceWidth
     return {
-        x: q * cardSwapPresentation.distance * (1 + spread),
+        x:
+            q *
+            cardSwapPresentation.distance *
+            (width / cardSwapPresentation.referenceWidth) *
+            (1 + spread),
         y: -q * cardSwapPresentation.verticalDistance * (1 + spread),
         z: -q * cardSwapPresentation.depth,
         r: 0,

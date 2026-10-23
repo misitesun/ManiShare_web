@@ -70,6 +70,7 @@ import type { SentenceReadingDisplayOptions } from '../model/sentence-reading-di
 import type { SentenceAnswerSubmission } from '../model/sentence-answer-input'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import { PhoneticsDemo } from './PhoneticsDemo'
+import type { PhoneticsReadingSnapshot } from '../model/phonetics-reading-runtime'
 import wordAsset from '../assets/word-woman-e23d5f.png'
 import sentenceAsset from '../assets/reading-scene.png'
 import greetingAsset from '../assets/greeting-scene.png'
@@ -123,6 +124,9 @@ export interface PracticeContentProps {
     readonly onReadAloud?: () => void
     readonly onExampleReadAloud?: ((example: WordCardExample) => void) | undefined
     readonly reading?: PracticeReadingView | undefined
+    readonly phoneticsReading?: PhoneticsReadingSnapshot | undefined
+    readonly onPhoneticsWordRead?: (() => void) | undefined
+    readonly onPhoneticsSegmentRead?: ((segmentId: string) => void) | undefined
     readonly videoExercisePlayback?: VideoListeningPlayback | undefined
     readonly questions?: readonly PracticeQuestion[]
     readonly cardBusy?: boolean
@@ -182,6 +186,9 @@ export function PracticeContent({
     onReadAloud,
     onExampleReadAloud,
     reading,
+    phoneticsReading,
+    onPhoneticsWordRead,
+    onPhoneticsSegmentRead,
     videoExercisePlayback,
     questions,
     cardBusy = false,
@@ -200,10 +207,15 @@ export function PracticeContent({
     const sentenceGameFamily = isSentenceGameFamily(demo.family) ? demo.family : undefined
     const isVideoCheck = demo.family === 'video' && mode === 'check'
     const isVideoTyping = demo.family === 'video' && mode === 'typing'
+    const isStandaloneTyping = demo.family === 'typing' && mode === 'typing'
     const isVideoOral = demo.family === 'video' && mode === 'oral'
     const isVideoBlocks = demo.family === 'video' && mode === 'blocks'
     const isVideoTranslation = demo.family === 'video' && mode === 'translate'
-    const typingFamily = isVideoTyping ? 'video' : sentenceGameFamily
+    const typingFamily = isStandaloneTyping
+        ? 'typing'
+        : isVideoTyping
+          ? 'video'
+          : sentenceGameFamily
     const blocksFamily = isVideoBlocks ? 'video' : sentenceGameFamily
     const videoExerciseMedia =
         videoExercisePlayback &&
@@ -325,14 +337,16 @@ export function PracticeContent({
                 phase={session.phase}
                 input={session.input}
                 blocked={blocked}
-                imageVisible={isVideoTyping ? false : imageVisible}
+                imageVisible={isVideoTyping || isStandaloneTyping ? false : imageVisible}
                 {...(isVideoTyping ? { media: videoExerciseMedia } : {})}
                 copy={
-                    isVideoTyping
-                        ? (additionalOptions?.copy ?? true)
-                        : (sentenceGameOptions?.copy ?? true)
+                    isStandaloneTyping
+                        ? true
+                        : isVideoTyping
+                          ? (additionalOptions?.copy ?? true)
+                          : (sentenceGameOptions?.copy ?? true)
                 }
-                translationVisible={showTranslation}
+                translationVisible={!isStandaloneTyping && showTranslation}
                 ignoreCase={values.ignoreCase}
                 borderStyle={appearance.borderStyle}
                 displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
@@ -401,8 +415,23 @@ export function PracticeContent({
     if (demo.family === 'phonetics' && mode !== 'oral')
         return (
             <PhoneticsDemo
+                questions={questions ?? [question]}
+                index={session.index}
+                blocked={blocked}
+                isBlocked={isCardBlocked}
+                onController={onCardController}
+                onBusyChange={onCardBusyChange}
+                onNavigate={onCardNavigate}
+                onDragStart={onCardDragStart}
                 naturalPhonics={additionalOptions?.naturalPhonics ?? true}
-                onNote={(): void => onNote(question.id)}
+                onNotice={onNotice}
+                reading={phoneticsReading}
+                waveStyle={values.readingWave}
+                onWordRead={onPhoneticsWordRead}
+                onSegmentRead={onPhoneticsSegmentRead}
+                oralController={oralAssessmentController}
+                oralEnabled={oralEnabled}
+                recordingWave={values.recordingWave}
             />
         )
     if (blocksFamily && mode === 'blocks')

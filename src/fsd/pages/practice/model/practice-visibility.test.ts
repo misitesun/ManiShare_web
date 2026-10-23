@@ -41,3 +41,8 @@ test('单词拼读的全部题态均不提供快捷口语，其他拼读与独�
     }
     assert.equal(canShowQuickOral('word', 'oral', 'answering', true, true), false)
 })
+
+test('纯指法的单词和句子目标在所有题态均不提供快捷口语', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+        assert.equal(canShowQuickOral('typing', 'typing', phase, true, true), false)
+})

@@ -58,12 +58,31 @@ test('本地输入不自行判题，揭晓独立于正确；移动清理题内�
     )
 })
 
-test('音标会话与音标主卡使用同一词例，复习题保留独立身份', (): void => {
+test('音标默认一课十个不同词例，课程目标与显式字母音一致', (): void => {
     const questions = getDemoQuestions('phonetics')
-    assert.equal(questions[0]?.english, 'understand')
-    assert.equal(questions[0]?.phonetic, '/ʌndəstænd/')
-    assert.equal(questions[1]?.english, questions[0]?.english)
-    assert.notEqual(questions[1]?.id, questions[0]?.id)
+    assert.equal(questions.length, 10)
+    assert.equal(new Set(questions.map((question) => question.id)).size, 10)
+    assert.deepEqual(
+        questions.map((question) => question.english),
+        ['cat', 'bat', 'hat', 'man', 'map', 'cap', 'bag', 'fan', 'ham', 'jam'],
+    )
+    for (const question of questions) {
+        assert.equal(question.phonetics?.lesson.targetPhonetic, 'æ')
+        assert.equal(
+            question.phonetics?.segments.map((segment) => segment.spelling).join(''),
+            question.english,
+        )
+        assert.equal(
+            question.phonetics?.segments.map((segment) => segment.ipa).join(''),
+            question.phonetic.slice(1, -1),
+        )
+        assert.ok(question.readingSource)
+        assert.ok(question.phonetics?.segments.every((segment) => segment.readingSource))
+    }
+    assert.deepEqual(questions, getDemoQuestions('phonetics', 'pronounce'))
+    const oral = getDemoQuestions('phonetics', 'oral')
+    assert.equal(oral.length, 2)
+    assert.equal(oral[0]?.english, 'understand')
 })
 
 test('完成只标记本轮结束，重练恢复首题输入和题态而不冒充判题结果', (): void => {

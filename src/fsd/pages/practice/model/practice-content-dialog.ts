@@ -14,7 +14,12 @@ export const practiceContentDisplayOptions = [
 ] as const
 
 export function usesPracticeContentDialog(family: PracticeFamily, mode?: PracticeMode): boolean {
-    return family === 'word' || family === 'sentence' || (family === 'audio' && mode !== undefined)
+    return (
+        family === 'word' ||
+        family === 'sentence' ||
+        (family === 'audio' && mode !== undefined) ||
+        (family === 'typing' && mode === 'typing')
+    )
 }
 
 export function resolvePracticeContentDisplay(value: string): PracticeContentDisplay {

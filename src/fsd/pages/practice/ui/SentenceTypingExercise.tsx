@@ -22,13 +22,14 @@ import { WordCardHeading } from './WordCardHeading'
 
 interface SentenceTypingStyle extends CSSProperties {
     '--sentence-typing-top': string
+    '--sentence-typing-compact-top'?: string
     '--sentence-typing-text-gap': string
     '--sentence-typing-translation-gap': string
     '--sentence-typing-keyboard-gap': string
 }
 
 interface SentenceTypingExerciseProps {
-    readonly family?: SentenceGameFamily | 'video'
+    readonly family?: SentenceGameFamily | 'video' | 'typing'
     readonly media?: ReactNode
     readonly question: PracticeQuestion
     readonly phase: PracticePhase
@@ -72,11 +73,22 @@ export function SentenceTypingExercise({
     const [keyboardInput, setKeyboardInput] = useState(() =>
         getSentenceAnswerEditingSnapshot(layout, createSentenceAnswerState(layout, input)),
     )
-    const reference = getPracticeReference(family === 'video' ? 'video' : 'word', 'typing', phase)
-    const mediaVisible = media !== undefined || imageVisible
+    const standalone = family === 'typing'
+    const reference = getPracticeReference(
+        standalone ? 'typing' : family === 'video' ? 'video' : 'word',
+        'typing',
+        phase,
+    )
+    const mediaVisible = !standalone && (media !== undefined || imageVisible)
     const editable = phase === 'answering' || phase === 'incorrect'
     const style: SentenceTypingStyle = {
         '--sentence-typing-top': `${reference.top}px`,
+        ...(standalone
+            ? {
+                  // 与句子指法的pt-16、px-4和16:9图片行同高，窄屏按实际可用宽度收缩。
+                  '--sentence-typing-compact-top': `calc(64px + min(${(reference.mediaWidth * 9) / 16}px, calc(56.25% - 18px)) + ${reference.textGap}px)`,
+              }
+            : {}),
         '--sentence-typing-text-gap': `${reference.textGap}px`,
         '--sentence-typing-translation-gap': `${reference.translationGap}px`,
         '--sentence-typing-keyboard-gap': `${reference.keyboardGap}px`,
@@ -86,12 +98,19 @@ export function SentenceTypingExercise({
             data-practice-typing-family={family}
             data-audio-typing-exercise={family === 'audio' || undefined}
             data-video-typing-exercise={family === 'video' || undefined}
+            data-standalone-typing-exercise={standalone || undefined}
             data-sentence-typing-exercise
-            data-reference-layout={family === 'video' ? 'video:typing' : 'word:typing'}
+            data-reference-layout={
+                standalone ? 'typing:typing' : family === 'video' ? 'video:typing' : 'word:typing'
+            }
             style={style}
-            className="relative w-full min-w-0 shrink-0 px-4 pt-16 design:pt-[var(--sentence-typing-top)]"
+            className={
+                standalone
+                    ? 'relative w-full min-w-0 shrink-0 px-4 pt-[var(--sentence-typing-compact-top)] design:pt-[var(--sentence-typing-top)]'
+                    : 'relative w-full min-w-0 shrink-0 px-4 pt-16 design:pt-[var(--sentence-typing-top)]'
+            }
         >
-            {media !== undefined ? (
+            {standalone ? null : media !== undefined ? (
                 <div className="mx-auto flex w-full max-w-[600px] justify-center">{media}</div>
             ) : imageVisible ? (
                 <div
@@ -118,7 +137,14 @@ export function SentenceTypingExercise({
                         : 'mx-auto flex min-h-[56px] w-full max-w-[848px] min-w-0 items-center justify-center text-[28px] font-medium leading-none tracking-[0.06em] md:text-[34px] design:text-[40px] [&_[data-sentence-word-hint]]:blur-[3px]'
                 }
             >
-                {phase === 'correct' ? (
+                {phase === 'correct' && standalone ? (
+                    <h2
+                        data-practice-english
+                        className="m-0 max-w-full break-words text-center font-medium leading-[normal] text-practice-answer [font-size:inherit]"
+                    >
+                        {question.english}
+                    </h2>
+                ) : phase === 'correct' ? (
                     <WordCardHeading
                         word={question.english}
                         referenceLayout={false}
@@ -148,13 +174,15 @@ export function SentenceTypingExercise({
                     />
                 )}
             </div>
-            <p
-                data-sentence-typing-translation
-                aria-hidden={!translationVisible}
-                className="mx-auto mt-[var(--sentence-typing-translation-gap)] min-h-[34px] max-w-[848px] break-words text-center text-[18px] font-medium leading-[normal] text-practice-muted md:text-[24px]"
-            >
-                {translationVisible && question.translation}
-            </p>
+            {!standalone && (
+                <p
+                    data-sentence-typing-translation
+                    aria-hidden={!translationVisible}
+                    className="mx-auto mt-[var(--sentence-typing-translation-gap)] min-h-[34px] max-w-[848px] break-words text-center text-[18px] font-medium leading-[normal] text-practice-muted md:text-[24px]"
+                >
+                    {translationVisible && question.translation}
+                </p>
+            )}
             <div className="mt-[var(--sentence-typing-keyboard-gap)] min-w-0">
                 <TypingKeyboard
                     width={reference.keyboardWidth}

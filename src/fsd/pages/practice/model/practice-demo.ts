@@ -9,6 +9,9 @@ import { wordMeaningQuestions } from './word-meaning-demo'
 import { sentenceListeningQuestions } from './sentence-listening-demo'
 import { audioGameQuestions } from './audio-game-demo'
 import { videoListeningQuestions } from './video-listening-demo'
+import { typingGameQuestions } from './typing-game-demo'
+import { phoneticsDemoQuestions } from './phonetics-demo'
+import type { PhoneticsWordContent } from './phonetics-lesson'
 import { editSentenceBlocks, judgeSentenceBlocks } from './sentence-blocks'
 import type { SentenceBlockEdit } from './sentence-blocks'
 import { getWordDemoReadingSource } from './word-demo-reading'
@@ -67,6 +70,7 @@ export interface PracticeQuestion {
     readonly translation: string
     readonly phonetic: string
     readonly wordPhonetics?: WordPhoneticBreakdown
+    readonly phonetics?: PhoneticsWordContent
     /** 可选的本地解析例句，真实接口由适配器映射；缺失时显示空态。 */
     readonly wordExamples?: readonly WordCardExample[]
     readonly wordMeaning?: WordMeaningContent
@@ -362,6 +366,7 @@ export function getDemoQuestions(
     mode?: PracticeMode,
 ): readonly PracticeQuestion[] {
     if (family === 'video') return videoListeningQuestions
+    if (family === 'typing') return typingGameQuestions
     if (mode !== undefined && sentenceModes.includes(mode)) {
         if (family === 'sentence') return sentenceListeningQuestions
         if (family === 'audio') return audioGameQuestions
@@ -372,7 +377,8 @@ export function getDemoQuestions(
     if (family === 'word' && mode === 'meaning') return wordMeaningReadingQuestions
     if (family === 'word' && mode === 'typing') return wordTypingQuestions
     if (family === 'word' && mode === 'oral') return wordOralQuestions
-    if (family === 'phonetics')
+    if (family === 'phonetics') {
+        if (mode !== 'oral') return phoneticsDemoQuestions
         return [
             {
                 id: 'understand',
@@ -389,6 +395,7 @@ export function getDemoQuestions(
                 tokens: [],
             },
         ].map(withDemoWordPhonetics)
+    }
     if (family === 'word' || family === 'guess') return wordSeedQuestions
     if (family === 'picture') {
         const pictureQuestion =
@@ -479,6 +486,12 @@ export type PracticeSessionAction =
           readonly ignoreCase: boolean
       }
     | {
+          readonly type: 'submit-sentence-answer'
+          readonly values: readonly string[]
+          readonly target: string
+          readonly ignoreCase: boolean
+      }
+    | {
           readonly type: 'submit-spelling'
           readonly value: string
           readonly target: string
@@ -535,7 +548,7 @@ export function reducePracticeSession(
         const judgment = judgeSentenceBlocks(action.tokens, state.blocks)
         return judgment === 'empty' ? state : { ...state, phase: judgment }
     }
-    if (action.type === 'submit-sentence-typing') {
+    if (action.type === 'submit-sentence-typing' || action.type === 'submit-sentence-answer') {
         if (state.finished || state.phase === 'correct' || state.phase === 'revealed') return state
         const layout = createSentenceAnswerLayout(action.target)
         if (!isSentenceAnswerComplete(layout, action.values)) return state
@@ -545,10 +558,13 @@ export function reducePracticeSession(
             ...state,
             input: serializeSentenceAnswer(layout, action.values),
             phase,
-            spellingStatistics: {
-                submissions: state.spellingStatistics.submissions + 1,
-                correct: state.spellingStatistics.correct + (phase === 'correct' ? 1 : 0),
-            },
+            spellingStatistics:
+                action.type === 'submit-sentence-answer'
+                    ? state.spellingStatistics
+                    : {
+                          submissions: state.spellingStatistics.submissions + 1,
+                          correct: state.spellingStatistics.correct + (phase === 'correct' ? 1 : 0),
+                      },
         }
     }
     if (action.type === 'submit-spelling' || action.type === 'submit-answer') {

@@ -56,3 +56,26 @@ test('五种设置朗读样式原样传递且缺源首帧可确定预渲染', ()
         assert.doesNotMatch(html, /<(?:audio|video|canvas)\b/)
     }
 })
+
+test('紧凑音标遮罩沿用五种朗读动画，不创建媒体或拦截操作', (): void => {
+    for (const waveStyle of ['默认竖条', '曲线频谱', '矩阵方块', '雨滴点阵', '波形线条']) {
+        const html = renderToStaticMarkup(
+            createElement(PracticeReadingOverlay, {
+                reading: { status: 'playing', waveStyle },
+                compact: true,
+            }),
+        )
+        assert.match(html, /data-practice-reading-overlay="playing"/)
+        assert.ok(html.includes(`data-audio-wave="${waveStyle}"`))
+        assert.match(html, /data-wave-active="true"/)
+        assert.match(html, /pointer-events-none/)
+        assert.doesNotMatch(html, /<(?:audio|video|button)\b/)
+    }
+})
+
+test('同一播放队列等待下一音段时保留静态遮罩，不显示缺源或重试提示', (): void => {
+    const html = render({ status: 'waiting', waveStyle: '默认竖条' })
+    assert.match(html, /data-practice-reading-overlay="waiting"/)
+    assert.match(html, /data-wave-active="false"/)
+    assert.doesNotMatch(html, /音源待接入|点击朗读重试|role="status"/)
+})

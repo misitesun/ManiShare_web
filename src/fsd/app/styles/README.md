@@ -1,5 +1,7 @@
 # Tailwind 与全局主题
 
+- 纯音标词卡新增`--app-shadow-phonetics-card`：dark按Figma `546:41846`为2px -5px 28.2px、紫色20%阴影，light引用既有panel阴影；仅`pages/practice/ui/PhoneticsWordCard`显式消费。卡片紫／白／绿边框复用既有`--app-gradient-sentence-tray`，其他练习阴影与默认主题值不变。按用户要求未运行测试、构建或页面配色验收。
+
 - 口语评测提示新增 `oral-action`：dark 对齐原稿 `#00DE77`，light 使用可读绿色。仅表示录音操作提示；弹窗底色、边框、正文和分数沿用已有语义 token，业务组件不写原始色值。
 - 口语按钮扩散层使用 `oral-record`／`oral-play`，取原 PNG 中心的 `#00DE77`／`#0090DE`；两个主题均保持图形原色，区别于辅助文字的 `oral-action`。只影响口语按钮，默认不显示外圈，录音／播放中才显示水波；没有新增全局 keyframe 或改变其他消费者。
 

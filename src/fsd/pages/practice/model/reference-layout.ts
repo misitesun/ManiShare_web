@@ -201,8 +201,16 @@ export function getPracticeReference(
     }
     if (family === 'audio' && mode === 'listen')
         return { ...base, node: getSentenceListeningReference('audio').node }
-    if (family === 'typing')
-        return { ...base, node: '546:41770', top: 306, textGap: 0, keyboardGap: 91 }
+    if (family === 'typing') {
+        // 句子指法实际复用word:typing；纯指法保留相同输入和键盘位置，不渲染图片／译文。
+        const typing = getPracticeReference('word', 'typing', phase)
+        return {
+            ...typing,
+            node: '546:41770',
+            top: typing.top + (typing.mediaWidth * 9) / 16 + typing.textGap,
+            keyboardGap: typing.translationGap + 34 + typing.keyboardGap,
+        }
+    }
     if (mode === 'typing' && family === 'picture')
         return {
             ...base,

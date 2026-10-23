@@ -24,7 +24,14 @@ export function canShowQuickOral(
     enabled: boolean,
     wordMeaningVariant?: WordMeaningVariant,
 ): boolean {
-    if (!enabled || !hasTarget || mode === 'oral' || family.endsWith('-reader')) return false
+    if (
+        !enabled ||
+        !hasTarget ||
+        mode === 'oral' ||
+        family === 'typing' ||
+        family.endsWith('-reader')
+    )
+        return false
     if (family === 'word' && mode === 'pronounce') return false
     if (family === 'word' && mode === 'meaning')
         return wordMeaningVariant === 'context' || phase === 'correct'

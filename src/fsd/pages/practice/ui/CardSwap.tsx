@@ -60,6 +60,8 @@ import type { WordPronunciationDeckController } from '../model/word-card-deck'
 
 interface CardSwapProps {
     readonly children: ReactNode
+    readonly label?: string
+    readonly scaleHorizontalSpacing?: boolean
     readonly index: number
     readonly blocked: boolean
     readonly isBlocked: () => boolean
@@ -88,6 +90,7 @@ interface Settings {
     keys: readonly string[]
     width: number
     height: number
+    scaleHorizontalSpacing: boolean
     dx: number
     dy: number
     dz: number
@@ -197,6 +200,8 @@ const clamp = (value: number, min: number, max: number): number =>
 const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(function CardSwap(
     {
         children,
+        label = '单词拼读卡片堆',
+        scaleHorizontalSpacing = false,
         index,
         blocked: disabled,
         isBlocked,
@@ -230,6 +235,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
     const settings: Settings = {
         keys,
         ...geometryRef.current,
+        scaleHorizontalSpacing,
         dx: cardSwapPresentation.distance,
         dy: cardSwapPresentation.verticalDistance,
         dz: cardSwapPresentation.depth,
@@ -369,7 +375,13 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
 
             const slot = (position: number, s: Settings): Pose => {
                 const q = Math.min(position, s.visible)
-                return { ...getCardSwapPresentationPose(q, state.spread) }
+                return {
+                    ...getCardSwapPresentationPose(
+                        q,
+                        state.spread,
+                        s.scaleHorizontalSpacing ? s.width : undefined,
+                    ),
+                }
             }
             const logicalIndex = (physical: number): number =>
                 settingsRef.current.keys.indexOf(deck[physical]?.key ?? '')
@@ -1332,7 +1344,7 @@ const CardSwap = forwardRef<WordPronunciationDeckController, CardSwapProps>(func
             className="relative isolate z-0 grid min-w-0"
             style={{ perspective: cardSwapPresentation.perspective }}
             role="group"
-            aria-label="单词拼读卡片堆"
+            aria-label={label}
         >
             {cards.map((card, cardIndex) => (
                 <div

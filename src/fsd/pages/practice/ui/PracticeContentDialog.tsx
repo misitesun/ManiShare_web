@@ -24,6 +24,7 @@ interface PracticeContentListProps {
 interface PracticeContentDialogProps extends Omit<PracticeContentListProps, 'display'> {
     readonly open: boolean
     readonly onClose: () => void
+    readonly englishOnly?: boolean
 }
 
 /** 页面私有列表：保留题目顺序，只渲染当前显示方案，滚动不影响标题与切换区。 */
@@ -92,8 +93,10 @@ export function PracticeContentDialog({
     currentIndex,
     onSelect,
     onClose,
+    englishOnly = false,
 }: PracticeContentDialogProps): ReactElement {
-    const [display, setDisplay] = useState<PracticeContentDisplay>('chinese')
+    const [selectedDisplay, setDisplay] = useState<PracticeContentDisplay>('chinese')
+    const display = englishOnly ? 'english' : selectedDisplay
 
     function close(): void {
         setDisplay('chinese')
@@ -137,18 +140,20 @@ export function PracticeContentDialog({
                         className="[filter:var(--app-filter-dialog-icon)]"
                     />
                 </button>
-                <div className="mx-auto mt-6 w-full max-w-[342px] shrink-0">
-                    <TldSegmentedTabs
-                        ariaLabel="内容显示方式"
-                        appearance="glass"
-                        semantics="filter"
-                        items={practiceContentDisplayOptions}
-                        value={display}
-                        onValueChange={(value): void =>
-                            setDisplay(resolvePracticeContentDisplay(value))
-                        }
-                    />
-                </div>
+                {!englishOnly && (
+                    <div className="mx-auto mt-6 w-full max-w-[342px] shrink-0">
+                        <TldSegmentedTabs
+                            ariaLabel="内容显示方式"
+                            appearance="glass"
+                            semantics="filter"
+                            items={practiceContentDisplayOptions}
+                            value={display}
+                            onValueChange={(value): void =>
+                                setDisplay(resolvePracticeContentDisplay(value))
+                            }
+                        />
+                    </div>
+                )}
                 <PracticeContentList
                     questions={questions}
                     currentIndex={currentIndex}

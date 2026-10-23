@@ -35,6 +35,38 @@ function context(changes: Partial<PracticeShortcutContext> = {}): PracticeShortc
     }
 }
 
+test('纯指法保持切题与提交命令，所有题态禁用朗读、口语、答案和知识快捷键', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+        const active = context({
+            family: 'typing',
+            mode: 'typing',
+            phase,
+            answerInputCommands: true,
+        })
+        for (const target of ['content', 'answer-input'] as const) {
+            for (const key of ['L', 'J', 'K'])
+                assert.equal(
+                    resolvePracticeShortcut(input(key, { shiftKey: true }), active, target),
+                    null,
+                )
+            for (const key of ['V', 'ArrowDown', 'ArrowUp'])
+                assert.equal(resolvePracticeShortcut(input(key), active, target), null)
+            assert.equal(
+                resolvePracticeShortcut(input('ArrowLeft', { shiftKey: true }), active, target),
+                'question.previous',
+            )
+            assert.equal(
+                resolvePracticeShortcut(input('ArrowRight', { shiftKey: true }), active, target),
+                'question.next',
+            )
+            assert.equal(
+                resolvePracticeShortcut(input('Enter'), active, target),
+                'practice.primary',
+            )
+        }
+    }
+})
+
 test('所有真实作答模式显式启用输入命令，普通编辑器保持隔离', (): void => {
     const active = context({ mode: 'spell', answerInputCommands: true, panelVisible: true })
     for (const [key, changes, expected] of [

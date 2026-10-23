@@ -459,6 +459,7 @@
     --app-color-phonetics-success: #00bf63;
     --app-color-phonetics-placeholder: #d9d9d9;
     --app-color-phonetics-card: #1c1c1c;
+    --app-shadow-phonetics-card: 2px -5px 28.2px 0 rgba(124, 92, 255, 0.2);
     --app-color-practice-design-answer: var(--app-color-answer-default-dark);
     --app-color-practice-sentence-answer: #ffffff;
     --app-color-practice-muted: rgba(255, 255, 255, 0.6);
@@ -769,6 +770,7 @@
     --app-color-phonetics-success: var(--app-color-accent-green);
     --app-color-phonetics-placeholder: var(--app-color-surface-raised);
     --app-color-phonetics-card: var(--app-color-surface);
+    --app-shadow-phonetics-card: var(--app-shadow-panel);
     --app-color-practice-design-answer: var(--app-color-answer-default-light);
     --app-color-practice-sentence-answer: var(--app-color-text-primary);
     --app-color-practice-muted: var(--app-color-text-secondary);

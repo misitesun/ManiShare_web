@@ -113,7 +113,7 @@ export function createPracticeMediaGroup(): PracticeMediaGroup {
 }
 
 // 仅本练习页的内容媒体共享，不含短音效、TTS 或录音。
-const practiceMediaGroup = createPracticeMediaGroup()
+export const practiceMediaGroup = createPracticeMediaGroup()
 
 export function stopPracticeMedia(): void {
     practiceMediaGroup.stopAll()
