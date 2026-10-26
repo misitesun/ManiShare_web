@@ -111,8 +111,8 @@ const families = [
         family: 'guess',
         demo: 'guess-basic',
         modes: {
-            guess: [previous, read, navigation, next],
-            read: reading,
+            guess: [previous, read, panel, navigation, next],
+            read: [previous, navigation, next],
             spell: [previous, read, primary, panel, navigation, next],
         },
     },

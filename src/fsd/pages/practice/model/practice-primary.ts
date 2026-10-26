@@ -40,8 +40,9 @@ export function resolvePracticePrimary({
         if (action !== 'answer') return action
     }
     if (isPracticeAnswerVisible(phase)) return 'next'
+    if (family === 'guess' && mode === 'guess') return 'next'
     if (hasPracticeAnswerInput(mode)) return 'submit'
-    if (mode === 'check' || (family === 'guess' && mode === 'guess')) return 'reveal'
+    if (mode === 'check') return 'reveal'
     if (['spell', 'dictate', 'translate', 'blocks', 'meaning'].includes(mode)) return 'submit'
     return 'next'
 }

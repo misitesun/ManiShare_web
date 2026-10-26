@@ -8,6 +8,7 @@ interface DemoWordPhonetics {
 
 /** 只为本地示例提供明确分组，不作为任意英语单词的拆音算法或词典。 */
 const demoWords: Readonly<Record<string, DemoWordPhonetics>> = {
+    hand: { phonetic: 'hænd', syllables: ['hænd'], phonics: ['h', 'æ', 'n', 'd'] },
     woman: { phonetic: 'ˈwʊmən', syllables: ['wʊ', 'mən'], phonics: ['w', 'ʊ', 'm', 'ə', 'n'] },
     man: { phonetic: 'mæn', syllables: ['mæn'], phonics: ['m', 'æ', 'n'] },
     girl: { phonetic: 'ɡɜːl', syllables: ['ɡɜːl'], phonics: ['ɡ', 'ɜː', 'l'] },
@@ -51,6 +52,7 @@ interface DemoWordSpellings {
 
 /** 示例的字母—发音映射显式维护；如oo、th、le保持为完整拼读片段。 */
 const demoSpellings: Readonly<Record<string, DemoWordSpellings>> = {
+    hand: { syllables: ['hand'], phonics: ['h', 'a', 'n', 'd'] },
     woman: { syllables: ['wo', 'man'], phonics: ['w', 'o', 'm', 'a', 'n'] },
     man: { syllables: ['man'], phonics: ['m', 'a', 'n'] },
     girl: { syllables: ['girl'], phonics: ['g', 'ir', 'l'] },

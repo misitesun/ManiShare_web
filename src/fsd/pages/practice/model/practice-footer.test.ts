@@ -50,8 +50,9 @@ test('全部公开演示组合及音标内部口语在四题态均有确定配�
 })
 
 test('原稿的简化底栏和纯内容不继承通用答案朗读或知识按钮', (): void => {
-    for (const family of ['sentence', 'audio', 'guess'] as const)
+    for (const family of ['sentence', 'audio'] as const)
         assert.deepEqual(ids(family, 'read'), ['previous', 'playback', 'next'])
+    assert.deepEqual(ids('guess', 'read'), ['previous', 'navigation', 'next'])
     assert.deepEqual(ids('typing', 'typing'), ['previous', 'navigation', 'next'])
     assert.deepEqual(ids('picture-reader', 'read'), ['previous', 'contextual', 'next'])
     for (const family of ['audio-reader', 'video-reader', 'text-reader'] as const)
@@ -122,6 +123,28 @@ test('句子与音频听力保留上下答案提示，阅读、自查、指法�
     }
 })
 
+test('猜词补充上下答案快捷键入口，不新增空格或回车切题提示', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+        for (const panelVisible of [false, true]) {
+            const items = getPracticeFooter({ ...context('guess', 'guess', phase), panelVisible })
+            assert.deepEqual(
+                items.map((item) => item.id),
+                ['previous', 'read-aloud', 'panel', 'navigation', 'next'],
+            )
+            const panel = items.find((item) => item.id === 'panel')
+            assert.equal(panel?.label, '答案')
+            assert.equal(panel?.action, 'practice.panel.toggle')
+            assert.equal(panel?.expanded, panelVisible)
+            assert.deepEqual(panel?.shortcuts, ['ArrowDown', 'ArrowUp'])
+            assert.equal(
+                items.some((item) =>
+                    item.shortcuts.some((key) => key === 'Space' || key === 'Enter'),
+                ),
+                false,
+            )
+        }
+})
+
 test('输入与结果提示分别使用提交和下一题，答后不保留跳格提示', (): void => {
     for (const family of ['sentence', 'audio', 'video', 'picture'] as const) {
         const input = getPracticeFooter(context(family, 'translate'))
@@ -173,6 +196,17 @@ test('输入与结果提示分别使用提交和下一题，答后不保留跳�
         )?.label,
         '显示答案',
     )
+})
+
+test('猜词打词底栏同时标明回车和空格提交，不改变其他猜词模式的切题限制', (): void => {
+    for (const phase of ['answering', 'incorrect', 'correct', 'revealed'] as const) {
+        const items = getPracticeFooter(context('guess', 'spell', phase))
+        assert.deepEqual(
+            items.map((item) => item.id),
+            ['previous', 'read-aloud', 'primary', 'panel', 'navigation', 'next'],
+        )
+        assert.deepEqual(items.find((item) => item.id === 'primary')?.shortcuts, ['Enter', 'Space'])
+    }
 })
 
 test('口语根据同一受控阶段显示开始停止、评测阻断、回放及重录', (): void => {

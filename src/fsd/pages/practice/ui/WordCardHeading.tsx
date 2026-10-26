@@ -11,6 +11,7 @@ interface WordCardHeadingProps {
     readonly disabled?: boolean
     readonly placement?: 'card' | 'slot' | 'typing'
     readonly playLabel?: string
+    readonly compact?: boolean
 }
 
 /** 拼读、单词作答及句子指法正确态共用的四线文本与朗读入口。 */
@@ -23,17 +24,20 @@ export function WordCardHeading({
     disabled = false,
     placement = 'card',
     playLabel = '朗读当前单词',
+    compact = false,
 }: WordCardHeadingProps): ReactElement {
     return (
         <div
             className={
-                placement === 'typing'
-                    ? 'relative w-max min-w-0 max-w-[calc(100%-120px)] text-center'
-                    : placement === 'slot'
-                      ? 'relative mt-6 w-max min-w-0 max-w-[calc(100%-120px)] text-center'
-                      : referenceLayout
-                        ? 'relative min-w-0 max-w-full text-center design:absolute design:left-1/2 design:top-[305px] design:h-[53px] design:w-max design:max-w-[calc(100%-120px)] design:-translate-x-1/2'
-                        : 'relative flex min-w-0 max-w-full flex-wrap items-center justify-center gap-4 text-center'
+                compact
+                    ? 'relative w-max min-w-0 max-w-[calc(100%-80px)] text-center xl:absolute xl:left-1/2 xl:top-[213px] xl:-translate-x-1/2'
+                    : placement === 'typing'
+                      ? 'relative w-max min-w-0 max-w-[calc(100%-120px)] text-center'
+                      : placement === 'slot'
+                        ? 'relative mt-6 w-max min-w-0 max-w-[calc(100%-120px)] text-center'
+                        : referenceLayout
+                          ? 'relative min-w-0 max-w-full text-center design:absolute design:left-1/2 design:top-[305px] design:h-[53px] design:w-max design:max-w-[calc(100%-120px)] design:-translate-x-1/2'
+                          : 'relative flex min-w-0 max-w-full flex-wrap items-center justify-center gap-4 text-center'
             }
         >
             <div className="relative min-w-0 max-w-full">
@@ -55,9 +59,11 @@ export function WordCardHeading({
                         displayFontSize === undefined ? undefined : { fontSize: displayFontSize }
                     }
                     className={
-                        placement === 'typing'
-                            ? 'relative m-0 max-w-full break-words text-inherit font-medium leading-[normal] tracking-[0.06em] text-practice-answer [font-size:inherit]'
-                            : 'relative m-0 max-w-full break-words text-[32px] font-semibold leading-[normal] tracking-[0.08em] text-practice-answer md:text-[38px]'
+                        compact
+                            ? 'relative m-0 max-w-full break-words text-[24px] font-semibold leading-[34px] tracking-[0.08em] text-practice-answer'
+                            : placement === 'typing'
+                              ? 'relative m-0 max-w-full break-words text-inherit font-medium leading-[normal] tracking-[0.06em] text-practice-answer [font-size:inherit]'
+                              : 'relative m-0 max-w-full break-words text-[32px] font-semibold leading-[normal] tracking-[0.08em] text-practice-answer md:text-[38px]'
                     }
                 >
                     <span className={hideEnglish ? 'invisible' : ''}>{word}</span>
@@ -69,16 +75,18 @@ export function WordCardHeading({
                 aria-label={playLabel}
                 onClick={onPlay}
                 className={
-                    placement === 'slot' || placement === 'typing' || referenceLayout
-                        ? 'absolute -right-[61px] top-[13px] size-8 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default'
-                        : 'size-8 shrink-0 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default'
+                    compact
+                        ? 'absolute -right-[41px] top-[5px] size-6 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default'
+                        : placement === 'slot' || placement === 'typing' || referenceLayout
+                          ? 'absolute -right-[61px] top-[13px] size-8 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default'
+                          : 'size-8 shrink-0 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-default'
                 }
             >
                 <img
                     src={playAsset.src}
                     alt=""
-                    width={32}
-                    height={32}
+                    width={compact ? 24 : 32}
+                    height={compact ? 24 : 32}
                     className="[filter:var(--app-filter-practice-icon)]"
                 />
             </button>

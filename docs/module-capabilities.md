@@ -1,5 +1,13 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- 猜词游戏静态UI开发完成：2026-10-26用户确认猜词、阅读、打词三个模式静态UI完成，并授权main提交／推送；十条共用数据与声音、三种题面、共用答案／翻转、阅读全宽滚动与焦点修正、打词键盘70px间距的最终范围见[完成检查点](checkpoints/2026-10-26-guess-games-static-ui-complete.md)。未运行测试／构建或各端验收，正式后台、积分与设备兼容不增加通过声明；下方“打词首版”为历史阶段。
+
+- 猜词打词模式：`pages/practice/GuessSpellingExercise`组合中文前后文、目标词输入及动态键盘，三种猜词模式共用十题和WAV；复用句子指法单段输入、提交／纠错与IME边界，正确或手动查看均用同一猜词答案卡，收起后归焦，切题清空并收起。默认抄写和既有显示／切读偏好保持，无额外口语／统计，黄晶1200仅展示、不扩奖励规则。无新接口、资源、路由、Storage、主题、依赖或Electron bridge；已补回归源码但按用户要求未执行测试／构建或各端验收，见[猜词开发记录](practice-guess-games-development.md)。下方早期“打词首版”范围以本项覆盖。
+
+- 猜词阅读模式：`pages/practice/GuessReadingExercise`以稳定挂载的垂直列表复用十条猜词语境和朗读源，点击单词或显式切题后打开唯一的共用答案卡，保留草稿位置、右滑与Y轴解析；列表和卡面分别内部滚动。底栏按阅读稿三项，Shift切题、上下答案及Shift+L沿统一命令；空格／Enter不切题，无输入／口语／评分或自动播放扩展。阅读已接入，打词仍为首版；按用户要求未运行测试／构建或各端验收，见[猜词开发记录](practice-guess-games-development.md)。
+
+- 猜词模式：`pages/practice`接入`guess-basic/guess`十条中文语境、目标词及同源朗读，目标词与顶栏答案共用非模态右滑浮窗，动画和默认固定位置复用草稿；`WordLearningCard`抽取原单词正面，在同一页面内复用500px默认与360px猜词变体，不创建全局shared组件。题面不以空格／Enter切题，保留默认Shift+←／→及原配置切题入口，无输入或正式判题；阅读已复用同一答案，打词仍为首版。原稿图片及hand离线音源随owner维护，无新接口、路由、依赖、存储、主题token或Electron bridge。按用户要求未执行测试／构建及各端验收，见[猜词开发记录](practice-guess-games-development.md)。
+
 - 独立指法与纯音标开发完成：2026-10-23用户确认两类游戏本阶段开发完成，并授权main提交、推送今日代码，包含视频三模式黄晶计分增量。十条混合指法数据、/æ/十词课程、复用卡堆、离线朗读与卡内单总分评测的最终范围见[今日完成检查点](checkpoints/2026-10-23-typing-phonetics-development-complete.md)。按用户要求未执行测试／构建及各端运行验收，正式题库、录音评分和学习记录仍未接入。
 
 - 音标卡内评测：`pages/practice`复用`features/oral-assessment`原四态控制器，由私有控制区替代该卡旧弹窗入口。根入口新增`OralAssessmentScoreRing`，默认供详细评分使用，compact供音标仅展示一个总分；录制及示例回放边界、其他模式默认不变。无新请求、采集、存储或主题token；按用户要求仅格式化和静态差异检查，测试／构建及各端运行验收未执行，见[纯音标开发记录](practice-phonetics-game-development.md)。

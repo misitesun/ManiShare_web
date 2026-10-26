@@ -366,6 +366,10 @@ function PracticeSession({
     const isVideoBlocks = isVideoGame && mode === 'blocks'
     const isVideoTranslation = isVideoGame && mode === 'translate'
     const isStandaloneTyping = demo.family === 'typing' && mode === 'typing'
+    const isGuessWord = demo.family === 'guess' && mode === 'guess'
+    const isGuessReading = demo.family === 'guess' && mode === 'read'
+    const isGuessSpelling = demo.family === 'guess' && mode === 'spell'
+    const usesGuessAnswer = isGuessWord || isGuessReading || isGuessSpelling
     const isVideoExercise =
         isVideoCheck || isVideoTyping || isVideoOral || isVideoBlocks || isVideoTranslation
     const [videoPlayback] = useState(() =>
@@ -424,7 +428,7 @@ function PracticeSession({
     const isOralExercise = isWordOral || isSentenceOral || isVideoOral
     const isSentenceTranslation = (isSentenceGame || isVideoTranslation) && mode === 'translate'
     const isSentenceCheck = (isSentenceGame || isVideoCheck) && mode === 'check'
-    const isSentenceInput = isSentenceTranslation || isSentenceTyping
+    const isSentenceInput = isSentenceTranslation || isSentenceTyping || isGuessSpelling
     const isSentenceBlocks = (isSentenceGame || isVideoBlocks) && mode === 'blocks'
     const isWordInput = isWordSpelling || isWordDictation
     const isWordMeaning = demo.family === 'word' && mode === 'meaning'
@@ -487,6 +491,7 @@ function PracticeSession({
         (isSentenceCheck && isPracticeAnswerVisible(session.phase))
     const isFourRowLayout =
         isWordAnswerMode ||
+        isGuessSpelling ||
         isVideoTranslation ||
         isTypingPractice ||
         isOralExercise ||
@@ -758,13 +763,14 @@ function PracticeSession({
         !blocked &&
         !session.finished &&
         hasAnswerInput &&
+        (!isGuessSpelling || !panelVisible) &&
         (session.phase === 'answering' || session.phase === 'incorrect')
     usePracticeInteractionFocus({
         rootRef,
         answerInput,
         keyboardNavigation,
         ready: snapshot.ready && toolbarPreferences.ready,
-        blocked: blocked || draftOpen || session.finished,
+        blocked: blocked || draftOpen || session.finished || (isGuessSpelling && panelVisible),
         answerEditable: answerFocusAllowed.current,
         reading: isSentenceReading,
     })
@@ -878,7 +884,8 @@ function PracticeSession({
         schedulePlayback:
             demo.family === 'sentence' ||
             (demo.family === 'audio' && !isAudioListening) ||
-            demo.family === 'word'
+            demo.family === 'word' ||
+            usesGuessAnswer
                 ? scheduleSentencePlayback
                 : undefined,
     })
@@ -914,6 +921,7 @@ function PracticeSession({
     const readingView: PracticeReadingView | undefined =
         (readingEnabled ||
             ((demo.family === 'word' ||
+                usesGuessAnswer ||
                 isSentenceInput ||
                 isSentenceCheck ||
                 isSentenceOral ||
@@ -1013,6 +1021,7 @@ function PracticeSession({
     }
     function open(next: Overlay, questionId?: string): void {
         phoneticsReading.stop()
+        if (usesGuessAnswer) setPanelVisible(false)
         if (isVideoGame && next === 'content') {
             if (videoContentPlayback) videoContentPlayback.toggleContent()
             else setFallbackVideoContentOpen((open) => !open)
@@ -1181,7 +1190,7 @@ function PracticeSession({
         stopPracticeMedia()
         activeOral.reset()
         dispatchWordMeaning({ type: 'question' })
-        setPanelVisible(demo.family === 'phonetics')
+        setPanelVisible(demo.family === 'phonetics' || isGuessReading)
         setResetRevision((revision) => revision + 1)
         setMessage('')
         if (isWordPronunciation) {
@@ -1189,7 +1198,22 @@ function PracticeSession({
             dispatch({ type: 'reset' })
         } else dispatch({ type: 'move', delta, total: questions.length })
         emit('questionChange')
-        if (isSentenceCheck) rootRef.current?.focus({ preventScroll: true })
+        if (isSentenceCheck || usesGuessAnswer) rootRef.current?.focus({ preventScroll: true })
+    }
+    function selectGuessReading(index: number): void {
+        if (
+            !isGuessReading ||
+            blocked ||
+            session.finished ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready ||
+            !Number.isInteger(index) ||
+            index < 0 ||
+            index >= questions.length
+        )
+            return
+        if (index !== session.index) move(index - session.index)
+        setPanelVisible(true)
     }
     function selectVideoContent(index: number): void {
         if (
@@ -1451,7 +1475,7 @@ function PracticeSession({
     }
     function readExampleAloud(example: WordCardExample): void {
         if (
-            demo.family !== 'word' ||
+            (demo.family !== 'word' && !usesGuessAnswer) ||
             blocked ||
             session.finished ||
             !snapshot.ready ||
@@ -1587,7 +1611,7 @@ function PracticeSession({
         readingAudio.pause()
         videoExerciseActions.pause()
         // 按段判题，空段和末段多词不能因拼接/trim后文本相同而误判正确。
-        if (isSentenceTyping || isVideoTranslation)
+        if (isSentenceTyping || isVideoTranslation || isGuessSpelling)
             dispatch({
                 type: isSentenceTyping ? 'submit-sentence-typing' : 'submit-sentence-answer',
                 values: submission.values,
@@ -1600,10 +1624,17 @@ function PracticeSession({
         }
         setMessage('')
         if (judgment === 'correct') {
-            setPanelVisible(false)
+            setPanelVisible(isGuessSpelling)
             rootRef.current?.focus({ preventScroll: true })
         }
         emit(judgment)
+    }
+    function restoreGuessSpellingFocus(): void {
+        if (!isGuessSpelling) return
+        // 显式收起答案后回到当前作答；已答对时由题面承接继续命令。
+        keyboardNavigation.current = false
+        if (isPracticeAnswerVisible(session.phase)) rootRef.current?.focus({ preventScroll: true })
+        else answerFocus.request()
     }
     function executeKeyboardCommand(command: PracticeCommand): void {
         const returnToSentence =
@@ -1714,7 +1745,7 @@ function PracticeSession({
             command === 'practice.panel.hide' ||
             command === 'practice.panel.toggle'
         ) {
-            if (supportsPracticePanel(demo.family, mode))
+            if (supportsPracticePanel(demo.family, mode)) {
                 setPanelVisible((visible) =>
                     command === 'practice.panel.show'
                         ? true
@@ -1722,9 +1753,17 @@ function PracticeSession({
                           ? false
                           : !visible,
                 )
+                if (
+                    command === 'practice.panel.hide' ||
+                    (command === 'practice.panel.toggle' && panelVisible)
+                )
+                    restoreGuessSpellingFocus()
+            }
         } else if (command === 'practice.dismiss') {
-            if (panelVisible) setPanelVisible(false)
-            else if (isVideoGame && videoContentOpen) closeVideoContent()
+            if (panelVisible) {
+                setPanelVisible(false)
+                restoreGuessSpellingFocus()
+            } else if (isVideoGame && videoContentOpen) closeVideoContent()
             else pause.pause()
         }
     }
@@ -1795,52 +1834,54 @@ function PracticeSession({
                     data-practice-four-row-layout={
                         isVideoTranslation
                             ? 'video-translate'
-                            : isImmersiveListening || isSentenceResult
-                              ? isVideoCheck
-                                  ? 'video-check'
-                                  : isVideoBlocks
-                                    ? 'video-blocks'
-                                    : demo.family === 'audio'
-                                      ? 'audio-listening'
-                                      : 'sentence-listening'
-                              : isSentenceBlocks
-                                ? isVideoBlocks
-                                    ? 'video-blocks'
-                                    : demo.family === 'audio'
-                                      ? 'audio-blocks'
-                                      : 'sentence-blocks'
-                                : isSentenceCheck
-                                  ? isVideoCheck
-                                      ? 'video-check'
+                            : isGuessSpelling
+                              ? 'guess-spelling'
+                              : isImmersiveListening || isSentenceResult
+                                ? isVideoCheck
+                                    ? 'video-check'
+                                    : isVideoBlocks
+                                      ? 'video-blocks'
                                       : demo.family === 'audio'
-                                        ? 'audio-check'
-                                        : 'sentence-check'
-                                  : isTypingPractice
-                                    ? isStandaloneTyping
-                                        ? 'standalone-typing'
-                                        : isSentenceTyping
-                                          ? isVideoTyping
-                                              ? 'video-typing'
-                                              : demo.family === 'audio'
-                                                ? 'audio-typing'
-                                                : 'sentence-typing'
-                                          : 'word-typing'
-                                    : isOralExercise
-                                      ? isVideoOral
-                                          ? 'video-oral'
-                                          : isSentenceOral
-                                            ? demo.family === 'audio'
-                                                ? 'audio-oral'
-                                                : 'sentence-oral'
-                                            : 'word-oral'
-                                      : isWordAnswerMode
-                                        ? 'word-input'
-                                        : undefined
+                                        ? 'audio-listening'
+                                        : 'sentence-listening'
+                                : isSentenceBlocks
+                                  ? isVideoBlocks
+                                      ? 'video-blocks'
+                                      : demo.family === 'audio'
+                                        ? 'audio-blocks'
+                                        : 'sentence-blocks'
+                                  : isSentenceCheck
+                                    ? isVideoCheck
+                                        ? 'video-check'
+                                        : demo.family === 'audio'
+                                          ? 'audio-check'
+                                          : 'sentence-check'
+                                    : isTypingPractice
+                                      ? isStandaloneTyping
+                                          ? 'standalone-typing'
+                                          : isSentenceTyping
+                                            ? isVideoTyping
+                                                ? 'video-typing'
+                                                : demo.family === 'audio'
+                                                  ? 'audio-typing'
+                                                  : 'sentence-typing'
+                                            : 'word-typing'
+                                      : isOralExercise
+                                        ? isVideoOral
+                                            ? 'video-oral'
+                                            : isSentenceOral
+                                              ? demo.family === 'audio'
+                                                  ? 'audio-oral'
+                                                  : 'sentence-oral'
+                                              : 'word-oral'
+                                        : isWordAnswerMode
+                                          ? 'word-input'
+                                          : undefined
                     }
                     className={
                         isVideoGame && !isVideoListening
                             ? 'flex h-dvh min-w-0 flex-col overflow-hidden'
-                            : isFourRowLayout || isSentenceReading
+                            : isFourRowLayout || isSentenceReading || isGuessReading
                               ? 'flex h-dvh min-w-0 flex-col overflow-hidden pb-[calc(100px+env(safe-area-inset-bottom))]'
                               : footerItems.length > 0
                                 ? 'flex min-h-dvh min-w-0 flex-col pb-[calc(100px+env(safe-area-inset-bottom))]'
@@ -1932,7 +1973,7 @@ function PracticeSession({
                         className={
                             isVideoGame
                                 ? 'relative flex min-h-0 min-w-0 flex-1 flex-col'
-                                : isSentenceReading
+                                : isSentenceReading || isGuessReading
                                   ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
                                   : isFourRowLayout
                                     ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain'
@@ -1995,10 +2036,14 @@ function PracticeSession({
                                 ) : null}
                             </fieldset>
                         </PracticeTimerContext.Provider>
-                        {supportsPracticeGameCrystals(demo.family, mode) && (
+                        {(isGuessSpelling || supportsPracticeGameCrystals(demo.family, mode)) && (
                             <div className="absolute right-4 top-5 z-[1]">
                                 <WordSpellingCrystals
-                                    value={getPracticeGameCrystals(answerSession)}
+                                    value={
+                                        isGuessSpelling
+                                            ? 1200
+                                            : getPracticeGameCrystals(answerSession)
+                                    }
                                 />
                             </div>
                         )}
@@ -2070,13 +2115,15 @@ function PracticeSession({
                                     key={
                                         isSentenceReading
                                             ? 'sentence-reading'
-                                            : demo.family === 'word' && mode === 'pronounce'
-                                              ? `word-pronunciation:${wordOrderRevision}`
-                                              : isPhoneticsPronunciation
-                                                ? 'phonetics-pronunciation'
-                                                : isWordSpelling
-                                                  ? 'word-spelling'
-                                                  : `${question.id}:${resetRevision}`
+                                            : isGuessReading
+                                              ? 'guess-reading'
+                                              : demo.family === 'word' && mode === 'pronounce'
+                                                ? `word-pronunciation:${wordOrderRevision}`
+                                                : isPhoneticsPronunciation
+                                                  ? 'phonetics-pronunciation'
+                                                  : isWordSpelling
+                                                    ? 'word-spelling'
+                                                    : `${question.id}:${resetRevision}`
                                     }
                                     demo={demo}
                                     mode={mode}
@@ -2132,6 +2179,7 @@ function PracticeSession({
                                         if (
                                             isWordAnswerMode ||
                                             isTypingPractice ||
+                                            isGuessSpelling ||
                                             isSentenceTranslation
                                         )
                                             emit('typing')
@@ -2182,6 +2230,15 @@ function PracticeSession({
                                     {...(videoExercisePlayback ? { videoExercisePlayback } : {})}
                                     onExampleReadAloud={readExampleAloud}
                                     reading={readingView}
+                                    guessAnswerOpen={usesGuessAnswer && panelVisible}
+                                    guessPortalRoot={rootRef}
+                                    onGuessReadingSelect={selectGuessReading}
+                                    onGuessToggleAnswer={(): void =>
+                                        executeCommand('practice.panel.toggle')
+                                    }
+                                    onGuessCloseAnswer={(): void =>
+                                        executeCommand('practice.panel.hide')
+                                    }
                                 />
                                 {isVideoTyping && typingStatistics}
                             </VideoPracticeLayout>
@@ -2229,7 +2286,7 @@ function PracticeSession({
                     {!isVideoGame && practiceFooter}
                     <PracticeAnswerPanel
                         portalRoot={rootRef}
-                        open={panelVisible}
+                        open={panelVisible && !usesGuessAnswer}
                         phonetics={demo.family === 'phonetics'}
                         sentenceTranslation={isSentenceTranslation && !isTranslationResult}
                         sentenceAnswer={isSentenceGame || isVideoListening || isVideoExercise}

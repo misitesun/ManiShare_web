@@ -24,7 +24,7 @@ test('单词六模式全部拥有对应目标词音源，题量及题目身份�
         }
     }
     assert.equal(words.size, 19)
-    assert.ok(getDemoQuestions('guess', 'guess').every((question) => !question.readingSource))
+    assert.ok(getDemoQuestions('guess', 'read').every((question) => question.readingSource))
 })
 
 test('三十条解析例句逐条绑定自身音源；十条语境句与目标单词音源分开', (): void => {

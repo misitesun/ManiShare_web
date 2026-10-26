@@ -32,9 +32,9 @@ test('输入和拼块主动作只提交当前题，答错后仍提交，不直�
         }
 })
 
-test('猜词输入交给通用校验，自查保留揭晓，已有答案时统一推进', (): void => {
+test('猜词主动作直接切题，自查保留揭晓，已有答案时统一推进', (): void => {
     for (const phase of ['answering', 'incorrect'] as const) {
-        assert.equal(resolve({ family: 'guess', mode: 'guess', phase }), 'submit')
+        assert.equal(resolve({ family: 'guess', mode: 'guess', phase }), 'next')
         for (const family of ['sentence', 'audio'] as const)
             assert.equal(resolve({ family, mode: 'check', phase }), 'reveal')
     }

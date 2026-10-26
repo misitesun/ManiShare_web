@@ -201,6 +201,19 @@ export function getPracticeReference(
     }
     if (family === 'audio' && mode === 'listen')
         return { ...base, node: getSentenceListeningReference('audio').node }
+    if (family === 'guess' && mode === 'spell') {
+        const typing = getPracticeReference('word', 'typing', phase)
+        return {
+            ...base,
+            node: '1734:10225',
+            top: 130,
+            mediaHeight: 240,
+            textGap: 45,
+            translationGap: 0,
+            // 中文已并入填词行，键盘仍保留句子指法的中文行及前后间距。
+            keyboardGap: typing.translationGap + 34 + typing.keyboardGap,
+        }
+    }
     if (family === 'typing') {
         // 句子指法实际复用word:typing；纯指法保留相同输入和键盘位置，不渲染图片／译文。
         const typing = getPracticeReference('word', 'typing', phase)

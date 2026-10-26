@@ -156,8 +156,8 @@ const layouts: Readonly<
         oral,
     },
     guess: {
-        guess: ['previous', 'read', 'navigation', 'next'],
-        read: reading,
+        guess: ['previous', 'read', 'panel', 'navigation', 'next'],
+        read: ['previous', 'navigation', 'next'],
         spell: ['previous', 'read', 'primary', 'panel', 'navigation', 'next'],
     },
     'audio-reader': { read: [] },
@@ -301,7 +301,8 @@ function primaryItems(context: PracticeFooterContext): readonly PracticeFooterIt
                 next ||
                 reveal ||
                 (context.family === 'word' &&
-                    (context.mode === 'spell' || context.mode === 'meaning'))
+                    (context.mode === 'spell' || context.mode === 'meaning')) ||
+                (context.family === 'guess' && context.mode === 'spell')
                     ? bindings(context, 'practice.primary', 'practice.contextual')
                     : item.shortcuts,
         },

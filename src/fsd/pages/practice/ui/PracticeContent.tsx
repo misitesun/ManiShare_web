@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useState } from 'react'
-import type { CSSProperties, ReactElement, ReactNode } from 'react'
+import type { CSSProperties, ReactElement, ReactNode, RefObject } from 'react'
 import type {
     OralAssessmentDemoController,
     OralAssessmentTarget,
@@ -70,6 +70,9 @@ import type { SentenceReadingDisplayOptions } from '../model/sentence-reading-di
 import type { SentenceAnswerSubmission } from '../model/sentence-answer-input'
 import { PracticeWordSlotsInput } from './PracticeWordSlotsInput'
 import { PhoneticsDemo } from './PhoneticsDemo'
+import { GuessWordExercise } from './GuessWordExercise'
+import { GuessReadingExercise } from './GuessReadingExercise'
+import { GuessSpellingExercise } from './GuessSpellingExercise'
 import type { PhoneticsReadingSnapshot } from '../model/phonetics-reading-runtime'
 import wordAsset from '../assets/word-woman-e23d5f.png'
 import sentenceAsset from '../assets/reading-scene.png'
@@ -124,6 +127,11 @@ export interface PracticeContentProps {
     readonly onReadAloud?: () => void
     readonly onExampleReadAloud?: ((example: WordCardExample) => void) | undefined
     readonly reading?: PracticeReadingView | undefined
+    readonly guessAnswerOpen?: boolean
+    readonly onGuessToggleAnswer?: () => void
+    readonly onGuessCloseAnswer?: () => void
+    readonly onGuessReadingSelect?: (index: number) => void
+    readonly guessPortalRoot?: RefObject<HTMLElement | null>
     readonly phoneticsReading?: PhoneticsReadingSnapshot | undefined
     readonly onPhoneticsWordRead?: (() => void) | undefined
     readonly onPhoneticsSegmentRead?: ((segmentId: string) => void) | undefined
@@ -186,6 +194,11 @@ export function PracticeContent({
     onReadAloud,
     onExampleReadAloud,
     reading,
+    guessAnswerOpen = false,
+    onGuessToggleAnswer = ignoreCardAction,
+    onGuessCloseAnswer = ignoreCardAction,
+    onGuessReadingSelect = ignoreCardAction,
+    guessPortalRoot,
     phoneticsReading,
     onPhoneticsWordRead,
     onPhoneticsSegmentRead,
@@ -292,6 +305,70 @@ export function PracticeContent({
                   ? greetingAsset.src
                   : sentenceAsset.src
     const style: ContentStyle = { '--practice-reference-top': `${reference.top}px` }
+    if (demo.family === 'guess' && mode === 'spell')
+        return (
+            <GuessSpellingExercise
+                question={question}
+                phase={session.phase}
+                input={session.input}
+                blocked={blocked}
+                showImage={imageVisible && (additionalOptions?.imageVisible ?? true)}
+                showKeyboard={additionalOptions?.keyboardVisible ?? true}
+                copy={additionalOptions?.copy ?? true}
+                ignoreCase={values.ignoreCase}
+                borderStyle={appearance.borderStyle}
+                displayFontSize={values.fontSize === '默认' ? undefined : appearance.fontSize}
+                answerOpen={guessAnswerOpen}
+                onInput={onInput}
+                onSubmit={onSentenceSubmit}
+                onController={onAnswerController}
+                onCloseAnswer={onGuessCloseAnswer}
+                onPlay={onReadAloud ?? ignoreCardAction}
+                onExamplePlay={
+                    onExampleReadAloud ?? ((): void => onNotice('当前例句暂无朗读音源。'))
+                }
+                onNotice={onNotice}
+                reading={reading}
+                {...(guessPortalRoot ? { portalRoot: guessPortalRoot } : {})}
+            />
+        )
+    if (demo.family === 'guess' && mode === 'read')
+        return (
+            <GuessReadingExercise
+                questions={questions ?? [question]}
+                question={question}
+                revision={spellingQuestionRevision ?? 0}
+                blocked={blocked}
+                answerOpen={guessAnswerOpen}
+                onSelect={onGuessReadingSelect}
+                onCloseAnswer={onGuessCloseAnswer}
+                onPlay={onReadAloud ?? ignoreCardAction}
+                onExamplePlay={
+                    onExampleReadAloud ?? ((): void => onNotice('当前例句暂无朗读音源。'))
+                }
+                onNotice={onNotice}
+                reading={reading}
+                {...(guessPortalRoot ? { portalRoot: guessPortalRoot } : {})}
+            />
+        )
+    if (demo.family === 'guess' && mode === 'guess')
+        return (
+            <GuessWordExercise
+                question={question}
+                blocked={blocked}
+                showImage={imageVisible && (additionalOptions?.imageVisible ?? true)}
+                answerOpen={guessAnswerOpen}
+                reading={reading}
+                onToggleAnswer={onGuessToggleAnswer}
+                onCloseAnswer={onGuessCloseAnswer}
+                {...(guessPortalRoot ? { portalRoot: guessPortalRoot } : {})}
+                onPlay={onReadAloud ?? ignoreCardAction}
+                onExamplePlay={
+                    onExampleReadAloud ?? ((): void => onNotice('当前例句暂无朗读音源。'))
+                }
+                onNotice={onNotice}
+            />
+        )
     if (
         (demo.family === 'word' || sentenceGameFamily !== undefined || isVideoOral) &&
         mode === 'oral' &&
@@ -849,12 +926,8 @@ export function PracticeContent({
                     )}
                 </div>
             </div>
-            {(mode === 'typing' || (demo.family === 'guess' && mode === 'spell')) && (
-                <div
-                    data-guess-keyboard={demo.family === 'guess' ? '' : undefined}
-                    hidden={demo.family === 'guess' && additionalOptions?.keyboardVisible === false}
-                    style={{ marginTop: reference.keyboardGap }}
-                >
+            {mode === 'typing' && (
+                <div style={{ marginTop: reference.keyboardGap }}>
                     <TypingKeyboard
                         width={reference.keyboardWidth}
                         height={reference.keyboardHeight}
@@ -869,14 +942,7 @@ export function PracticeContent({
                             mode === 'typing' ? 'typing' : 'text',
                         ).join('')}
                         cursor={answerCursor}
-                        active={
-                            !blocked &&
-                            !answerVisible &&
-                            !(
-                                demo.family === 'guess' &&
-                                additionalOptions?.keyboardVisible === false
-                            )
-                        }
+                        active={!blocked && !answerVisible}
                         sessionKey={`${question.id}:${mode}`}
                     />
                 </div>

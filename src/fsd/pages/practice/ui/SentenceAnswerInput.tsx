@@ -27,6 +27,7 @@ import { getWordSlotHint, getWordSlotPlaceholder } from '../model/word-slot-inpu
 import { PracticeInputBridge } from './PracticeInputBridge'
 
 interface SentenceAnswerInputProps {
+    readonly label?: string
     readonly target: string
     readonly initialValue: string
     readonly showWordHint: boolean
@@ -235,12 +236,12 @@ export function SentenceAnswerInput(props: SentenceAnswerInputProps): ReactEleme
             }}
         >
             <label htmlFor={id} className="sr-only">
-                句子答案，第{state.activeIndex + 1}段
+                {props.label ?? '句子答案'}，第{state.activeIndex + 1}段
             </label>
             <PracticeInputBridge
                 id={id}
                 ref={inputRef}
-                aria-label={`句子答案，第${state.activeIndex + 1}段`}
+                aria-label={`${props.label ?? '句子答案'}，第${state.activeIndex + 1}段`}
                 aria-invalid={state.feedback[state.activeIndex] === 'incorrect'}
                 value={compositionValue ?? state.values[state.activeIndex] ?? ''}
                 disabled={disabled}

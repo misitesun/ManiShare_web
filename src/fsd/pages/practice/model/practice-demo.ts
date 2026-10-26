@@ -2,6 +2,8 @@ import { judgeWordSpelling } from './word-spelling'
 import type { WordSpellingStatistics } from './word-spelling'
 import { getDemoWordPhonetics } from './word-phonetics-demo'
 import type { WordPhoneticBreakdown } from './word-phonetics'
+import type { GuessWordContent } from './guess-word'
+import { guessWordQuestions } from './guess-word-demo'
 import { getDemoWordCardExamples } from './word-card-analysis-demo'
 import type { WordCardExample } from './word-card-analysis'
 import type { WordMeaningContent } from './word-meaning'
@@ -74,6 +76,7 @@ export interface PracticeQuestion {
     /** 可选的本地解析例句，真实接口由适配器映射；缺失时显示空态。 */
     readonly wordExamples?: readonly WordCardExample[]
     readonly wordMeaning?: WordMeaningContent
+    readonly guess?: GuessWordContent
     readonly tokens: readonly PracticeToken[]
     /** 页面内部的可选朗读音源，后续由真实接口适配器映射；不是后台字段约定。 */
     readonly readingSource?: string
@@ -367,6 +370,7 @@ export function getDemoQuestions(
 ): readonly PracticeQuestion[] {
     if (family === 'video') return videoListeningQuestions
     if (family === 'typing') return typingGameQuestions
+    if (family === 'guess') return guessWordQuestions
     if (mode !== undefined && sentenceModes.includes(mode)) {
         if (family === 'sentence') return sentenceListeningQuestions
         if (family === 'audio') return audioGameQuestions
@@ -396,7 +400,7 @@ export function getDemoQuestions(
             },
         ].map(withDemoWordPhonetics)
     }
-    if (family === 'word' || family === 'guess') return wordSeedQuestions
+    if (family === 'word') return wordSeedQuestions
     if (family === 'picture') {
         const pictureQuestion =
             mode === 'listen'

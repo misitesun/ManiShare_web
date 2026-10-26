@@ -7,7 +7,7 @@ export function hasPracticeAnswerInput(
     wordMeaningVariant?: WordMeaningVariant,
 ): boolean {
     if (mode === 'meaning' && wordMeaningVariant === 'context') return false
-    return ['spell', 'dictate', 'translate', 'meaning', 'guess', 'typing'].includes(mode)
+    return ['spell', 'dictate', 'translate', 'meaning', 'typing'].includes(mode)
 }
 
 /** 答错仍是可编辑阶段；演示状态不推导正式判题结果。 */
@@ -33,6 +33,7 @@ export function canShowQuickOral(
     )
         return false
     if (family === 'word' && mode === 'pronounce') return false
+    if (family === 'guess') return false
     if (family === 'word' && mode === 'meaning')
         return wordMeaningVariant === 'context' || phase === 'correct'
     if (mode === 'spell' || mode === 'dictate' || mode === 'typing') return phase === 'correct'

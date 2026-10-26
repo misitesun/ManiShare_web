@@ -552,28 +552,118 @@ test('句子和音频阅读空格朗读，其他阅读保留滚动，作答内�
         )
 })
 
-test('猜词空格交给输入，自查保留揭晓流程，答案态再推进下一题', (): void => {
-    for (const entry of [
-        { family: 'guess', mode: 'guess' },
-        { family: 'sentence', mode: 'check' },
-    ] as const)
+test('猜词及阅读的题面和答案均不以空格或回车切题，保留显式切题与朗读', (): void => {
+    for (const mode of ['guess', 'read'] as const) {
+        for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+            for (const panelVisible of [false, true]) {
+                const active = context({ family: 'guess', mode, phase, panelVisible })
+                for (const target of ['content', 'answer-input', 'native', 'editor'] as const)
+                    for (const key of [' ', 'Space', 'Enter'])
+                        assert.equal(resolvePracticeShortcut(input(key), active, target), null)
+                for (const target of ['content', 'native'] as const) {
+                    assert.equal(
+                        resolvePracticeShortcut(input('ArrowDown'), active, target),
+                        'practice.panel.show',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(input('ArrowUp'), active, target),
+                        panelVisible ? 'practice.panel.hide' : null,
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(
+                            input('ArrowLeft', { shiftKey: true }),
+                            active,
+                            target,
+                        ),
+                        'question.previous',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(
+                            input('ArrowRight', { shiftKey: true }),
+                            active,
+                            target,
+                        ),
+                        'question.next',
+                    )
+                    assert.equal(
+                        resolvePracticeShortcut(input('L', { shiftKey: true }), active, target),
+                        'practice.readAloud',
+                    )
+                    for (const key of ['ArrowLeft', 'ArrowRight'])
+                        assert.equal(resolvePracticeShortcut(input(key), active, target), null)
+                }
+                for (const key of ['ArrowDown', 'ArrowUp'])
+                    assert.equal(resolvePracticeShortcut(input(key), active, 'editor'), null)
+            }
+    }
+    assert.equal(
+        resolvePracticeShortcut(
+            input('Enter'),
+            context({ family: 'guess', mode: 'spell' }),
+            'content',
+        ),
+        'practice.primary',
+    )
+})
+
+test('猜词打词保留单段提交及答案按键，卡内按钮同样可收起，快捷口语不开放', (): void => {
+    for (const phase of ['answering', 'incorrect', 'correct', 'revealed'] as const) {
+        const active = context({
+            family: 'guess',
+            mode: 'spell',
+            phase,
+            panelVisible: true,
+            answerInputCommands: true,
+        })
+        assert.equal(
+            resolvePracticeShortcut(input('Enter'), active, 'answer-input'),
+            'practice.primary',
+        )
+        assert.equal(resolvePracticeShortcut(input(' '), active, 'answer-input'), null)
+        assert.equal(resolvePracticeShortcut(input(' '), active, 'content'), 'practice.contextual')
+        for (const target of ['answer-input', 'native', 'content'] as const) {
+            assert.equal(
+                resolvePracticeShortcut(input('ArrowDown'), active, target),
+                'practice.panel.show',
+            )
+            assert.equal(
+                resolvePracticeShortcut(input('ArrowUp'), active, target),
+                'practice.panel.hide',
+            )
+            assert.equal(
+                resolvePracticeShortcut(input('ArrowRight', { shiftKey: true }), active, target),
+                'question.next',
+            )
+            assert.equal(
+                resolvePracticeShortcut(input('L', { shiftKey: true }), active, target),
+                'practice.readAloud',
+            )
+            assert.equal(resolvePracticeShortcut(input('V'), active, target), null)
+        }
+        assert.equal(resolvePracticeShortcut(input('Enter'), active, 'native'), null)
+    }
+})
+
+test('自查空格保留揭晓流程，答案态再推进下一题', (): void => {
+    for (const family of ['sentence', 'audio'] as const)
         for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
             assert.equal(
-                resolvePracticeShortcut(input(' '), context({ ...entry, phase }), 'content'),
+                resolvePracticeShortcut(
+                    input(' '),
+                    context({ family, mode: 'check', phase }),
+                    'content',
+                ),
                 'practice.contextual',
             )
             assert.equal(
                 resolvePracticePrimary({
-                    ...entry,
+                    family,
+                    mode: 'check',
                     phase,
                     oralStage: 'idle',
                     quickOral: false,
                 }),
-                phase === 'revealed' || phase === 'correct'
-                    ? 'next'
-                    : entry.mode === 'guess'
-                      ? 'submit'
-                      : 'reveal',
+                phase === 'revealed' || phase === 'correct' ? 'next' : 'reveal',
             )
         }
 })

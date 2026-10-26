@@ -80,17 +80,21 @@ export function resolvePracticeShortcut(
         context.answerInputCommands === true &&
         hasPracticeAnswerInput(mode, context.wordMeaningVariant)
     const plain = !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey
+    const guessPanelArrow =
+        family === 'guess' && (event.key === 'ArrowDown' || event.key === 'ArrowUp')
     if (
         target === 'answer-input' &&
         plain &&
         (event.key === 'ArrowLeft' || event.key === 'ArrowRight')
     )
         return null
-    // 原生控件的 Enter / 空格 / 方向键由控件激活一次，不由全局再执行。
+    // 原生控件保留自身操作；猜词卡内按钮聚焦后，上下答案键仍走同一命令入口。
     if (
         target === 'native' &&
         plain &&
-        (event.key === 'Enter' || event.key === ' ' || event.key.startsWith('Arrow'))
+        (event.key === 'Enter' ||
+            event.key === ' ' ||
+            (event.key.startsWith('Arrow') && !guessPanelArrow))
     )
         return null
     if (context.scope === 'finish') {
@@ -114,6 +118,14 @@ export function resolvePracticeShortcut(
                 : 'practice.contextual'
         return null
     }
+    // 猜词只用显式切题组合键；空格和回车不进入通用主流程。
+    if (
+        family === 'guess' &&
+        (mode === 'guess' || mode === 'read') &&
+        (matches(event, 'practice.primary', values) ||
+            matches(event, 'practice.contextual', values))
+    )
+        return null
     if (matches(event, 'practice.dismiss', values)) return 'practice.dismiss'
     if (
         target === 'answer-input' &&

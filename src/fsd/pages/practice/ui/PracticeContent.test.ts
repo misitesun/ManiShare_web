@@ -153,6 +153,15 @@ function renderContent(props: ContentFixtureProps): string {
     )
 }
 
+test('猜词阅读接入十条语境列表，不回退到重复阅读占位或场景图', (): void => {
+    const html = renderContent({ family: 'guess', mode: 'read', phase: 'answering' })
+    assert.match(html, /data-guess-reading-exercise/)
+    assert.equal((html.match(/<li\b/g) ?? []).length, 10)
+    assert.match(html, /查看 hand 的答案/)
+    assert.match(html, /查看 happy 的答案/)
+    assert.doesNotMatch(html, /阅读全览|添加笔记|data-practice-media|<input/)
+})
+
 function assertListeningResult(result: string, listening: string): void {
     const englishTag = /<span\b[^>]*data-practice-english[^>]*>/g
     const resultWords = result.match(englishTag) ?? []
@@ -366,6 +375,17 @@ test('单词拼写四档音标使用局部选择，输入和答案的全局显�
         }
 })
 
+test('猜词打词接入独立中文填词题面，正确后仍保留图片与键盘且不落回通用结果', (): void => {
+    for (const phase of ['answering', 'incorrect', 'correct', 'revealed'] as const) {
+        const html = renderContent({ family: 'guess', mode: 'spell', phase, input: 'ha' })
+        assert.match(html, /data-guess-spelling-exercise/)
+        assert.match(html, /他有一双肥嘟嘟的/)
+        assert.match(html, /data-typing-keyboard/)
+        assert.match(html, /data-practice-media/)
+        assert.doesNotMatch(html, /data-word-slot-input|答对状态演示|本轮指法统计|快捷口语/)
+    }
+})
+
 test('真实文本输入共用原生输入桥，句子中译英独立按段维护', (): void => {
     for (const [family, mode] of [
         ['word', 'spell'],
@@ -379,7 +399,6 @@ test('真实文本输入共用原生输入桥，句子中译英独立按段维�
         ['audio', 'translate'],
         ['video', 'translate'],
         ['guess', 'spell'],
-        ['guess', 'guess'],
         ['typing', 'typing'],
     ] as const) {
         const html = renderContent({ family, mode, phase: 'answering' })
@@ -390,11 +409,12 @@ test('真实文本输入共用原生输入桥，句子中译英独立按段维�
         )
         assert.match(html, /data-practice-controlled-answer="true"/)
         if (
-            (family === 'sentence' ||
+            (family === 'guess' && mode === 'spell') ||
+            ((family === 'sentence' ||
                 family === 'audio' ||
                 family === 'video' ||
                 family === 'typing') &&
-            (mode === 'translate' || mode === 'typing')
+                (mode === 'translate' || mode === 'typing'))
         ) {
             assert.match(html, /data-sentence-answer-input="true"/)
             assert.doesNotMatch(html, /data-spelling-position=/)
