@@ -60,12 +60,15 @@ test('展示、听力、阅读与纯内容的主动作推进当前内容，不�
         { family: 'sentence', mode: 'listen' },
         { family: 'phonetics', mode: 'pronounce' },
         { family: 'guess', mode: 'read' },
-        { family: 'audio-reader', mode: 'read' },
-        { family: 'video-reader', mode: 'read' },
         { family: 'picture-reader', mode: 'read' },
-        { family: 'text-reader', mode: 'read' },
     ]
     for (const context of cases) assert.equal(resolve(context), 'next')
+})
+
+test('纯音视频静态阶段与空文章保持当前内容，不触发下一条或完成流程', (): void => {
+    for (const family of ['video-reader', 'audio-reader', 'text-reader'] as const)
+        for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const)
+            assert.equal(resolve({ family, mode: 'read', phase }), 'none')
 })
 
 test('口语主动作按阶段推进，评测不重入，快捷结果返回原题而独立结果下一题', (): void => {

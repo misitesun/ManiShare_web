@@ -17,6 +17,7 @@ interface PracticeFooterProps {
     readonly floating?: boolean
     readonly embedded?: boolean
     readonly playback?: PracticeFooterPlayback
+    readonly pictureReader?: boolean
 }
 
 function DirectionIcon({ next }: { readonly next: boolean }): ReactElement {
@@ -123,6 +124,7 @@ export function PracticeFooter({
     floating = false,
     embedded = false,
     playback,
+    pictureReader = false,
 }: PracticeFooterProps): ReactElement | null {
     if (items.length === 0) return null
     const reading = items.length === 3 && items[1]?.id === 'playback'
@@ -187,17 +189,19 @@ export function PracticeFooter({
                                 else onAction(command)
                             }}
                             className={
-                                item.id === 'read-aloud'
-                                    ? 'hidden min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:inline-flex md:min-w-24 xl:h-8 xl:min-h-8'
-                                    : item.size === 'playback'
-                                      ? 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular text-practice-control-text outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-10 md:border-0 md:p-0 xl:h-7 xl:min-h-7 xl:w-7'
-                                      : item.size === 'direction'
-                                        ? playback
-                                            ? 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-20 md:min-w-20 md:px-0 xl:h-8 xl:min-h-8'
-                                            : 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-auto md:min-w-20 xl:h-8 xl:min-h-8'
-                                        : item.size === 'panel' || item.size === 'primary'
-                                          ? 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:min-w-[88px] xl:h-8 xl:min-h-8'
-                                          : 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:min-w-24 xl:h-8 xl:min-h-8'
+                                pictureReader && item.id === 'contextual'
+                                    ? 'inline-flex min-h-10 shrink-0 cursor-pointer items-center justify-center gap-[10px] rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-[86px] xl:h-8 xl:min-h-8'
+                                    : item.id === 'read-aloud'
+                                      ? 'hidden min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:inline-flex md:min-w-24 xl:h-8 xl:min-h-8'
+                                      : item.size === 'playback'
+                                        ? 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular text-practice-control-text outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-10 md:border-0 md:p-0 xl:h-7 xl:min-h-7 xl:w-7'
+                                        : item.size === 'direction'
+                                          ? playback || pictureReader
+                                              ? 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-20 md:min-w-20 md:px-0 xl:h-8 xl:min-h-8'
+                                              : 'inline-flex min-h-10 w-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-1 text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:w-auto md:min-w-20 xl:h-8 xl:min-h-8'
+                                          : item.size === 'panel' || item.size === 'primary'
+                                            ? 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-[5px] rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:min-w-[88px] xl:h-8 xl:min-h-8'
+                                            : 'inline-flex min-h-10 min-w-0 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg border border-practice-control-text/50 px-[10px] text-label-regular font-normal outline-offset-2 hover:bg-practice-control-text/10 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-default disabled:opacity-40 md:min-w-24 xl:h-8 xl:min-h-8'
                             }
                         >
                             <FooterItemContent item={item} playback={playback} />

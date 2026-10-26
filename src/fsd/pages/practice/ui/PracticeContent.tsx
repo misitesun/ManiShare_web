@@ -73,12 +73,14 @@ import { PhoneticsDemo } from './PhoneticsDemo'
 import { GuessWordExercise } from './GuessWordExercise'
 import { GuessReadingExercise } from './GuessReadingExercise'
 import { GuessSpellingExercise } from './GuessSpellingExercise'
+import { PureVideoReader } from './PureVideoReader'
+import { PureAudioReader } from './PureAudioReader'
+import { PurePictureReader } from './PurePictureReader'
+import { PureArticleReader } from './PureArticleReader'
 import type { PhoneticsReadingSnapshot } from '../model/phonetics-reading-runtime'
 import wordAsset from '../assets/word-woman-e23d5f.png'
 import sentenceAsset from '../assets/reading-scene.png'
 import greetingAsset from '../assets/greeting-scene.png'
-import audioCoverAsset from '../assets/audio-cover.png'
-import pictureReaderAsset from '../assets/picture-reader.png'
 import phoneticsAsset from '../assets/phonetics-word.png'
 interface ContentStyle extends CSSProperties {
     '--practice-reference-top': string
@@ -131,6 +133,8 @@ export interface PracticeContentProps {
     readonly onGuessToggleAnswer?: () => void
     readonly onGuessCloseAnswer?: () => void
     readonly onGuessReadingSelect?: (index: number) => void
+    readonly onPictureSelect?: (index: number) => void
+    readonly onPictureBusyChange?: (busy: boolean) => void
     readonly guessPortalRoot?: RefObject<HTMLElement | null>
     readonly phoneticsReading?: PhoneticsReadingSnapshot | undefined
     readonly onPhoneticsWordRead?: (() => void) | undefined
@@ -198,6 +202,8 @@ export function PracticeContent({
     onGuessToggleAnswer = ignoreCardAction,
     onGuessCloseAnswer = ignoreCardAction,
     onGuessReadingSelect = ignoreCardAction,
+    onPictureSelect = ignoreCardAction,
+    onPictureBusyChange = ignoreCardAction,
     guessPortalRoot,
     phoneticsReading,
     onPhoneticsWordRead,
@@ -299,12 +305,23 @@ export function PracticeContent({
             ? wordAsset.src
             : demo.family === 'phonetics'
               ? phoneticsAsset.src
-              : demo.family === 'picture-reader'
-                ? pictureReaderAsset.src
-                : demo.family === 'picture'
-                  ? greetingAsset.src
-                  : sentenceAsset.src
+              : demo.family === 'picture'
+                ? greetingAsset.src
+                : sentenceAsset.src
     const style: ContentStyle = { '--practice-reference-top': `${reference.top}px` }
+    if (demo.family === 'video-reader') return <PureVideoReader />
+    if (demo.family === 'text-reader') return <PureArticleReader content={null} />
+    if (demo.family === 'audio-reader')
+        return <PureAudioReader waveStyle={values.readingWave} active={!blocked && !paused} />
+    if (demo.family === 'picture-reader')
+        return (
+            <PurePictureReader
+                index={session.index}
+                blocked={blocked || paused}
+                onSelect={onPictureSelect}
+                onBusyChange={onPictureBusyChange}
+            />
+        )
     if (demo.family === 'guess' && mode === 'spell')
         return (
             <GuessSpellingExercise
@@ -565,18 +582,14 @@ export function PracticeContent({
     const media =
         mediaIsVideo || mediaIsAudio ? (
             <div className="mx-auto w-full max-w-full" style={{ maxWidth: reference.mediaWidth }}>
-                {mediaIsAudio && (effectiveImage || demo.family === 'audio-reader') && (
+                {mediaIsAudio && effectiveImage && (
                     <div
                         data-practice-reading-surface
                         className="relative mb-5 overflow-hidden rounded-[20px]"
                     >
                         <img
                             data-practice-media
-                            src={
-                                demo.family === 'audio-reader'
-                                    ? audioCoverAsset.src
-                                    : sentenceAsset.src
-                            }
+                            src={sentenceAsset.src}
                             alt="音频练习封面"
                             className="block h-auto w-full rounded-[20px] object-cover"
                             style={{
@@ -726,33 +739,6 @@ export function PracticeContent({
                 blocked={blocked}
                 onNote={onNote}
             />
-        )
-    if (mode === 'read' && !mediaIsAudio && !mediaIsVideo && demo.family !== 'picture-reader')
-        return (
-            <article className="mx-auto max-w-[1100px] space-y-8 px-4 py-16 text-[20px] text-practice-text">
-                <h2 className="text-section-title">阅读全览</h2>
-                {[question, { ...question, id: `${question.id}-review` }].map((item) => (
-                    <section
-                        key={item.id}
-                        className="space-y-5 rounded-xl border border-subtle p-5"
-                    >
-                        <AnnotatedText
-                            question={item}
-                            values={values}
-                            annotated
-                            density="reading"
-                        />
-                        <p>{item.translation}</p>
-                        <TldButton
-                            size="compact"
-                            variant="secondary"
-                            onClick={(): void => onNote(item.id)}
-                        >
-                            添加笔记
-                        </TldButton>
-                    </section>
-                ))}
-            </article>
         )
     return (
         <div

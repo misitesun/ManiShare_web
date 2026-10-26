@@ -319,7 +319,10 @@ function slotItems(
                 {
                     ...action('previous', '上一题', 'question.previous', context, 'direction'),
                     shortcuts: [],
-                    disabled: context.index <= 0 || context.total <= 0,
+                    disabled:
+                        context.family === 'picture-reader'
+                            ? context.total <= 1
+                            : context.index <= 0 || context.total <= 0,
                 },
             ]
         case 'next':
@@ -327,7 +330,7 @@ function slotItems(
                 {
                     ...action('next', '下一题', 'question.next', context, 'direction'),
                     shortcuts: [],
-                    disabled: context.total <= 0,
+                    disabled: context.total <= (context.family === 'picture-reader' ? 1 : 0),
                 },
             ]
         case 'mastered':

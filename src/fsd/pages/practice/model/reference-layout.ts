@@ -345,9 +345,11 @@ export function getPracticeReference(
     if (mode === 'translate') return { ...base, node: '546:33717', top: 261, textGap: 24 }
     if (family === 'picture-reader')
         return { ...base, node: '546:43565', top: 98, mediaWidth: 1100, mediaHeight: 733 }
+    if (family === 'text-reader')
+        return { ...base, node: '546:43593', top: 95, mediaWidth: 1100, mediaHeight: 740 }
     if (family === 'video-reader')
-        return { ...base, node: '546:43497', top: 151, mediaWidth: 1200, mediaHeight: 700 }
+        return { ...base, node: '546:43497', top: 154, mediaWidth: 1200, mediaHeight: 700 }
     if (family === 'audio-reader')
-        return { ...base, node: '546:43531', top: 200, mediaWidth: 496, mediaHeight: 280 }
+        return { ...base, node: '546:43531', top: 203, mediaWidth: 496, mediaHeight: 280 }
     return base
 }

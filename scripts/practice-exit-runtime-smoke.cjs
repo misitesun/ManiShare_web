@@ -455,37 +455,43 @@ async function runChecks(window, origin, label) {
         ]) {
             console.log('Exit ' + label + ': family ' + demo)
             await load(window, origin, demo, mode)
+            if (demo === 'video-reader' || demo === 'audio-reader')
+                assert.equal(
+                    await evaluate(window, () => Boolean(document.querySelector('audio, video'))),
+                    false,
+                    demo + ' has no media in the static stage',
+                )
             const modal = await open(window)
             near(modal.frame.width, 580, 'common exit width')
             await click(window, '[data-exit-action="continue"]')
             await closed(window)
             report.families.push({ demo, mode })
         }
-        // 内容媒体暂停但不归零，取消退出后也不会自动播放。
+        // 纯音视频暂为静态展示；媒体位置保留使用已接入的单音轨视频听力。
         console.log('Exit ' + label + ': media and themes')
-        await load(window, origin, 'video-reader', 'read')
-        await waitFor(window, () => document.querySelector('video')?.readyState >= 2, 'video ready')
+        await load(window, origin, 'video-basic', 'listen')
+        await waitFor(window, () => document.querySelector('audio')?.readyState >= 2, 'audio ready')
         await evaluate(window, async () => {
-            const video = document.querySelector('video')
-            video.currentTime = 0.6
-            await video.play()
+            const audio = document.querySelector('audio')
+            audio.currentTime = 0.6
+            await audio.play()
         })
         await delay(70)
         await open(window)
         const media = await evaluate(window, () => ({
-            paused: document.querySelector('video').paused,
-            position: document.querySelector('video').currentTime,
+            paused: document.querySelector('audio').paused,
+            position: document.querySelector('audio').currentTime,
         }))
         assert.equal(media.paused, true)
         assert.ok(media.position >= 0.6 && media.position < 1.5)
         await click(window, '[data-exit-action="continue"]')
         await closed(window)
         const retained = await evaluate(window, () => ({
-            paused: document.querySelector('video').paused,
-            position: document.querySelector('video').currentTime,
+            paused: document.querySelector('audio').paused,
+            position: document.querySelector('audio').currentTime,
         }))
         assert.equal(retained.paused, true)
-        near(retained.position, media.position, 'retained video position')
+        near(retained.position, media.position, 'retained audio position')
         report.media = { media, retained }
         await click(window, '[data-practice-navigation-action="settings"]')
         await waitFor(window, () => document.querySelector('[role="tab"]'), 'settings')

@@ -127,6 +127,9 @@ export function resolvePracticeShortcut(
     )
         return null
     if (matches(event, 'practice.dismiss', values)) return 'practice.dismiss'
+    // 静态音视频与空文章不推进占位条目；Space继续保留原生控件／文章滚动。
+    if (family === 'video-reader' || family === 'audio-reader' || family === 'text-reader')
+        return null
     if (
         target === 'answer-input' &&
         (event.ctrlKey || event.metaKey) &&
@@ -147,7 +150,11 @@ export function resolvePracticeShortcut(
     )
         return null
     for (const command of ['question.previous', 'question.next', 'practice.readAloud'] as const) {
-        if (family === 'typing' && command === 'practice.readAloud') continue
+        if (
+            (family === 'typing' || family === 'picture-reader') &&
+            command === 'practice.readAloud'
+        )
+            continue
         if (matches(event, command, values)) return command
     }
     if (target === 'answer-input' && !answerCommands && plain && event.key.startsWith('Arrow'))
@@ -197,8 +204,7 @@ export function resolvePracticeShortcut(
         )
             return 'practice.contextual'
         // 其他阅读保留滚动；词块空格只由当前聚焦的真实词块按钮处理。
-        if (family === 'text-reader' || (mode === 'read' && !family.endsWith('-reader')))
-            return null
+        if (mode === 'read' && !family.endsWith('-reader')) return null
         if (mode === 'blocks' && !isPracticeAnswerVisible(phase)) return null
         if (
             ['spell', 'dictate', 'translate', 'meaning', 'typing'].includes(mode) &&

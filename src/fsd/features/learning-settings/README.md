@@ -30,6 +30,8 @@
 
 ### 原版声纹与反馈动画（2026-10-19）
 
+2026-10-26新增页内消费者`PureAudioReader`：经本feature根入口复用`LearningAudioWave`和当前`readingWave`，以70px原高度在496×280槽位居中，作为静态页面的声纹预览。它与设置预览一样不代表媒体已经playing，不创建音源；由页面阻断／暂停状态控制active，原组件继续拥有可见性、reduced-motion、异步加载及清理。真实录音／朗读消费者仍按下方媒体状态规则使用，不改变默认Props或增加公共API；本轮未执行测试／构建及各端运行验收。
+
 声纹保留`recordingWave`/`readingWave`五种中文值，`LearningAudioWave`由本feature持有并经根入口给设置、口语演示和媒体朗读复用。32列竖条/矩阵/雨滴、70px声纹槽与原版曲线/线条沿用当前参考形态；五种样式统一使用当前主题的brand绿色，设置预览与练习一致。只在可见且活动时运行，reduced-motion静态显示。SiriWave按需加载，尺寸/主题变化重建并清理旧实例。预览不申请麦克风，口语仍标注演示；朗读只跟随媒体真正playing，waiting/pause/ended/error时消失，不把预加载或play请求视为已经朗读。
 
 `AnimationEffectSettings`将原5个emoji选择替换为7份150px原版Lottie卡片及独立章节完成预览。资源/速度/稳定ID归`model/feedback-animations.ts`，预览与练习经根入口`getLearningAnimation`/`resolveCorrectAnimationId`消费同一注册表；其他设置布局和声音选项保持。新增`LearningAnimationId`公开7种答对ID和`chapter-complete`。`correctEffectType`默认改为原版第一份`lottie-0`；5个合法历史emoji值统一回退该项，不声称与原效果等价。v1键/版本不变，读取不自动写回默认；后续实际编辑按原保存流程写入，不清空其他偏好。

@@ -35,6 +35,34 @@ function context(changes: Partial<PracticeShortcutContext> = {}): PracticeShortc
     }
 }
 
+test('静态纯音视频与空文章不处理学习命令，保留Esc与原生控件／滚动', (): void => {
+    for (const family of ['video-reader', 'audio-reader', 'text-reader'] as const)
+        for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+            const active = context({ family, mode: 'read', phase })
+            for (const target of ['content', 'native'] as const) {
+                for (const key of [' ', 'Enter', 'V', 'ArrowDown', 'ArrowUp'])
+                    assert.equal(resolvePracticeShortcut(input(key), active, target), null)
+                for (const key of ['L', 'J', 'K', 'ArrowLeft', 'ArrowRight'])
+                    assert.equal(
+                        resolvePracticeShortcut(input(key, { shiftKey: true }), active, target),
+                        null,
+                    )
+                assert.equal(
+                    resolvePracticeShortcut(input('Escape'), active, target),
+                    'practice.dismiss',
+                )
+            }
+            assert.equal(
+                resolvePracticeShortcut(
+                    input('P', { altKey: true }),
+                    { ...active, values: { ...values, playShortcut: 'Alt + P' } },
+                    'content',
+                ),
+                null,
+            )
+        }
+})
+
 test('纯指法保持切题与提交命令，所有题态禁用朗读、口语、答案和知识快捷键', (): void => {
     for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
         const active = context({
@@ -545,11 +573,39 @@ test('句子和音频阅读空格朗读，其他阅读保留滚动，作答内�
                 ),
                 mode === 'blocks' ? null : 'practice.contextual',
             )
-    for (const family of ['audio-reader', 'video-reader', 'picture-reader'] as const)
+    for (const family of ['picture-reader'] as const)
         assert.equal(
             resolvePracticeShortcut(input(' '), context({ family, mode: 'read' }), 'content'),
             'practice.contextual',
         )
+})
+
+test('纯图片保持空格和显式翻页，禁用无源朗读，浮层和编辑器不翻页', (): void => {
+    const active = context({ family: 'picture-reader', mode: 'read', hasTarget: false })
+    assert.equal(resolvePracticeShortcut(input(' '), active, 'content'), 'practice.contextual')
+    assert.equal(
+        resolvePracticeShortcut(input('ArrowLeft', { shiftKey: true }), active, 'content'),
+        'question.previous',
+    )
+    assert.equal(
+        resolvePracticeShortcut(input('ArrowRight', { shiftKey: true }), active, 'content'),
+        'question.next',
+    )
+    assert.equal(resolvePracticeShortcut(input('L', { shiftKey: true }), active, 'content'), null)
+    assert.equal(
+        resolvePracticeShortcut(
+            input('P', { altKey: true }),
+            { ...active, values: { ...values, playShortcut: 'Alt + P' } },
+            'content',
+        ),
+        null,
+    )
+    assert.equal(
+        resolvePracticeShortcut(input(' '), { ...active, scope: 'blocked' }, 'content'),
+        null,
+    )
+    assert.equal(resolvePracticeShortcut(input(' '), active, 'editor'), null)
+    assert.equal(resolvePracticeShortcut(input(' '), active, 'native'), null)
 })
 
 test('猜词及阅读的题面和答案均不以空格或回车切题，保留显式切题与朗读', (): void => {

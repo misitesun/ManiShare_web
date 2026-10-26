@@ -1,5 +1,15 @@
 # 漫奇说 Web 技术选型与基础能力地图
 
+- 纯内容四模式开发完成：2026-10-26用户确认纯视频、纯音频、纯图片和纯文章本阶段完成，授权main提交／推送。最终静态UI、本地演示、空态、素材及验证边界见[统一完成检查点](checkpoints/2026-10-26-pure-content-modes-development-complete.md)；真实音视频播放和文章接口仍按原范围后续接入，本轮未运行测试或构建。
+
+- 纯文章：`pages/practice/ui/PureArticleReader`沿`text-reader/read`原入口展示1100×740独立滚动富文本容器，当前正文为空，保留顶部进度轨道且填充0%，无虚构条目计数／句子题面／底栏。复用导航、计时、草稿与设置；仅接页内语义React内容，接口及HTML解析待格式明确后接入，空态不响应学习推进命令。无新接口、存储、路由、依赖或主题token；仅格式与差异检查，各端效果待用户验收，见[纯文章开发记录](practice-pure-article-development.md)。
+
+- 纯图片轮播：`pages/practice/ui/PurePictureReader`沿`picture-reader/read`原入口还原1100×733图片框、50px箭头和五个指示器；五张本地演示图与会话索引统一，箭头／圆点／底栏／Space／显式切题键／触控均可切图，首尾循环、不弹完成窗、不接朗读。动画沿共享GSAP入口，保留纵向滚动、浮层阻断与reduced-motion。无新路由、接口、存储、主题token或依赖；仅源码、格式与差异检查，各端效果待用户验收，见[纯图片开发记录](practice-pure-picture-development.md)。
+
+- 纯音频静态页：`pages/practice/PureAudioReader`沿`audio-reader/read`原入口组合496×280声纹槽、755×8装饰进度及居中的播放／暂停按钮；直接复用设置根入口`LearningAudioWave`和`readingWave`五种样式，默认静止，按钮控制声纹预览的播放／暂停，阻断时停止；默认一个条目且隐藏顶部条目计数，无媒体源，纯音视频共用静态命令门控与导航分隔线，其他模式保持；无新公共API、路由、接口、Storage、主题token、依赖或Electron bridge。仅格式化与差异检查，各端视觉、动画及真机待用户验收，见[纯音频开发记录](practice-pure-audio-development.md)。
+
+- 纯视频静态页：`pages/practice/PureVideoReader`沿`video-reader/read`原入口还原1200×700封面、同图模糊背景和40px控制条；临时图复用既有视频封面，四份24px图标来自原Figma。仅纯视频移除技术媒体和题目进度条，保留计时／草稿／设置／页面全屏；控件静态、播放及切题命令禁用，无新路由、媒体源、接口、Storage、主题token、依赖或Electron bridge。按用户约定未运行测试／构建或各端验收，见[纯视频开发记录](practice-pure-video-development.md)。
+
 - 猜词游戏静态UI开发完成：2026-10-26用户确认猜词、阅读、打词三个模式静态UI完成，并授权main提交／推送；十条共用数据与声音、三种题面、共用答案／翻转、阅读全宽滚动与焦点修正、打词键盘70px间距的最终范围见[完成检查点](checkpoints/2026-10-26-guess-games-static-ui-complete.md)。未运行测试／构建或各端验收，正式后台、积分与设备兼容不增加通过声明；下方“打词首版”为历史阶段。
 
 - 猜词打词模式：`pages/practice/GuessSpellingExercise`组合中文前后文、目标词输入及动态键盘，三种猜词模式共用十题和WAV；复用句子指法单段输入、提交／纠错与IME边界，正确或手动查看均用同一猜词答案卡，收起后归焦，切题清空并收起。默认抄写和既有显示／切读偏好保持，无额外口语／统计，黄晶1200仅展示、不扩奖励规则。无新接口、资源、路由、Storage、主题、依赖或Electron bridge；已补回归源码但按用户要求未执行测试／构建或各端验收，见[猜词开发记录](practice-guess-games-development.md)。下方早期“打词首版”范围以本项覆盖。

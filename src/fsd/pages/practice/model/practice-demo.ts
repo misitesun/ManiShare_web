@@ -13,6 +13,7 @@ import { audioGameQuestions } from './audio-game-demo'
 import { videoListeningQuestions } from './video-listening-demo'
 import { typingGameQuestions } from './typing-game-demo'
 import { phoneticsDemoQuestions } from './phonetics-demo'
+import { pictureReaderQuestions } from './picture-reader-demo'
 import type { PhoneticsWordContent } from './phonetics-lesson'
 import { editSentenceBlocks, judgeSentenceBlocks } from './sentence-blocks'
 import type { SentenceBlockEdit } from './sentence-blocks'
@@ -364,10 +365,29 @@ const wordAnswerQuestions: readonly PracticeQuestion[] = [
 const wordMeaningReadingQuestions: readonly PracticeQuestion[] =
     wordMeaningQuestions.map(withDemoWordReading)
 
+/** 纯音频只持有一个待接音源的阅读条目，不借用句子题库。 */
+const audioReaderQuestions: readonly PracticeQuestion[] = [
+    { id: 'audio-reader-single', english: '', translation: '', phonetic: '', tokens: [] },
+]
+
+/** 纯视频只持有一个待接视频的阅读条目，不借用句子题库。 */
+const videoReaderQuestions: readonly PracticeQuestion[] = [
+    { id: 'video-reader-single', english: '', translation: '', phonetic: '', tokens: [] },
+]
+
+/** 空文章的会话载体，仅维持导航与计时；不是正式文章或句子题目。 */
+const articleReaderQuestions: readonly PracticeQuestion[] = [
+    { id: 'text-reader-empty', english: '', translation: '', phonetic: '', tokens: [] },
+]
+
 export function getDemoQuestions(
     family: PracticeFamily,
     mode?: PracticeMode,
 ): readonly PracticeQuestion[] {
+    if (family === 'audio-reader') return audioReaderQuestions
+    if (family === 'video-reader') return videoReaderQuestions
+    if (family === 'text-reader') return articleReaderQuestions
+    if (family === 'picture-reader') return pictureReaderQuestions
     if (family === 'video') return videoListeningQuestions
     if (family === 'typing') return typingGameQuestions
     if (family === 'guess') return guessWordQuestions

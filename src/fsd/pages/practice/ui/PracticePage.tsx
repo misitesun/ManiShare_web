@@ -24,6 +24,7 @@ import {
     practiceModeSelections,
 } from '../../../features/practice-mode-selection'
 import { practiceDemos, getPracticeModeLabel, getDemoQuestions } from '../model/practice-demo'
+import { getPictureReaderIndex } from '../model/picture-reader'
 import type {
     PracticeMode,
     PracticeRouteResult,
@@ -358,6 +359,10 @@ function PracticeSession({
     const { values } = snapshot
     const appearance = getPreviewAppearance(values)
     const sourceQuestions = getDemoQuestions(demo.family, mode)
+    const isStaticMediaReader = demo.family === 'video-reader' || demo.family === 'audio-reader'
+    const isPictureReader = demo.family === 'picture-reader'
+    const isArticleReader = demo.family === 'text-reader'
+    const isSilentReader = isStaticMediaReader || isPictureReader || isArticleReader
     const isVideoGame = demo.family === 'video'
     const isVideoListening = isVideoGame && mode === 'listen'
     const isVideoCheck = isVideoGame && mode === 'check'
@@ -549,6 +554,10 @@ function PracticeSession({
     const [panelVisible, setPanelVisible] = useState(demo.family === 'phonetics')
     const rootRef = useRef<HTMLDivElement>(null)
     const wordDeck = useRef<WordPronunciationDeckController | null>(null)
+    const pictureBusy = useRef(false)
+    const reportPictureBusy = useCallback((busy: boolean): void => {
+        pictureBusy.current = busy
+    }, [])
     const answerInput = useRef<WordSpellingInputController | null>(null)
     const answerFocusAllowed = useRef(false)
     const keyboardNavigation = useRef(false)
@@ -653,9 +662,11 @@ function PracticeSession({
         family: demo.family,
         mode,
         visitKey: wordOralTarget.id,
-        source: isVideoExercise
-            ? undefined
-            : (wordOralQuestion?.readingSource ?? getWordDemoReadingSource(wordOralTarget.text)),
+        source:
+            isVideoExercise || isSilentReader
+                ? undefined
+                : (wordOralQuestion?.readingSource ??
+                  getWordDemoReadingSource(wordOralTarget.text)),
         enabled: false,
         ready:
             oralAssessmentActive &&
@@ -807,11 +818,12 @@ function PracticeSession({
         index: session.index,
         revision: resetRevision,
     })
-    const readingSource = isPhoneticsPronunciation
-        ? undefined
-        : isWordMeaning
-          ? (question?.wordMeaning?.readingSource ?? question?.readingSource)
-          : question?.readingSource
+    const readingSource =
+        isPhoneticsPronunciation || isSilentReader
+            ? undefined
+            : isWordMeaning
+              ? (question?.wordMeaning?.readingSource ?? question?.readingSource)
+              : question?.readingSource
     const cutReading = isPracticeCutReadingEnabled(
         demo.family,
         mode,
@@ -825,6 +837,7 @@ function PracticeSession({
     )
     const manualReadingRequested = isSentenceReading && manualReadingVisit === readingVisit
     const readingEnabled =
+        !isSilentReader &&
         !isVideoExercise &&
         (cutReading ||
             manualReadingRequested ||
@@ -1142,13 +1155,17 @@ function PracticeSession({
         }
     }
     function move(delta: number, origin: SentenceListeningNavigationOrigin = 'manual'): void {
+        if (isArticleReader) return
+        if (isPictureReader && pictureBusy.current) return
         phoneticsReading.stop()
         if (videoPlayback) {
             videoPlayback.move(delta)
             return
         }
         if (pendingRemember.current !== null) return
-        const nextIndex = Math.min(questions.length - 1, Math.max(0, session.index + delta))
+        const nextIndex = isPictureReader
+            ? getPictureReaderIndex(session.index, questions.length, delta)
+            : Math.min(questions.length - 1, Math.max(0, session.index + delta))
         if (nextIndex === session.index) {
             if (
                 origin === 'manual' &&
@@ -1196,9 +1213,29 @@ function PracticeSession({
         if (isWordPronunciation) {
             setWordRemember((current) => moveWordRememberSession(current, current.index + delta))
             dispatch({ type: 'reset' })
-        } else dispatch({ type: 'move', delta, total: questions.length })
+        } else
+            dispatch({
+                type: 'move',
+                delta: isPictureReader ? nextIndex - session.index : delta,
+                total: questions.length,
+            })
         emit('questionChange')
         if (isSentenceCheck || usesGuessAnswer) rootRef.current?.focus({ preventScroll: true })
+    }
+    function selectPicture(index: number): void {
+        if (
+            !isPictureReader ||
+            blocked ||
+            pause.isPaused() ||
+            session.finished ||
+            !snapshot.ready ||
+            !toolbarPreferences.ready ||
+            !Number.isInteger(index) ||
+            index < 0 ||
+            index >= questions.length
+        )
+            return
+        move(index - session.index)
     }
     function selectGuessReading(index: number): void {
         if (
@@ -1317,6 +1354,11 @@ function PracticeSession({
         else advanceQuestion()
     }
     function advanceQuestion(): void {
+        if (isArticleReader) return
+        if (isPictureReader) {
+            move(1)
+            return
+        }
         if (videoPlayback) {
             videoPlayback.move(1)
             return
@@ -1420,7 +1462,7 @@ function PracticeSession({
         if (!started) cancelRemember()
     }
     function readAloud(): void {
-        if (isStandaloneTyping) return
+        if (isStandaloneTyping || isSilentReader) return
         if (isPhoneticsPronunciation) {
             if (phoneticsOralBusy) return
             wordOral.pause()
@@ -1647,6 +1689,16 @@ function PracticeSession({
             !session.finished &&
             !(command === 'question.next' && session.index === questions.length - 1)
         executeCommand(command)
+        if (
+            isPictureReader &&
+            !blocked &&
+            !pause.isPaused() &&
+            (command === 'question.previous' ||
+                command === 'question.next' ||
+                command === 'practice.contextual' ||
+                command === 'practice.primary')
+        )
+            rootRef.current?.focus({ preventScroll: true })
         if (!returnToSentence) return
         // 阅读回焦列表，让空格走播放／暂停命令，避免再次激活此前聚焦的自动切题按钮。
         const root = rootRef.current
@@ -1803,6 +1855,7 @@ function PracticeSession({
             blocked={blocked || !snapshot.ready || rememberAction !== null}
             floating={usesCardDeck}
             embedded={isVideoGame}
+            pictureReader={isPictureReader}
             {...(isSentenceReading
                 ? { playback: { active: sentencePlaybackActive, onToggle: readAloud } }
                 : {})}
@@ -1879,7 +1932,7 @@ function PracticeSession({
                                           : undefined
                     }
                     className={
-                        isVideoGame && !isVideoListening
+                        isArticleReader || (isVideoGame && !isVideoListening)
                             ? 'flex h-dvh min-w-0 flex-col overflow-hidden'
                             : isFourRowLayout || isSentenceReading || isGuessReading
                               ? 'flex h-dvh min-w-0 flex-col overflow-hidden pb-[calc(100px+env(safe-area-inset-bottom))]'
@@ -1891,11 +1944,13 @@ function PracticeSession({
                     <header
                         data-practice-header
                         className={
-                            demo.family === 'guess' || demo.family.endsWith('-reader')
-                                ? 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px] design:pr-[10px]'
-                                : usesCardDeck
-                                  ? 'relative z-[1] flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
-                                  : 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
+                            isStaticMediaReader
+                                ? 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 border-b border-primary/40 px-3 py-[11px] design:h-[72px] design:pr-[10px]'
+                                : demo.family === 'guess' || demo.family.endsWith('-reader')
+                                  ? 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px] design:pr-[10px]'
+                                  : usesCardDeck
+                                    ? 'relative z-[1] flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
+                                    : 'flex min-h-[72px] min-w-0 items-center justify-between gap-x-4 gap-y-3 px-3 py-[11px] design:h-[72px]'
                         }
                     >
                         <div className="flex min-w-0 flex-1 items-center gap-[11px]">
@@ -1914,15 +1969,22 @@ function PracticeSession({
                             </button>
                             <div className="flex min-w-0 flex-col gap-[5px]">
                                 <h1 className="truncate bg-linear-to-r from-brand-start to-brand-end bg-clip-text text-[16px] font-medium leading-[22px] text-transparent">
-                                    本地演示（
-                                    {session.finished && isWordPronunciation
-                                        ? sourceQuestions.length
-                                        : session.index + 1}
-                                    /
-                                    {session.finished && isWordPronunciation
-                                        ? sourceQuestions.length
-                                        : questions.length}
-                                    ） · {getPracticeModeLabel(demo.family, mode)}
+                                    本地演示
+                                    {!isStaticMediaReader && !isArticleReader && (
+                                        <>
+                                            （
+                                            {session.finished && isWordPronunciation
+                                                ? sourceQuestions.length
+                                                : session.index + 1}
+                                            /
+                                            {session.finished && isWordPronunciation
+                                                ? sourceQuestions.length
+                                                : questions.length}
+                                            ）
+                                        </>
+                                    )}
+                                    {' · '}
+                                    {getPracticeModeLabel(demo.family, mode)}
                                 </h1>
                                 <p className="text-[14px] leading-5 text-secondary">
                                     {demo.title} · 无后台接口
@@ -1936,35 +1998,53 @@ function PracticeSession({
                             onAction={handleNavigationAction}
                         />
                     </header>
-                    <div
-                        data-practice-progress
-                        role="progressbar"
-                        aria-label={isWordPronunciation ? '单词记住进度' : '本地演示题目进度'}
-                        aria-valuemin={0}
-                        aria-valuemax={
-                            isWordPronunciation ? rememberProgress.total : questions.length
-                        }
-                        aria-valuenow={
-                            isWordPronunciation ? rememberProgress.remembered : session.index + 1
-                        }
-                        aria-valuetext={
-                            isWordPronunciation
-                                ? `已记住 ${rememberProgress.remembered} 个，共 ${rememberProgress.total} 个，剩余 ${rememberProgress.remaining} 个`
-                                : undefined
-                        }
-                        className={
-                            usesCardDeck
-                                ? 'relative z-[1] h-[3px] shrink-0 bg-primary/40'
-                                : 'h-[3px] shrink-0 bg-primary/40'
-                        }
-                    >
+                    {!isStaticMediaReader && (
                         <div
-                            className="h-full bg-linear-to-r from-brand-start to-brand-end transition-[width] duration-300 ease-out motion-reduce:transition-none"
-                            style={{
-                                width: `${isWordPronunciation ? rememberProgress.percent : ((session.index + 1) / questions.length) * 100}%`,
-                            }}
-                        />
-                    </div>
+                            data-practice-progress
+                            role="progressbar"
+                            aria-label={
+                                isArticleReader
+                                    ? '文章阅读进度'
+                                    : isWordPronunciation
+                                      ? '单词记住进度'
+                                      : '本地演示题目进度'
+                            }
+                            aria-valuemin={0}
+                            aria-valuemax={
+                                isArticleReader
+                                    ? 100
+                                    : isWordPronunciation
+                                      ? rememberProgress.total
+                                      : questions.length
+                            }
+                            aria-valuenow={
+                                isArticleReader
+                                    ? 0
+                                    : isWordPronunciation
+                                      ? rememberProgress.remembered
+                                      : session.index + 1
+                            }
+                            aria-valuetext={
+                                isArticleReader
+                                    ? '暂无文章内容'
+                                    : isWordPronunciation
+                                      ? `已记住 ${rememberProgress.remembered} 个，共 ${rememberProgress.total} 个，剩余 ${rememberProgress.remaining} 个`
+                                      : undefined
+                            }
+                            className={
+                                usesCardDeck
+                                    ? 'relative z-[1] h-[3px] shrink-0 bg-primary/40'
+                                    : 'h-[3px] shrink-0 bg-primary/40'
+                            }
+                        >
+                            <div
+                                className="h-full bg-linear-to-r from-brand-start to-brand-end transition-[width] duration-300 ease-out motion-reduce:transition-none"
+                                style={{
+                                    width: `${isArticleReader ? 0 : isWordPronunciation ? rememberProgress.percent : ((session.index + 1) / questions.length) * 100}%`,
+                                }}
+                            />
+                        </div>
+                    )}
                     <main
                         aria-label="练习内容"
                         data-toolbar-ready={toolbarPreferences.ready}
@@ -1973,7 +2053,7 @@ function PracticeSession({
                         className={
                             isVideoGame
                                 ? 'relative flex min-h-0 min-w-0 flex-1 flex-col'
-                                : isSentenceReading || isGuessReading
+                                : isArticleReader || isSentenceReading || isGuessReading
                                   ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
                                   : isFourRowLayout
                                     ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain'
@@ -2115,20 +2195,24 @@ function PracticeSession({
                                     key={
                                         isSentenceReading
                                             ? 'sentence-reading'
-                                            : isGuessReading
-                                              ? 'guess-reading'
-                                              : demo.family === 'word' && mode === 'pronounce'
-                                                ? `word-pronunciation:${wordOrderRevision}`
-                                                : isPhoneticsPronunciation
-                                                  ? 'phonetics-pronunciation'
-                                                  : isWordSpelling
-                                                    ? 'word-spelling'
-                                                    : `${question.id}:${resetRevision}`
+                                            : isPictureReader
+                                              ? 'picture-reader'
+                                              : isGuessReading
+                                                ? 'guess-reading'
+                                                : demo.family === 'word' && mode === 'pronounce'
+                                                  ? `word-pronunciation:${wordOrderRevision}`
+                                                  : isPhoneticsPronunciation
+                                                    ? 'phonetics-pronunciation'
+                                                    : isWordSpelling
+                                                      ? 'word-spelling'
+                                                      : `${question.id}:${resetRevision}`
                                     }
                                     demo={demo}
                                     mode={mode}
                                     question={question}
                                     session={session}
+                                    onPictureSelect={selectPicture}
+                                    onPictureBusyChange={reportPictureBusy}
                                     values={values}
                                     imageVisible={
                                         wordMode

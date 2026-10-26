@@ -58,6 +58,31 @@ test('本地输入不自行判题，揭晓独立于正确；移动清理题内�
     )
 })
 
+test('纯音频和纯视频默认各有一个条目，不借用句子题目或朗读音源', (): void => {
+    for (const family of ['audio-reader', 'video-reader'] as const) {
+        const questions = getDemoQuestions(family, 'read')
+        assert.equal(questions.length, 1)
+        assert.deepEqual(questions, getDemoQuestions(family))
+        assert.equal(questions[0]?.english, '')
+        assert.equal(questions[0]?.readingSource, undefined)
+        assert.deepEqual(questions[0]?.tokens, [])
+    }
+    assert.equal(getDemoQuestions('picture-reader', 'read').length, 5)
+    assert.equal(getDemoQuestions('audio', 'read').length, 10)
+    assert.equal(getDemoQuestions('video', 'listen').length, 10)
+})
+
+test('空文章只有一个无作答目标的会话载体，不使用重复句子题库', (): void => {
+    const questions = getDemoQuestions('text-reader', 'read')
+    assert.equal(questions.length, 1)
+    assert.deepEqual(questions, getDemoQuestions('text-reader'))
+    assert.equal(questions[0]?.english, '')
+    assert.equal(questions[0]?.translation, '')
+    assert.equal(questions[0]?.phonetic, '')
+    assert.equal(questions[0]?.readingSource, undefined)
+    assert.deepEqual(questions[0]?.tokens, [])
+})
+
 test('音标默认一课十个不同词例，课程目标与显式字母音一致', (): void => {
     const questions = getDemoQuestions('phonetics')
     assert.equal(questions.length, 10)

@@ -29,6 +29,8 @@ export function resolvePracticePrimary({
     readonly quickOral: boolean
     readonly wordMeaning?: WordMeaningState
 }): PracticePrimaryAction {
+    if (family === 'video-reader' || family === 'audio-reader' || family === 'text-reader')
+        return 'none'
     if (quickOral || mode === 'oral') {
         if (oralStage === 'idle') return 'oral-start'
         if (oralStage === 'recording') return 'oral-stop'

@@ -69,9 +69,11 @@ export function PracticeModeToolbar<TRow extends ModeToolbarRow>({
             className={
                 reference === 'listening'
                     ? 'relative z-30 flex min-w-0 flex-wrap items-center gap-3 px-4 pt-5 text-practice-control-text design:absolute design:left-[29px] design:right-4 design:top-[17px] design:p-0'
-                    : family === 'phonetics'
-                      ? 'relative z-30 flex min-w-0 flex-wrap items-center gap-[10px] px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
-                      : 'relative z-30 flex min-w-0 flex-wrap items-center gap-3 px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
+                    : family === 'video-reader' || family === 'audio-reader'
+                      ? 'absolute left-4 right-4 top-[23px] z-30 flex min-w-0 flex-wrap items-center gap-3 text-practice-control-text'
+                      : family === 'phonetics'
+                        ? 'relative z-30 flex min-w-0 flex-wrap items-center gap-[10px] px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
+                        : 'relative z-30 flex min-w-0 flex-wrap items-center gap-3 px-4 pt-5 text-practice-control-text design:absolute design:left-4 design:right-4 design:top-5 design:p-0'
             }
         >
             <PracticeToolbarTimer family={family} />

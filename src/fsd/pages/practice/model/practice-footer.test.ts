@@ -63,6 +63,27 @@ test('原稿的简化底栏和纯内容不继承通用答案朗读或知识按�
     assert.deepEqual(playback?.shortcuts, [])
 })
 
+test('纯图片首张允许上一张循环，空图集或单图禁用双向切换', (): void => {
+    const first = { ...context('picture-reader', 'read'), index: 0, total: 5 }
+    assert.equal(getPracticeFooter(first).find((item) => item.id === 'previous')?.disabled, false)
+    assert.equal(
+        getPracticeFooter({ ...first, index: 4 }).find((item) => item.id === 'next')?.disabled,
+        false,
+    )
+    for (const total of [0, 1])
+        for (const id of ['previous', 'next'])
+            assert.equal(
+                getPracticeFooter({ ...first, total }).find((item) => item.id === id)?.disabled,
+                true,
+            )
+    assert.equal(
+        getPracticeFooter({ ...context('sentence', 'check'), index: 0 }).find(
+            (item) => item.id === 'previous',
+        )?.disabled,
+        true,
+    )
+})
+
 test('知识能力按小模式裁剪，音视频全部排除，看图三种非指法模式保留', (): void => {
     for (const demo of practiceDemos)
         for (const mode of demo.modes) {

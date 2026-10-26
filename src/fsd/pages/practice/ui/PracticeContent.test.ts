@@ -31,6 +31,9 @@ interface ContentFixtureProps {
     readonly questionIndex?: number
     readonly translationVisible?: boolean
     readonly copy?: boolean
+    readonly readingWave?: string
+    readonly blocked?: boolean
+    readonly paused?: boolean
 }
 
 function ignoreAction(): void {}
@@ -71,6 +74,9 @@ function ContentFixture({
     questionIndex = 0,
     translationVisible = true,
     copy = false,
+    readingWave,
+    blocked = false,
+    paused = false,
 }: ContentFixtureProps): ReactElement {
     const snapshot = useLearningSettingsSnapshot()
     const demo = practiceDemos.find((entry) => entry.family === family)
@@ -83,6 +89,7 @@ function ContentFixture({
         session: { ...initialPracticeSession, phase, input, index: questionIndex },
         values: {
             ...snapshot.values,
+            ...(readingWave === undefined ? {} : { readingWave }),
             ...(phoneticsEnabled === undefined
                 ? {}
                 : { showPhonetics: phoneticsEnabled, showAnswerPhonetics: phoneticsEnabled }),
@@ -102,7 +109,8 @@ function ContentFixture({
               }
             : {}),
         imageVisible,
-        blocked: false,
+        blocked,
+        paused,
         additionalOptions: {
             copy,
             imageVisible: true,
@@ -152,6 +160,111 @@ function renderContent(props: ContentFixtureProps): string {
         createElement(LearningSettingsProvider, null, createElement(ContentFixture, props)),
     )
 }
+
+test('纯视频所有题态只显示同图封面与静态控制条，不挂载技术媒体和学习内容', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+        const html = renderContent({
+            family: 'video-reader',
+            mode: 'read',
+            phase,
+            phoneticsEnabled: true,
+            imageVisible: false,
+        })
+        assert.match(html, /data-pure-video-reader/)
+        assert.match(html, /alt="纯视频封面"/)
+        const images = Array.from(html.matchAll(/<img\b[^>]*src="([^"]*)"/g), (match) => match[1])
+        assert.equal(images[0], images[1])
+        for (const label of ['暂停', '音量', '画中画', '播放器全屏'])
+            assert.match(html, new RegExp(`<button\\b[^>]*aria-label="${label}"[^>]*disabled`))
+        assert.doesNotMatch(
+            html,
+            /<audio\b|<video\b|<input\b|technical-video|technical-tone|逐词解析|播放进度与总时长|倍速|data-practice-quick-oral/,
+        )
+    }
+})
+
+test('纯音频默认静止且只保留一个播放／暂停入口，阻断时禁用，不挂载媒体或学习题面', (): void => {
+    for (const readingWave of ['默认竖条', '曲线频谱', '矩阵方块', '雨滴点阵', '波形线条'])
+        for (const state of [{}, { blocked: true }, { paused: true }]) {
+            const html = renderContent({
+                family: 'audio-reader',
+                mode: 'read',
+                phase: 'correct',
+                readingWave,
+                phoneticsEnabled: true,
+                ...state,
+            })
+            assert.match(html, /data-pure-audio-reader/)
+            assert.match(html, new RegExp(`data-audio-wave="${readingWave}"`))
+            assert.match(html, /aria-label="纯音频声纹预览"/)
+            assert.match(html, /data-wave-active="false"/)
+            assert.equal(html.match(/<button\b/g)?.length, 1)
+            assert.match(html, /aria-label="播放声纹预览"/)
+            if (state.blocked || state.paused) assert.match(html, /<button\b[^>]*disabled/)
+            else assert.doesNotMatch(html, /<button\b[^>]*disabled/)
+            assert.doesNotMatch(
+                html,
+                /<audio\b|<video\b|<input\b|technical-tone|音频练习封面|播放进度与总时长|逐词解析|data-practice-quick-oral|随机播放|上一条|下一条|重复播放/,
+            )
+        }
+})
+
+test('纯图片轮播仅当前图可访问，五个指示器与会话题号一致，无学习内容或媒体', (): void => {
+    for (const questionIndex of [0, 2, 4]) {
+        const html = renderContent({
+            family: 'picture-reader',
+            mode: 'read',
+            phase: 'answering',
+            questionIndex,
+            imageVisible: false,
+            oralEnabled: true,
+            phoneticsEnabled: true,
+        })
+        assert.match(html, /data-pure-picture-reader/)
+        assert.equal(html.match(/data-picture-slide=/g)?.length, 5)
+        assert.equal(
+            html.match(/aria-roledescription="幻灯片"[^>]*aria-hidden="false"/g)?.length,
+            1,
+        )
+        assert.match(
+            html,
+            new RegExp(`aria-label="查看第${questionIndex + 1}张图片" aria-current="true"`),
+        )
+        assert.match(html, new RegExp(`第${questionIndex + 1}张，共5张图片`))
+        assert.doesNotMatch(
+            html,
+            /<audio\b|<video\b|<input\b|data-practice-media|data-practice-english|data-practice-translation|data-practice-quick-oral|逐词解析/,
+        )
+    }
+    const blocked = renderContent({
+        family: 'picture-reader',
+        mode: 'read',
+        phase: 'answering',
+        blocked: true,
+    })
+    assert.match(blocked, /aria-label="上一张图片"[^>]*disabled/)
+    assert.match(blocked, /aria-label="下一张图片"[^>]*disabled/)
+})
+
+test('纯文章各题态保持空富文本容器，不显示句子、笔记、答题或媒体占位', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+        const html = renderContent({
+            family: 'text-reader',
+            mode: 'read',
+            phase,
+            oralEnabled: true,
+            phoneticsEnabled: true,
+        })
+        assert.match(html, /data-pure-article-reader/)
+        assert.match(html, /data-article-empty="true"/)
+        assert.match(html, /aria-label="文章内容" tabindex="0"/)
+        assert.match(html, /暂无文章内容/)
+        assert.doesNotMatch(
+            html,
+            /<audio\b|<video\b|<img\b|<input\b|添加笔记|data-practice-english|data-practice-translation|data-practice-media|data-practice-quick-oral|逐词解析/,
+        )
+    }
+})
 
 test('猜词阅读接入十条语境列表，不回退到重复阅读占位或场景图', (): void => {
     const html = renderContent({ family: 'guess', mode: 'read', phase: 'answering' })

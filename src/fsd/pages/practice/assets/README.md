@@ -35,8 +35,8 @@
 - reading-scene.png：546:33666；句子游戏题图。
 - picture-scene.png：2655:11089；看图听力，原图已含静态遮罩/目标描边。
 - greeting-scene.png：2651:10419，同2651:10098的浴室场景；文件名沿首次导出，非另造问候题图，原稿指法Nice to meet you与此图是设计占位组合。
-- audio-cover.png：546:43542；纯音频封面496×280。
-- picture-reader.png：546:43589；纯图片主体1100×733（原稿另有渐变覆盖，当前未补齐）。
+- 纯音频原静态声纹图`546:43542`现由`PureAudioReader`在496×280槽位内复用设置的`LearningAudioWave`，不再保留未引用的`audio-cover.png`；仅保留32px播放图标，暂停使用用户提供的32×32原图`audio-reader/pause.png`，见[audio-reader素材说明](audio-reader/README.md)。
+- picture-reader.png：546:43589；纯图片主体1100×733，`PurePictureReader`已用现有media主题token补齐30%渐变覆盖；左右50px原稿SVG见[picture-reader素材说明](picture-reader/README.md)。其余四张轮播演示图直接复用现有资源，不复制文件。
 - 顶栏SVG：I546:31241;257:6750/6756/6764/6772/6778/6784/6790/6799，对应答案/内容/模式/暂停/重置/报错/草稿/设置；返回6809为26×26，全屏6803为30×30；根尺寸保留。
 - known.svg/retry.svg：546:31286/31289，均66×66。
 - word-card-gradient-border.svg：546:31320，原始500×500透明描边，1px、20px圆角；136°紫→白（49%）→绿渐变，未改写路径或色值。

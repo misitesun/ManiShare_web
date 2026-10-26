@@ -143,7 +143,17 @@ async function measureReference(window) {
             header: box(document.querySelector('[data-practice-header]')),
             progress: box(document.querySelector('[data-practice-progress]')),
             media: box(document.querySelector('[data-practice-media]')),
-            videoSlot: box(document.querySelector('video')?.parentElement),
+            videoSlot: box(
+                document.querySelector('[data-pure-video-cover]') ??
+                    document.querySelector('video')?.parentElement,
+            ),
+            audioReaderWave: box(document.querySelector('[data-pure-audio-wave-slot]')),
+            audioReaderProgress: box(document.querySelector('[data-pure-audio-progress] > div')),
+            audioReaderControls: box(document.querySelector('[aria-label="音频控制栏"]')),
+            pictureReaderFrame: box(document.querySelector('[data-pure-picture-frame]')),
+            pictureReaderPrevious: box(document.querySelector('[aria-label="上一张图片"]')),
+            pictureReaderNext: box(document.querySelector('[aria-label="下一张图片"]')),
+            articleReaderFrame: box(document.querySelector('[data-pure-article-content]')),
             english: box(document.querySelector('[data-practice-english]')),
             translation: box(document.querySelector('[data-practice-translation]')),
             footer: box(document.querySelector('[data-practice-footer]')),
@@ -752,12 +762,24 @@ async function runPracticeChecks(window, origin, label, report) {
         await navigate(window, origin, '?demo=video-reader&mode=read')
         await waitFor(
             window,
-            () => Boolean(document.querySelector('video')),
+            () => Boolean(document.querySelector('[data-pure-video-cover]')),
             'video reader geometry',
         )
         result.videoReaderReference = await measureReference(window)
         assert.equal(result.videoReaderReference.videoSlot.width, 1200)
         assert.equal(result.videoReaderReference.videoSlot.height, 700)
+        assert.equal(result.videoReaderReference.videoSlot.x, 360)
+        assert.equal(result.videoReaderReference.videoSlot.y, 226)
+        assert.equal(result.videoReaderReference.progress, null)
+        assert.doesNotMatch(
+            await evaluate(window, () => document.querySelector('h1').textContent),
+            /[（(]\s*\d+\s*\/\s*\d+\s*[）)]/,
+        )
+        assert.equal(
+            await evaluate(window, () => Boolean(document.querySelector('audio, video'))),
+            false,
+            'pure video remains a static cover until media integration',
+        )
         assert.equal(
             await evaluate(window, () =>
                 Boolean(document.querySelector('[data-practice-quick-oral]')),
@@ -765,6 +787,187 @@ async function runPracticeChecks(window, origin, label, report) {
             false,
         )
         result.pureReadersNeverOfferQuickOral = true
+        await navigate(window, origin, '?demo=audio-reader&mode=read')
+        await waitFor(
+            window,
+            () => Boolean(document.querySelector('[data-pure-audio-reader] [data-audio-wave]')),
+            'audio reader uses the settings waveform preview',
+        )
+        result.audioReaderReference = await measureReference(window)
+        assert.equal(result.audioReaderReference.audioReaderWave.x, 712)
+        assert.equal(result.audioReaderReference.audioReaderWave.y, 275)
+        assert.equal(result.audioReaderReference.audioReaderWave.width, 496)
+        assert.equal(result.audioReaderReference.audioReaderWave.height, 280)
+        assert.equal(result.audioReaderReference.audioReaderProgress.x, 583)
+        assert.equal(result.audioReaderReference.audioReaderProgress.y, 565)
+        assert.equal(result.audioReaderReference.audioReaderProgress.width, 755)
+        assert.equal(result.audioReaderReference.audioReaderProgress.height, 8)
+        assert.equal(result.audioReaderReference.audioReaderControls.y, 615)
+        assert.equal(result.audioReaderReference.audioReaderControls.x, 944)
+        assert.equal(result.audioReaderReference.audioReaderControls.width, 32)
+        assert.equal(result.audioReaderReference.progress, null)
+        assert.doesNotMatch(
+            await evaluate(window, () => document.querySelector('h1').textContent),
+            /[（(]\s*\d+\s*\/\s*\d+\s*[）)]/,
+        )
+        assert.equal(
+            await evaluate(
+                window,
+                () => document.querySelectorAll('[aria-label="音频控制栏"] button').length,
+            ),
+            1,
+        )
+        assert.equal(
+            await evaluate(window, () =>
+                document
+                    .querySelector('[data-pure-audio-reader] [data-audio-wave]')
+                    .getAttribute('data-wave-active'),
+            ),
+            'false',
+        )
+        await evaluate(window, () => document.querySelector('[aria-label="播放声纹预览"]').click())
+        await waitFor(
+            window,
+            () =>
+                Boolean(document.querySelector('[aria-label="暂停声纹预览"]')) &&
+                document
+                    .querySelector('[data-pure-audio-reader] [data-audio-wave]')
+                    ?.getAttribute('data-wave-active') === 'true',
+            'pure audio preview starts',
+        )
+        await evaluate(window, () => document.querySelector('[aria-label="暂停声纹预览"]').click())
+        await waitFor(
+            window,
+            () =>
+                Boolean(document.querySelector('[aria-label="播放声纹预览"]')) &&
+                document
+                    .querySelector('[data-pure-audio-reader] [data-audio-wave]')
+                    ?.getAttribute('data-wave-active') === 'false',
+            'pure audio preview pauses',
+        )
+        assert.equal(
+            await evaluate(window, () =>
+                Boolean(document.querySelector('audio, video, [data-practice-quick-oral]')),
+            ),
+            false,
+            'pure audio is a waveform preview without a media source or quick oral entry',
+        )
+        await navigate(window, origin, '?demo=picture-reader&mode=read')
+        await waitFor(
+            window,
+            () => Boolean(document.querySelector('[data-pure-picture-frame]')),
+            'picture carousel mounted',
+        )
+        result.pictureReaderReference = await measureReference(window)
+        assert.equal(result.pictureReaderReference.pictureReaderFrame.x, 410)
+        assert.equal(result.pictureReaderReference.pictureReaderFrame.y, 173)
+        assert.equal(result.pictureReaderReference.pictureReaderFrame.width, 1100)
+        assert.equal(result.pictureReaderReference.pictureReaderFrame.height, 733)
+        assert.equal(result.pictureReaderReference.pictureReaderPrevious.x, 424)
+        assert.equal(result.pictureReaderReference.pictureReaderNext.x, 1444)
+        assert.equal(result.pictureReaderReference.progress.height, 3)
+        for (const [selector, expected] of [
+            ['[aria-label="上一张图片"]', 4],
+            ['[data-practice-footer-item="next"]', 0],
+            ['[aria-label="查看第3张图片"]', 2],
+        ]) {
+            await evaluate(window, (target) => document.querySelector(target).click(), selector)
+            await waitFor(
+                window,
+                (index) =>
+                    document.querySelector('[data-practice-index]')?.dataset.practiceIndex ===
+                        String(index) &&
+                    document.querySelector('[data-pure-picture-frame]')?.dataset
+                        .pictureSwitching === 'false',
+                'picture selection settles',
+                expected,
+            )
+            assert.equal(
+                await evaluate(window, () =>
+                    document
+                        .querySelector('[aria-current="true"][aria-label^="查看第"]')
+                        ?.getAttribute('aria-label'),
+                ),
+                `查看第${expected + 1}张图片`,
+            )
+        }
+        await evaluate(window, () => document.querySelector('[data-practice-index]').focus())
+        window.webContents.sendInputEvent({ type: 'keyDown', keyCode: 'Space' })
+        window.webContents.sendInputEvent({ type: 'keyUp', keyCode: 'Space' })
+        await waitFor(
+            window,
+            () =>
+                document.querySelector('[data-practice-index]')?.dataset.practiceIndex === '3' &&
+                document.querySelector('[data-pure-picture-frame]')?.dataset.pictureSwitching ===
+                    'false',
+            'space advances carousel once',
+        )
+        assert.equal(
+            await evaluate(window, () =>
+                Boolean(
+                    document.querySelector(
+                        'audio, video, [data-practice-quick-oral], [data-practice-english]',
+                    ),
+                ),
+            ),
+            false,
+        )
+        result.pictureReaderLoopsWithoutCompletion = true
+        await navigate(window, origin, '?demo=text-reader&mode=read')
+        await waitFor(
+            window,
+            () => Boolean(document.querySelector('[data-pure-article-content]')),
+            'empty article reader mounted',
+        )
+        result.articleReaderReference = await measureReference(window)
+        assert.equal(result.articleReaderReference.articleReaderFrame.x, 410)
+        assert.equal(result.articleReaderReference.articleReaderFrame.y, 170)
+        assert.equal(result.articleReaderReference.articleReaderFrame.width, 1100)
+        assert.equal(result.articleReaderReference.articleReaderFrame.height, 740)
+        assert.equal(result.articleReaderReference.progress.height, 3)
+        assert.equal(result.articleReaderReference.footer, null)
+        assert.equal(result.articleReaderReference.media, null)
+        assert.equal(
+            await evaluate(window, () =>
+                document.querySelector('[aria-label="文章阅读进度"]').getAttribute('aria-valuenow'),
+            ),
+            '0',
+        )
+        assert.equal(
+            await evaluate(window, () =>
+                document.querySelector('[aria-label="文章阅读进度"]').getAttribute('aria-valuemax'),
+            ),
+            '100',
+        )
+        assert.equal(
+            await evaluate(
+                window,
+                () => document.querySelector('[aria-label="文章阅读进度"] > div').style.width,
+            ),
+            '0%',
+        )
+        assert.doesNotMatch(
+            await evaluate(window, () => document.querySelector('h1').textContent),
+            /[（(]\s*\d+\s*\/\s*\d+\s*[）)]/,
+        )
+        assert.equal(
+            await evaluate(window, () =>
+                document
+                    .querySelector('[data-pure-article-reader]')
+                    .getAttribute('data-article-empty'),
+            ),
+            'true',
+        )
+        assert.equal(
+            await evaluate(window, () =>
+                Boolean(
+                    document.querySelector(
+                        'audio, video, input, [data-practice-quick-oral], [data-practice-english]',
+                    ),
+                ),
+            ),
+            false,
+        )
         await navigate(window, origin, '?demo=word-basic&mode=pronounce')
         await waitFor(
             window,
