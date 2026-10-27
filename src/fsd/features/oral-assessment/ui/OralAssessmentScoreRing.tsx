@@ -91,7 +91,7 @@ export function OralAssessmentScoreRing({
                     pathLength="100"
                     strokeDasharray={`${score} 100`}
                     transform="rotate(-90 65.5 65.5)"
-                    className={animate && active && !activity.visible ? 'opacity-0' : undefined}
+                    className={animate && active && !activity.visible ? 'opacity-0' : ''}
                 />
             </svg>
             <p

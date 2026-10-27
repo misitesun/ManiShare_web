@@ -53,9 +53,9 @@ export function PracticeAnswerPanel({
         if (!phonetics || !panel || !target) return undefined
         let active = true
         function synchronizeHeight(): void {
-            if (!active) return
+            if (!active || !panel || !target) return
             const height = panel.offsetHeight
-            // 收起讲解时保留最后的预留高度，不让整个卡堆随固定面板跳动。
+            // 收起讲解时保留最后的预留高度，不让整个卡堆随面板跳动。
             if (height > 0)
                 target.style.setProperty('--practice-phonetics-panel-height', `${height}px`)
         }
@@ -79,7 +79,7 @@ export function PracticeAnswerPanel({
             aria-hidden={!open || blocked}
             className={
                 phonetics
-                    ? 'fixed inset-x-0 top-[96px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[720px] overflow-y-auto rounded-2xl bg-transparent design:top-[211px]'
+                    ? 'absolute inset-x-0 top-[96px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-[calc(100%-32px)] max-w-[720px] overflow-y-auto rounded-2xl bg-transparent design:top-[211px]'
                     : sentenceAnswer
                       ? 'fixed inset-x-0 top-[76px] z-[55] mx-auto max-h-[calc(100dvh-200px)] w-max min-w-[min(430px,calc(100%-32px))] max-w-[calc(100%-32px)] overflow-y-auto rounded-2xl border border-strong bg-surface px-4 py-4 shadow-xl md:px-8 md:py-6'
                       : compactTranslation

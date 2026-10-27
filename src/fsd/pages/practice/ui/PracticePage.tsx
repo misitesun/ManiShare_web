@@ -1899,7 +1899,15 @@ function PracticeSession({
         <div
             ref={rootRef}
             tabIndex={-1}
-            className={usesCardDeck ? 'overflow-clip outline-none' : 'outline-none'}
+            className={
+                demo.family === 'phonetics'
+                    ? usesCardDeck
+                        ? 'relative overflow-clip outline-none'
+                        : 'relative outline-none'
+                    : usesCardDeck
+                      ? 'overflow-clip outline-none'
+                      : 'outline-none'
+            }
             style={style}
             data-practice-phase={session.phase}
             data-practice-index={session.index}

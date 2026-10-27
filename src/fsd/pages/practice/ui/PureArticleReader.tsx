@@ -11,7 +11,7 @@ interface PureArticleReaderProps {
 }
 
 export function PureArticleReader({ content }: PureArticleReaderProps): ReactElement {
-    const reference = getPracticeReference('text-reader', 'read')
+    const reference = getPracticeReference('text-reader', 'read', 'answering')
     const style: ReaderStyle = { '--practice-reference-top': `${reference.top}px` }
     const empty = content === null || content === undefined
     return (

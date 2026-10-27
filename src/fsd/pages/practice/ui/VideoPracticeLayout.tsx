@@ -8,6 +8,7 @@ import { formatPracticeMediaTime } from '../model/media-controller'
 import type { VideoListeningSegment } from '../model/video-listening-demo'
 import { PracticePlaybackList } from './PracticePlaybackList'
 import type { PracticePlaybackListContent } from '../model/practice-playback-list'
+import { getVideoPracticeFrameLayout } from '../model/video-practice-layout'
 
 interface VideoPracticeLayoutProps {
     readonly enabled?: boolean
@@ -24,19 +25,6 @@ interface VideoPracticeLayoutProps {
     readonly onCompactChange: (compact: boolean) => void
     readonly controls: ReactNode
     readonly children: ReactNode
-}
-
-interface VideoFrameLayout {
-    readonly width: number
-    readonly marginLeft: number
-}
-
-function getVideoFrameLayout(containerWidth: number, sidebarSpace: number): VideoFrameLayout {
-    const width =
-        sidebarSpace > 0
-            ? Math.max(0, containerWidth - sidebarSpace)
-            : Math.min(containerWidth, 1390)
-    return { width, marginLeft: sidebarSpace > 0 ? 0 : (containerWidth - width) / 2 }
 }
 
 /** 视频与看图共用内容列表、响应式与联动布局；不创建媒体或持有题态。 */
@@ -133,11 +121,17 @@ function VideoPracticeFrame({
             let containerWidth = containerBounds.width
             let dockWidth = dockBounds.width
             const sidebarSpace = sidebarOpen ? panel.offsetWidth + 23 : 0
-            function getScrollViewportWidth(): number {
+            function getLayout(): ReturnType<typeof getVideoPracticeFrameLayout> {
                 const rootBounds = root.current?.getBoundingClientRect()
                 const bounds = container?.getBoundingClientRect()
                 const inset = rootBounds && bounds ? Math.max(0, bounds.left - rootBounds.left) : 0
-                return Math.max(0, containerWidth - sidebarSpace) + inset * (sidebarOpen ? 1 : 2)
+                return getVideoPracticeFrameLayout({
+                    frameWidth: containerWidth,
+                    dockWidth,
+                    inset,
+                    sidebarSpace,
+                    edgeScroll,
+                })
             }
             const panelTarget = {
                 x: sidebarOpen ? 0 : 30,
@@ -149,13 +143,15 @@ function VideoPracticeFrame({
             context.ignore((): void => {
                 motionContext = gsap.context((): void => {
                     // 固定当前可见几何，再同步插值真实宽度与边距，避免先重排再位移。
-                    gsap.set(main, {
-                        x: 0,
-                        width: mainBounds.width,
-                        marginLeft: mainBounds.left - containerBounds.left,
-                        marginRight: 0,
-                        maxWidth: 'none',
-                    })
+                    // 边缘滚动布局由视口宽度带动题面自然重排，保留滚动条实际占位。
+                    if (!edgeScroll)
+                        gsap.set(main, {
+                            x: 0,
+                            width: mainBounds.width,
+                            marginLeft: mainBounds.left - containerBounds.left,
+                            marginRight: 0,
+                            maxWidth: 'none',
+                        })
                     gsap.set(controls, {
                         x: 0,
                         width: controlsBounds.width,
@@ -171,10 +167,11 @@ function VideoPracticeFrame({
                             ease: sidebarOpen ? 'power2.out' : 'power2.in',
                         },
                     })
-                    transition.to(main, { ...getVideoFrameLayout(containerWidth, sidebarSpace) }, 0)
-                    transition.to(controls, { ...getVideoFrameLayout(dockWidth, sidebarSpace) }, 0)
+                    const layout = getLayout()
+                    if (!edgeScroll) transition.to(main, { ...layout.stage }, 0)
+                    transition.to(controls, { ...layout.controls }, 0)
                     transition.to(panel, panelTarget, 0)
-                    if (viewport) transition.to(viewport, { width: getScrollViewportWidth() }, 0)
+                    if (viewport) transition.to(viewport, { width: layout.scrollViewportWidth }, 0)
                 }, root)
             })
             function reduceMotion(): void {
@@ -192,10 +189,11 @@ function VideoPracticeFrame({
                 motionContext?.add((): void => {
                     transition?.kill()
                     transition = undefined
-                    gsap.set(main, { ...getVideoFrameLayout(containerWidth, sidebarSpace) })
-                    gsap.set(controls, { ...getVideoFrameLayout(dockWidth, sidebarSpace) })
+                    const layout = getLayout()
+                    if (!edgeScroll) gsap.set(main, { ...layout.stage })
+                    gsap.set(controls, { ...layout.controls })
                     gsap.set(panel, panelTarget)
-                    if (viewport) gsap.set(viewport, { width: getScrollViewportWidth() })
+                    if (viewport) gsap.set(viewport, { width: layout.scrollViewportWidth })
                 })
             }
             const observer = new ResizeObserver(resize)

@@ -12,7 +12,7 @@ interface ReaderStyle extends CSSProperties {
 
 /** 暂无视频资源时只呈现原稿控制栏，不创建媒体或模拟播放状态。 */
 export function PureVideoReader(): ReactElement {
-    const reference = getPracticeReference('video-reader', 'read')
+    const reference = getPracticeReference('video-reader', 'read', 'answering')
     const style: ReaderStyle = { '--practice-reference-top': `${reference.top}px` }
     return (
         <section

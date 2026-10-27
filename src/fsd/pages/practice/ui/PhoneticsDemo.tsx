@@ -99,7 +99,7 @@ export function PhoneticsExplanation({
     )
 }
 
-/** 为固定讲解预留实际高度与90px间距；原稿主卡y481，切题不重挂整个卡堆。 */
+/** 为同页讲解预留实际高度与90px间距；原稿主卡y481，切题不重挂整个卡堆。 */
 export function PhoneticsDemo({
     questions,
     index,

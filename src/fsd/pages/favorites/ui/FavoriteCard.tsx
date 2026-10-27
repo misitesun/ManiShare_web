@@ -47,7 +47,7 @@ export function FavoriteCard({
                         {favoriteItem.categoryLabel}
                     </span>
                 </div>
-                <p className="mt-1 text-body text-primary/60">共{favoriteItem.noteCount}条笔记</p>
+                <p className="mt-1 text-body text-primary/60">课程详情</p>
             </div>
 
             {isEditing ? (

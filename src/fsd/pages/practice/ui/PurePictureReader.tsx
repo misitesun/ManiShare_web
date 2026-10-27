@@ -58,7 +58,7 @@ export function PurePictureReader({
     onSelect,
     onBusyChange,
 }: PurePictureReaderProps): ReactElement {
-    const reference = getPracticeReference('picture-reader', 'read')
+    const reference = getPracticeReference('picture-reader', 'read', 'answering')
     const style: ReaderStyle = { '--practice-reference-top': `${reference.top}px` }
     const frameRef = useRef<HTMLDivElement>(null)
     const pointer = useRef<PicturePointer | null>(null)

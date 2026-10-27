@@ -34,7 +34,7 @@ export function PracticeReadingOverlay({
                     : 'pointer-events-none absolute inset-x-0 bottom-0 z-10 overflow-hidden bg-linear-to-t from-media-ink/80 to-transparent px-3 py-2 text-center text-media-foreground'
             }
         >
-            <div className={compact ? 'h-7 [&>div]:origin-top [&>div]:scale-y-[0.4]' : undefined}>
+            <div className={compact ? 'h-7 [&>div]:origin-top [&>div]:scale-y-[0.4]' : ''}>
                 <LearningAudioWave
                     style={reading.waveStyle}
                     active={reading.status === 'playing'}

@@ -19,7 +19,7 @@ interface PureAudioReaderProps {
 /** 无真实音源时播放／暂停仅控制声纹预览，不模拟媒体进度。 */
 export function PureAudioReader({ waveStyle, active }: PureAudioReaderProps): ReactElement {
     const [previewPlaying, setPreviewPlaying] = useState(false)
-    const reference = getPracticeReference('audio-reader', 'read')
+    const reference = getPracticeReference('audio-reader', 'read', 'answering')
     const style: ReaderStyle = { '--practice-reference-top': `${reference.top}px` }
     return (
         <section

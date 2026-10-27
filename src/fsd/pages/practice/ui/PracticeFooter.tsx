@@ -134,10 +134,10 @@ export function PracticeFooter({
             aria-label="练习底部操作"
             className={
                 embedded
-                    ? 'relative z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
+                    ? 'relative z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto overflow-y-hidden bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
                     : floating
-                      ? 'pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-transparent px-3 pb-[env(safe-area-inset-bottom)] [&_button]:pointer-events-auto'
-                      : 'fixed inset-x-0 bottom-0 z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
+                      ? 'pointer-events-none fixed inset-x-0 bottom-0 z-[1] h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto overflow-y-hidden bg-transparent px-3 pb-[env(safe-area-inset-bottom)] [&_button]:pointer-events-auto'
+                      : 'fixed inset-x-0 bottom-0 z-30 h-[calc(100px+env(safe-area-inset-bottom))] overflow-x-auto overflow-y-hidden bg-practice-background px-3 pb-[env(safe-area-inset-bottom)]'
             }
         >
             <div
