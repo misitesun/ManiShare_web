@@ -84,13 +84,13 @@ test('纯图片首张允许上一张循环，空图集或单图禁用双向切�
     )
 })
 
-test('知识能力按小模式裁剪，音视频全部排除，看图三种非指法模式保留', (): void => {
+test('知识能力按小模式裁剪，音视频全部排除，看图仅听力和口语保留', (): void => {
     for (const demo of practiceDemos)
         for (const mode of demo.modes) {
             const expected =
                 (demo.family === 'word' && mode !== 'typing') ||
                 (demo.family === 'sentence' && mode !== 'typing' && mode !== 'read') ||
-                (demo.family === 'picture' && mode !== 'typing')
+                (demo.family === 'picture' && (mode === 'listen' || mode === 'oral'))
             assert.equal(supportsPracticeKnowledge(demo.family, mode), expected)
             const items = getPracticeFooter(context(demo.family, mode))
             assert.equal(
@@ -174,11 +174,11 @@ test('输入与结果提示分别使用提交和下一题，答后不保留跳�
             [
                 'previous',
                 'input',
-                ...(family === 'sentence' || family === 'picture' ? ['mastered'] : []),
+                ...(family === 'sentence' ? ['mastered'] : []),
                 'read-aloud',
                 'primary',
                 'panel',
-                ...(family === 'sentence' || family === 'picture' ? ['unfamiliar'] : []),
+                ...(family === 'sentence' ? ['unfamiliar'] : []),
                 'navigation',
                 'next',
             ],
@@ -309,4 +309,37 @@ test('音频七模式不出现知识操作，分段输入的空格跳格提示�
             ?.shortcuts,
         ['Space', '← / →'],
     )
+})
+
+test('看图听力仅在本模式的切题提示包含空格，朗读仍独立使用配置快捷键', (): void => {
+    const footer = getPracticeFooter(context('picture', 'listen'))
+    assert.deepEqual(footer.find((item) => item.id === 'navigation')?.shortcuts, [
+        'Shift + ArrowLeft',
+        'Shift + ArrowRight',
+        'Space',
+    ])
+    assert.deepEqual(footer.find((item) => item.id === 'read-aloud')?.shortcuts, ['Shift + L'])
+    assert.equal(
+        getPracticeFooter(context('picture', 'translate'))
+            .find((item) => item.id === 'navigation')
+            ?.shortcuts.includes('Space'),
+        false,
+    )
+    assert.equal(
+        getPracticeFooter(context('sentence', 'listen'))
+            .find((item) => item.id === 'navigation')
+            ?.shortcuts.includes('Space'),
+        false,
+    )
+})
+
+test('看图中译英底栏与视频一致，初始和答案态沿同一操作白名单', (): void => {
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+        assert.deepEqual(
+            getPracticeFooter(context('picture', 'translate', phase)),
+            getPracticeFooter(context('video', 'translate', phase)),
+        )
+    }
+    assert.equal(supportsPracticeKnowledge('picture', 'listen'), true)
+    assert.equal(supportsPracticeKnowledge('picture', 'translate'), false)
 })

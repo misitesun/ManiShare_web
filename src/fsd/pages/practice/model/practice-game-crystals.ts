@@ -25,6 +25,7 @@ export const initialPracticeCrystalSession: PracticeCrystalSession = {
 export function supportsPracticeGameCrystals(family: PracticeFamily, mode: PracticeMode): boolean {
     return (
         (family === 'typing' && mode === 'typing') ||
+        (family === 'picture' && (mode === 'translate' || mode === 'typing')) ||
         (family === 'video' && (mode === 'translate' || mode === 'blocks' || mode === 'typing'))
     )
 }

@@ -135,6 +135,7 @@ function ContentFixture({
         ...((family === 'word' ||
             family === 'sentence' ||
             family === 'audio' ||
+            family === 'picture' ||
             family === 'video') &&
         mode === 'oral'
             ? {
@@ -143,7 +144,10 @@ function ContentFixture({
                       id: question.id,
                       text: question.english,
                       translation: question.translation,
-                      kind: family === 'word' ? ('word' as const) : ('sentence' as const),
+                      kind:
+                          family === 'word' || family === 'picture'
+                              ? ('word' as const)
+                              : ('sentence' as const),
                   },
               }
             : {}),
@@ -333,7 +337,7 @@ test('纯指法固定抄写并由单一分段输入覆盖全部混合题，无�
     )
 })
 
-test('单词与句子口语页直接装配同一评测正文，其他内容族口语保留原入口', (): void => {
+test('单词、句子与音频口语页直接装配同一评测正文', (): void => {
     const html = renderContent({ family: 'word', mode: 'oral', phase: 'answering' })
     assert.match(html, /data-word-oral-assessment-exercise="true"/)
     assert.match(html, /data-oral-assessment-content="page"/)
@@ -428,6 +432,79 @@ test('视频口语使用当前视频句子和局部翻译设置，不依赖图�
     assert.match(html, /you drink water/)
     assert.match(html, /data-video-oral-cover="true"/)
     assert.doesNotMatch(html, /你喝水|we read books together|data-practice-media/)
+})
+
+test('看图口语复用句子评测完整正文与五种阶段，录制和评测时禁用封面朗读', (): void => {
+    const result = {
+        score: 85,
+        accuracy: 80,
+        fluency: 92,
+        completeness: 90,
+        rating: 'EXCELLENT',
+        description: '口语模拟结果',
+        words: [{ text: 'books', score: 85 }],
+    } as const
+    const typing = renderContent({ family: 'picture', mode: 'typing', phase: 'answering' })
+    const source = typing.match(/<img\b[^>]*src="([^"]+)"/)?.[1]
+    assert.ok(source)
+    for (const stage of ['idle', 'recording', 'evaluating', 'result', 'error'] as const) {
+        const html = renderContent({
+            family: 'picture',
+            mode: 'oral',
+            phase: 'answering',
+            assessmentController: {
+                ...oralAssessment,
+                stage,
+                result: stage === 'result' ? result : null,
+            },
+        })
+        assert.match(html, /data-picture-oral-assessment-exercise="true"/)
+        assert.match(html, /data-picture-oral-cover="true"/)
+        assert.equal(html.match(/<img\b[^>]*src="([^"]+)"/)?.[1], source)
+        assert.match(html, new RegExp(`data-oral-assessment-stage="${stage}"`))
+        assert.match(html, /data-oral-assessment-content="page"/)
+        assert.match(html, /width="520" height="360"/)
+        assert.doesNotMatch(
+            html,
+            /data-word-oral-assessment-exercise|data-oral-demo-panel|role="dialog"|<input\b|<audio\b|<video\b|data-typing-keyboard/,
+        )
+        const cover = html.match(/<button\b[^>]*data-picture-oral-cover[^>]*>/)?.[0] ?? ''
+        assert.ok(cover)
+        if (stage === 'recording' || stage === 'evaluating') assert.match(cover, /disabled=""/)
+        else assert.doesNotMatch(cover, /disabled=/)
+        if (stage === 'result') {
+            assert.match(html, /逐词模拟分数/)
+            assert.match(html, /准确度/)
+            assert.match(html, /流畅度/)
+            assert.match(html, /完整度/)
+            assert.match(html, /重新录制/)
+            assert.match(html, /模拟播放录音/)
+        }
+    }
+})
+
+test('看图口语按当前词例与局部翻译开关显示，封面不依赖图片开关且无指法统计', (): void => {
+    const html = renderContent({
+        family: 'picture',
+        mode: 'oral',
+        phase: 'answering',
+        questionIndex: 4,
+        imageVisible: false,
+        translationVisible: false,
+    })
+    assert.match(html, /brush teeth/)
+    assert.match(html, /data-picture-oral-cover="true"/)
+    assert.doesNotMatch(
+        html,
+        /刷牙|Nice to meet you|data-typing-keyboard|data-practice-answer-statistics|输入数|正确率/,
+    )
+    const blocked = renderContent({
+        family: 'picture',
+        mode: 'oral',
+        phase: 'answering',
+        blocked: true,
+    })
+    assert.match(blocked, /data-picture-oral-cover[^>]*disabled=""/)
 })
 
 test('单词拼写的默写和抄写控制输入提示，已有输入保留，其他模式不启用该提示', (): void => {
@@ -526,6 +603,7 @@ test('真实文本输入共用原生输入桥，句子中译英独立按段维�
             ((family === 'sentence' ||
                 family === 'audio' ||
                 family === 'video' ||
+                family === 'picture' ||
                 family === 'typing') &&
                 (mode === 'translate' || mode === 'typing'))
         ) {
@@ -600,6 +678,67 @@ test('视频指法复用分段输入与键盘，答案态保留视频封面并�
     assert.match(correct, /aria-label="朗读当前句子"/)
 })
 
+test('看图指法单词和短语复用分段输入与同一键盘，抄写开关不替换题面', (): void => {
+    for (const [questionIndex, input, slots] of [
+        [0, 'bo', 1],
+        [4, 'brush te', 2],
+    ] as const) {
+        const common: ContentFixtureProps = {
+            family: 'picture',
+            mode: 'typing',
+            phase: 'answering',
+            questionIndex,
+            input,
+            copy: true,
+        }
+        const pending = renderContent(common)
+        assert.match(pending, /data-picture-typing-exercise="true"/)
+        assert.match(pending, /data-picture-typing-cover/)
+        assert.match(pending, /data-sentence-answer-input="true"/)
+        assert.equal((pending.match(/<input\b/g) ?? []).length, 1)
+        assert.equal((pending.match(/data-sentence-answer-slot="\d+"/g) ?? []).length, slots)
+        assert.match(pending, /data-sentence-word-hint="true"/)
+        assert.match(pending, /data-keyboard-active="true"/)
+        assert.doesNotMatch(pending, /data-word-slot-input|确认输入|<audio\b|<video\b/)
+        const hiddenHint = renderContent({ ...common, copy: false })
+        assert.doesNotMatch(hiddenHint, /data-sentence-word-hint="true"/)
+        assert.match(hiddenHint, /data-picture-typing-cover/)
+        assert.match(hiddenHint, /data-sentence-answer-input="true"/)
+    }
+})
+
+test('看图指法各题态保留原场景与朗读层，答对后去掉输入并停用键盘', (): void => {
+    const common: ContentFixtureProps = {
+        family: 'picture',
+        mode: 'typing',
+        phase: 'answering',
+        imageVisible: false,
+        reading: true,
+        input: 'bo',
+    }
+    for (const phase of ['answering', 'incorrect', 'revealed', 'correct'] as const) {
+        const result = renderContent({ ...common, phase })
+        assert.match(result, /data-picture-typing-cover/)
+        assert.match(result, /data-picture-typing-static-highlight/)
+        assert.match(result, /data-practice-reading-overlay="pending-source"/)
+        assert.match(result, /data-sentence-typing-translation="true"/)
+        assert.doesNotMatch(result, /data-sentence-listening-content|<audio\b|<video\b/)
+        assert.match(
+            result,
+            phase === 'answering' || phase === 'incorrect'
+                ? /data-keyboard-active="true"/
+                : /data-keyboard-active="false"/,
+        )
+    }
+    const correct = renderContent({ ...common, phase: 'correct' })
+    assert.doesNotMatch(correct, /<input\b|data-sentence-answer-slot=/)
+    assert.equal((correct.match(/data-word-card-guideline="true"/g) ?? []).length, 4)
+    assert.match(correct, /aria-label="朗读当前词条"/)
+    const blocked = renderContent({ ...common, blocked: true })
+    assert.match(blocked, /data-keyboard-active="false"/)
+    assert.match(blocked, /aria-label="朗读当前词条"[^>]*disabled=""/)
+})
+
 test('切换拆分时输入字母保持一致，音标定位仅在已映射的可编辑拼写题面启用', (): void => {
     const options = createWordToolbarOptions('spell')
     for (const phonetics of ['original', 'none', 'syllables', 'phonics'] as const) {
@@ -663,7 +802,7 @@ test('显式题态夹具验证中译英输入与揭晓，生产页不再依赖�
         )
 })
 
-test('句子中译英仅答对态复用无封面的听力解析、笔记与口语', (): void => {
+test('句子中译英答对保留题图，继续复用听力解析、笔记与口语', (): void => {
     const common: ContentFixtureProps = {
         family: 'sentence',
         mode: 'translate',
@@ -672,7 +811,7 @@ test('句子中译英仅答对态复用无封面的听力解析、笔记与口�
         oralEnabled: true,
     }
     const result = renderContent(common)
-    const listening = renderContent({ ...common, mode: 'listen', imageVisible: false })
+    const listening = renderContent({ ...common, mode: 'listen', imageVisible: true })
     assertListeningResult(result, listening)
     assert.match(result, /data-annotation-variant="sentence-listening"/)
     assert.match(result, /data-sentence-listening-note/)
@@ -715,7 +854,7 @@ test('视频中译英复用单一分段输入，900×500封面、中文及输入
     }
 })
 
-test('视频中译英沿局部抄写／翻译设置，答案态隐藏封面且答对共用完整解析', (): void => {
+test('视频中译英沿局部设置，答对保留原封面且仅揭晓仍隐藏', (): void => {
     const common: ContentFixtureProps = {
         family: 'video',
         mode: 'translate',
@@ -731,16 +870,15 @@ test('视频中译英沿局部抄写／翻译设置，答案态隐藏封面且�
     assert.match(hiddenTranslation, /data-sentence-answer-input/)
     for (const phase of ['revealed', 'correct'] as const) {
         const html = renderContent({ ...common, phase })
-        assert.doesNotMatch(
-            html,
-            /data-video-exercise-cover|data-practice-media|<audio\b|<video\b|data-sentence-answer-input/,
-        )
+        assert.doesNotMatch(html, /<audio\b|<video\b|data-sentence-answer-input/)
         assert.match(html, /data-practice-english/)
         if (phase === 'correct') {
             assert.match(html, /data-practice-listening="video"/)
+            assert.match(html, /data-video-translate-cover="true"/)
+            assert.match(html, /width="900" height="500"/)
             assert.match(html, /data-sentence-listening-note/)
             assert.match(html, /data-sentence-listening-oral-slot/)
-        }
+        } else assert.doesNotMatch(html, /data-video-exercise-cover|data-practice-media/)
     }
     const second = renderContent({ ...common, questionIndex: 1, imageVisible: false })
     assert.match(second, /你喝水/)
@@ -748,7 +886,7 @@ test('视频中译英沿局部抄写／翻译设置，答案态隐藏封面且�
     assert.doesNotMatch(second, /我们一起读书/)
 })
 
-test('理解自查揭晓前保持原题面，揭晓后复用无封面的沉浸听力题面', (): void => {
+test('理解自查仅揭晓时隐藏题图，答对保留图片并复用听力题面', (): void => {
     const common: ContentFixtureProps = {
         family: 'sentence',
         mode: 'check',
@@ -767,7 +905,7 @@ test('理解自查揭晓前保持原题面，揭晓后复用无封面的沉浸�
         const result = renderContent({ ...common, phase })
         assertListeningResult(
             result,
-            renderContent({ ...common, mode: 'listen', phase, imageVisible: false }),
+            renderContent({ ...common, mode: 'listen', phase, imageVisible: phase === 'correct' }),
         )
         assert.match(result, /data-sentence-listening-note/)
         assert.equal(result.match(/data-practice-quick-oral/g)?.length, 1)
@@ -883,7 +1021,7 @@ test('视频拼块复用托盘和候选词块，使用600×337视频封面而非
     }
 })
 
-test('句子／音频／视频拼块在揭晓和答对时统一隐藏封面并复用答案解析', (): void => {
+test('句子／音频／视频拼块答对保留原封面，仅揭晓隐藏，解析保持共用', (): void => {
     for (const family of ['sentence', 'audio', 'video'] as const) {
         const prompt = renderContent({ family, mode: 'blocks', phase: 'answering' })
         assert.match(prompt, family === 'video' ? /data-video-blocks-cover/ : /data-practice-media/)
@@ -894,8 +1032,18 @@ test('句子／音频／视频拼块在揭晓和答对时统一隐藏封面并�
             assert.match(html, /data-sentence-listening-oral-slot/)
             assert.doesNotMatch(
                 html,
-                /data-practice-media|data-video-exercise-cover|data-practice-reading-surface|data-sentence-blocks-tray|data-sentence-blocks-candidates|<audio\b|<video\b/,
+                /data-sentence-blocks-tray|data-sentence-blocks-candidates|<audio\b|<video\b/,
             )
+            if (phase === 'correct')
+                assert.match(
+                    html,
+                    family === 'video' ? /data-video-blocks-cover/ : /data-practice-media/,
+                )
+            else
+                assert.doesNotMatch(
+                    html,
+                    /data-practice-media|data-video-exercise-cover|data-practice-reading-surface/,
+                )
         }
     }
 })
@@ -944,5 +1092,124 @@ test('音频六模式直接复用现有句子题面，完整答案继续使用�
         assert.match(result, /data-practice-listening="audio"/)
         assert.match(result, /data-sentence-listening-note/)
         assert.match(result, /data-sentence-listening-oral-slot/)
+    }
+})
+
+test('看图中译英复用视频的纵向分段输入，760×520图片与听力同源', (): void => {
+    const listening = renderContent({ family: 'picture', mode: 'listen', phase: 'answering' })
+    const source = listening.match(/<img\b[^>]*src="([^"]+)"/)?.[1]
+    assert.ok(source)
+    for (const phase of ['answering', 'incorrect'] as const) {
+        const html = renderContent({
+            family: 'picture',
+            mode: 'translate',
+            phase,
+            input: 'brush te',
+            questionIndex: 4,
+            reading: true,
+        })
+        assert.match(html, /data-picture-translation-exercise="true"/)
+        assert.match(html, /data-practice-sentence-family="picture"/)
+        assert.match(html, /data-picture-translation-cover="true"/)
+        assert.match(html, /width="760" height="520"/)
+        assert.equal(html.match(/<img\b[^>]*src="([^"]+)"/)?.[1], source)
+        assert.equal(html.match(/<input[^>]*data-practice-answer-input/g)?.length, 1)
+        assert.match(html, /data-sentence-slot-value="brush"/)
+        assert.match(html, /data-sentence-slot-value="te"/)
+        assert.match(html, /data-practice-reading-overlay="pending-source"/)
+        const cover = html.indexOf('data-picture-translation-cover')
+        const translation = html.indexOf('data-practice-translation')
+        const input = html.indexOf('data-sentence-answer-input')
+        assert.ok(cover >= 0 && translation > cover && input > translation)
+        assert.doesNotMatch(
+            html,
+            /<audio\b|<video\b|technical-tone|data-video-exercise-cover|957px|design:absolute/,
+        )
+    }
+})
+
+test('看图中译英答对保留同源760×520封面，仍提供解析／笔记／口语', (): void => {
+    const common: ContentFixtureProps = {
+        family: 'picture',
+        mode: 'translate',
+        phase: 'answering',
+        input: 'b',
+        oralEnabled: true,
+    }
+    assert.match(renderContent({ ...common, copy: true }), /data-sentence-word-hint/)
+    assert.doesNotMatch(renderContent({ ...common, copy: false }), /data-sentence-word-hint/)
+    const hiddenTranslation = renderContent({ ...common, translationVisible: false })
+    assert.doesNotMatch(hiddenTranslation, /data-practice-translation/)
+    assert.match(hiddenTranslation, /data-picture-translation-cover/)
+    for (const phase of ['revealed', 'correct'] as const) {
+        const html = renderContent({ ...common, phase })
+        assert.doesNotMatch(html, /<audio\b|<video\b|data-sentence-answer-input/)
+        assert.match(html, /data-practice-english/)
+        if (phase === 'correct') {
+            assert.match(html, /data-practice-listening="picture"/)
+            assert.match(html, /data-picture-translation-cover/)
+            assert.match(html, /width="760" height="520"/)
+            assert.match(html, /data-sentence-listening-note/)
+            assert.match(html, /data-sentence-listening-oral-slot/)
+        } else assert.doesNotMatch(html, /data-picture-translation-cover|data-practice-media/)
+    }
+})
+
+test('看图中译英图片朗读入口沿既有命令，阻断时禁用', (): void => {
+    const html = renderContent({
+        family: 'picture',
+        mode: 'translate',
+        phase: 'answering',
+        blocked: true,
+    })
+    const cover = html.match(/<button\b[^>]*data-picture-translation-cover[^>]*>/)?.[0] ?? ''
+    assert.ok(cover)
+    assert.match(cover, /data-practice-command="practice.readAloud"/)
+    assert.match(cover, /aria-label="朗读当前词条"/)
+    assert.match(cover, /disabled=""/)
+    assert.match(cover, /cursor-pointer/)
+})
+
+test('十个指定模式答对均保留原封面来源，句子／音频仍尊重图片关闭设置', (): void => {
+    const modes = [
+        ['sentence', 'check'],
+        ['sentence', 'translate'],
+        ['sentence', 'blocks'],
+        ['audio', 'check'],
+        ['audio', 'translate'],
+        ['audio', 'blocks'],
+        ['video', 'check'],
+        ['video', 'translate'],
+        ['video', 'blocks'],
+        ['picture', 'translate'],
+    ] as const
+    assert.equal(modes.length, 10)
+    for (const [family, mode] of modes) {
+        const common = { family, mode, oralEnabled: true }
+        const prompt = renderContent({ ...common, phase: 'answering' })
+        const correct = renderContent({ ...common, phase: 'correct' })
+        const source = prompt.match(/<img\b[^>]*src="([^"]+)"/)?.[1]
+        assert.ok(source)
+        assert.equal(correct.match(/<img\b[^>]*src="([^"]+)"/)?.[1], source)
+        assert.match(correct, /data-practice-english/)
+        assert.match(correct, /data-sentence-listening-note/)
+        if (family === 'video') {
+            assert.match(correct, /data-video-exercise-cover/)
+            assert.match(
+                correct,
+                mode === 'translate' ? /width="900" height="500"/ : /width="600" height="337"/,
+            )
+        } else if (family === 'picture') {
+            assert.match(correct, /data-picture-translation-cover/)
+        } else {
+            const hidden = renderContent({ ...common, phase: 'correct', imageVisible: false })
+            assert.doesNotMatch(hidden, /data-practice-media|data-practice-reading-surface/)
+            assert.match(hidden, /data-practice-english/)
+        }
+        const revealed = renderContent({ ...common, phase: 'revealed' })
+        assert.doesNotMatch(
+            revealed,
+            /data-practice-media|data-video-exercise-cover|data-picture-translation-cover/,
+        )
     }
 })

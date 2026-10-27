@@ -63,6 +63,19 @@ test('原生禁用和答案面板展开状态正确输出，阻断时所有动�
     for (const button of buttons) assert.match(button[1] ?? '', /disabled=""/)
 })
 
+test('看图听力三项切题键合并同修饰方向键，空格与自定义不同修饰键保持独立', (): void => {
+    const picture: PracticeFooterContext = { ...context, family: 'picture', mode: 'listen' }
+    const html = renderFooter(picture)
+    assert.match(html, /Shift\+←\/→ \/ 空格/)
+    assert.doesNotMatch(html, /Shift\+← \/ Shift\+→/)
+    const custom = renderFooter({
+        ...picture,
+        values: { ...picture.values, previousShortcut: 'Alt + ArrowLeft' },
+    })
+    assert.match(custom, /Alt\+← \/ Shift\+→ \/ 空格/)
+    assert.doesNotMatch(custom, /Alt\+←\/→/)
+})
+
 test('阅读只有无键帽播放图标与两端，纯媒体和视频听力不生成通用底栏', (): void => {
     const read = renderFooter({ ...context, family: 'audio', mode: 'read' })
     assert.equal((read.match(/<button\b/g) ?? []).length, 3)

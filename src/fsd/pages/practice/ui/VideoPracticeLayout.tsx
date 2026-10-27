@@ -6,14 +6,18 @@ import { gsap, useGSAP } from '../../../shared/lib/animation'
 import { TldDialog } from '../../../shared/ui/tld-dialog'
 import { formatPracticeMediaTime } from '../model/media-controller'
 import type { VideoListeningSegment } from '../model/video-listening-demo'
-import closeAsset from '../assets/video-listening/close.svg'
+import { PracticePlaybackList } from './PracticePlaybackList'
+import type { PracticePlaybackListContent } from '../model/practice-playback-list'
 
 interface VideoPracticeLayoutProps {
     readonly enabled?: boolean
-    readonly variant?: 'listening' | 'exercise'
+    readonly variant?: 'listening' | 'exercise' | 'picture'
+    /** 将滚动视口与限宽题面分开，默认消费者保持原滚动宿主。 */
+    readonly edgeScrollbar?: boolean
     readonly open: boolean
     readonly currentIndex: number
-    readonly segments: readonly VideoListeningSegment[]
+    readonly segments?: readonly VideoListeningSegment[]
+    readonly content?: PracticePlaybackListContent
     readonly heardIds?: readonly string[] | undefined
     readonly onSelect: (index: number) => void
     readonly onClose: () => void
@@ -35,90 +39,7 @@ function getVideoFrameLayout(containerWidth: number, sidebarSpace: number): Vide
     return { width, marginLeft: sidebarSpace > 0 ? 0 : (containerWidth - width) / 2 }
 }
 
-function VideoSentenceList({
-    segments,
-    currentIndex,
-    open,
-    heardIds = [],
-    onSelect,
-    onClose,
-}: {
-    readonly segments: readonly VideoListeningSegment[]
-    readonly currentIndex: number
-    readonly open: boolean
-    readonly heardIds?: readonly string[] | undefined
-    readonly onSelect: (index: number) => void
-    readonly onClose: () => void
-}): ReactElement {
-    const list = useRef<HTMLUListElement>(null)
-    useEffect((): void => {
-        const container = list.current
-        const active = container?.querySelector('[aria-current="true"]')
-        if (!open || !container || !active) return
-        const bounds = container.getBoundingClientRect()
-        const row = active.getBoundingClientRect()
-        if (row.top < bounds.top) container.scrollTop += row.top - bounds.top
-        else if (row.bottom > bounds.bottom) container.scrollTop += row.bottom - bounds.bottom
-    }, [open, currentIndex])
-    return (
-        <section
-            aria-label="视频句子列表"
-            className="flex h-full min-h-0 flex-col rounded-2xl bg-surface-raised/70 p-4 text-foreground"
-        >
-            <header className="mb-[14px] flex h-6 shrink-0 items-center justify-between gap-3">
-                <h2 className="text-[16px] font-medium leading-6">句子列表</h2>
-                <button
-                    type="button"
-                    aria-label="关闭视频句子列表"
-                    className="grid size-7 cursor-pointer place-items-center rounded focus-visible:outline-2 focus-visible:outline-focus"
-                    onClick={onClose}
-                >
-                    <img
-                        src={closeAsset.src}
-                        alt=""
-                        className="[filter:var(--app-filter-shell-icon)]"
-                    />
-                </button>
-            </header>
-            <ul
-                ref={list}
-                className="min-h-0 flex-1 space-y-[14px] overflow-y-auto overscroll-contain"
-            >
-                {segments.map((segment, index) => (
-                    <li key={segment.id}>
-                        <button
-                            type="button"
-                            aria-current={currentIndex === index ? 'true' : undefined}
-                            data-active={currentIndex === index}
-                            className="flex min-h-[72px] w-full cursor-pointer items-start gap-2 rounded-lg border border-transparent bg-primary/5 px-[10px] py-[10px] text-left data-[active=true]:border-brand data-[active=true]:bg-brand/5 focus-visible:outline-2 focus-visible:outline-focus"
-                            onClick={(): void => onSelect(index)}
-                        >
-                            <span
-                                data-active={currentIndex === index}
-                                className="shrink-0 text-[14px] leading-[22px] tabular-nums text-practice-muted data-[active=true]:text-brand"
-                            >
-                                {formatPracticeMediaTime(segment.start)}
-                            </span>
-                            <span className="flex min-w-0 flex-col gap-[10px]">
-                                <span className="text-[16px] font-medium leading-[22px]">
-                                    {segment.question.english}
-                                </span>
-                                <span className="text-[14px] leading-5 text-practice-muted">
-                                    {segment.question.translation}
-                                </span>
-                            </span>
-                            {heardIds.includes(segment.id) && (
-                                <span className="sr-only">已听完</span>
-                            )}
-                        </button>
-                    </li>
-                ))}
-            </ul>
-        </section>
-    )
-}
-
-/** 视频各模式共用内容列表、响应式与联动布局；不创建媒体或持有题态。 */
+/** 视频与看图共用内容列表、响应式与联动布局；不创建媒体或持有题态。 */
 export function VideoPracticeLayout(props: VideoPracticeLayoutProps): ReactElement {
     if (props.enabled === false) return <>{props.children}</>
     return <VideoPracticeFrame {...props} />
@@ -126,9 +47,11 @@ export function VideoPracticeLayout(props: VideoPracticeLayoutProps): ReactEleme
 
 function VideoPracticeFrame({
     variant = 'listening',
+    edgeScrollbar = false,
     open,
     currentIndex,
-    segments,
+    segments = [],
+    content,
     heardIds,
     onSelect,
     onClose,
@@ -136,13 +59,27 @@ function VideoPracticeFrame({
     controls,
     children,
 }: VideoPracticeLayoutProps): ReactElement {
+    const listContent: PracticePlaybackListContent = content ?? {
+        title: '句子列表',
+        label: '视频句子列表',
+        closeLabel: '关闭视频句子列表',
+        entries: segments.map((segment) => ({
+            id: segment.id,
+            marker: formatPracticeMediaTime(segment.start),
+            english: segment.question.english,
+            translation: segment.question.translation,
+        })),
+    }
     const root = useRef<HTMLDivElement>(null)
+    const frame = useRef<HTMLDivElement>(null)
     const stage = useRef<HTMLDivElement>(null)
+    const scrollViewport = useRef<HTMLDivElement>(null)
     const controlsDock = useRef<HTMLDivElement>(null)
     const controlsFrame = useRef<HTMLDivElement>(null)
     const sidebar = useRef<HTMLElement>(null)
     const [wide, setWide] = useState(false)
     const sidebarOpen = wide && open
+    const edgeScroll = edgeScrollbar && variant !== 'listening'
     function closeSidebar(): void {
         onClose()
         stage.current
@@ -184,16 +121,24 @@ function VideoPracticeFrame({
             const panel = sidebar.current
             const controls = controlsFrame.current
             const dock = controlsDock.current
-            const container = main?.parentElement
+            const container = frame.current
+            const viewport = scrollViewport.current
             if (!main || !panel || !controls || !dock || !container) return
             const reduced = window.matchMedia('(prefers-reduced-motion: reduce)')
             const containerBounds = container.getBoundingClientRect()
             const dockBounds = dock.getBoundingClientRect()
             const mainBounds = main.getBoundingClientRect()
             const controlsBounds = controls.getBoundingClientRect()
+            const viewportBounds = viewport?.getBoundingClientRect()
             let containerWidth = containerBounds.width
             let dockWidth = dockBounds.width
             const sidebarSpace = sidebarOpen ? panel.offsetWidth + 23 : 0
+            function getScrollViewportWidth(): number {
+                const rootBounds = root.current?.getBoundingClientRect()
+                const bounds = container?.getBoundingClientRect()
+                const inset = rootBounds && bounds ? Math.max(0, bounds.left - rootBounds.left) : 0
+                return Math.max(0, containerWidth - sidebarSpace) + inset * (sidebarOpen ? 1 : 2)
+            }
             const panelTarget = {
                 x: sidebarOpen ? 0 : 30,
                 xPercent: sidebarOpen ? 0 : 100,
@@ -218,6 +163,8 @@ function VideoPracticeFrame({
                         marginRight: 0,
                         maxWidth: 'none',
                     })
+                    if (viewport && viewportBounds)
+                        gsap.set(viewport, { width: viewportBounds.width, right: 'auto' })
                     transition = gsap.timeline({
                         defaults: {
                             duration: reduced.matches || !wide ? 0 : 0.24,
@@ -227,6 +174,7 @@ function VideoPracticeFrame({
                     transition.to(main, { ...getVideoFrameLayout(containerWidth, sidebarSpace) }, 0)
                     transition.to(controls, { ...getVideoFrameLayout(dockWidth, sidebarSpace) }, 0)
                     transition.to(panel, panelTarget, 0)
+                    if (viewport) transition.to(viewport, { width: getScrollViewportWidth() }, 0)
                 }, root)
             })
             function reduceMotion(): void {
@@ -247,6 +195,7 @@ function VideoPracticeFrame({
                     gsap.set(main, { ...getVideoFrameLayout(containerWidth, sidebarSpace) })
                     gsap.set(controls, { ...getVideoFrameLayout(dockWidth, sidebarSpace) })
                     gsap.set(panel, panelTarget)
+                    if (viewport) gsap.set(viewport, { width: getScrollViewportWidth() })
                 })
             }
             const observer = new ResizeObserver(resize)
@@ -259,14 +208,29 @@ function VideoPracticeFrame({
                 motionContext?.kill(false)
             }
         },
-        { scope: root, dependencies: [sidebarOpen, wide], revertOnUpdate: true },
+        { scope: root, dependencies: [sidebarOpen, wide, edgeScroll], revertOnUpdate: true },
+    )
+
+    const stageContent = (
+        <div
+            ref={stage}
+            data-video-stage
+            className={
+                variant === 'listening' || edgeScroll
+                    ? 'relative mx-auto flex w-full min-w-0 max-w-[1390px] shrink-0 flex-col'
+                    : 'relative mx-auto flex min-h-0 w-full min-w-0 max-w-[1390px] shrink-0 flex-col overflow-y-auto overscroll-y-contain'
+            }
+        >
+            {children}
+        </div>
     )
 
     return (
         <div
             ref={root}
             data-video-listening={variant === 'listening' ? '' : undefined}
-            data-video-practice-layout={variant}
+            data-video-practice-layout={variant === 'picture' ? undefined : variant}
+            data-picture-practice-layout={variant === 'picture' ? '' : undefined}
             className={
                 variant === 'listening'
                     ? 'relative flex min-w-0 flex-1 flex-col overflow-x-clip px-3 pb-[calc(var(--video-controls-height,180px)+46px+env(safe-area-inset-bottom))] pt-[63px] md:px-[30px]'
@@ -274,32 +238,44 @@ function VideoPracticeFrame({
             }
         >
             <div
+                ref={frame}
                 className={
                     variant === 'listening'
                         ? 'relative flex min-w-0 flex-1'
                         : 'relative flex min-h-0 min-w-0 flex-1'
                 }
             >
-                <div
-                    ref={stage}
-                    data-video-stage
-                    className={
-                        variant === 'listening'
-                            ? 'relative mx-auto flex w-full min-w-0 max-w-[1390px] shrink-0 flex-col'
-                            : 'relative mx-auto flex min-h-0 w-full min-w-0 max-w-[1390px] shrink-0 flex-col overflow-y-auto overscroll-y-contain'
-                    }
-                >
-                    {children}
-                </div>
+                {edgeScroll ? (
+                    <div
+                        ref={scrollViewport}
+                        data-practice-edge-scroll-viewport
+                        className="absolute inset-y-0 -left-3 -right-3 min-w-0 overflow-x-hidden overflow-y-auto overscroll-y-contain [scrollbar-width:thin] [scrollbar-color:var(--app-color-practice-muted)_transparent] md:-left-[30px] md:-right-[30px] [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-practice-muted/50 [&::-webkit-scrollbar-thumb:hover]:bg-practice-muted/70"
+                    >
+                        <div
+                            className={
+                                sidebarOpen
+                                    ? 'flex min-h-full min-w-0 pl-3 md:pl-[30px]'
+                                    : 'flex min-h-full min-w-0 px-3 md:px-[30px]'
+                            }
+                        >
+                            {stageContent}
+                        </div>
+                    </div>
+                ) : (
+                    stageContent
+                )}
                 <aside
                     ref={sidebar}
                     aria-hidden={!sidebarOpen}
                     inert={!sidebarOpen}
-                    data-video-sentence-sidebar
+                    data-video-sentence-sidebar={variant === 'picture' ? undefined : ''}
+                    data-picture-content-sidebar={variant === 'picture' ? '' : undefined}
                     className={
                         variant === 'listening'
                             ? 'invisible absolute right-0 top-0 hidden h-[calc(100%+var(--video-controls-height,180px)+26px)] min-h-0 w-[447px] overflow-hidden xl:block'
-                            : 'invisible absolute right-0 top-0 hidden h-[calc(100%+var(--video-controls-height,100px)-20px)] min-h-0 w-[447px] overflow-hidden xl:block'
+                            : variant === 'picture'
+                              ? 'invisible absolute right-0 top-[70px] hidden h-[calc(100%+var(--video-controls-height,100px)-90px)] min-h-0 w-[447px] overflow-hidden xl:block'
+                              : 'invisible absolute right-0 top-0 hidden h-[calc(100%+var(--video-controls-height,100px)-20px)] min-h-0 w-[447px] overflow-hidden xl:block'
                     }
                     onKeyDown={(event): void => {
                         if (event.key === 'Escape') {
@@ -309,8 +285,8 @@ function VideoPracticeFrame({
                         }
                     }}
                 >
-                    <VideoSentenceList
-                        segments={segments}
+                    <PracticePlaybackList
+                        content={listContent}
                         currentIndex={currentIndex}
                         open={sidebarOpen}
                         heardIds={heardIds}
@@ -337,7 +313,7 @@ function VideoPracticeFrame({
             </div>
             <TldDialog
                 open={!wide && open}
-                title="句子列表"
+                title={listContent.title}
                 showHeader={false}
                 showCloseButton={false}
                 footer={null}
@@ -347,8 +323,8 @@ function VideoPracticeFrame({
                 }}
             >
                 <div className="h-[min(700px,70dvh)] min-h-0">
-                    <VideoSentenceList
-                        segments={segments}
+                    <PracticePlaybackList
+                        content={listContent}
                         currentIndex={currentIndex}
                         open={!wide && open}
                         heardIds={heardIds}

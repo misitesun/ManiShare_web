@@ -170,7 +170,7 @@ export function supportsPracticeKnowledge(family: PracticeFamily, mode: Practice
     if (family === 'word') return mode !== 'typing' && Boolean(layouts.word[mode])
     if (family === 'sentence')
         return mode !== 'typing' && mode !== 'read' && Boolean(layouts.sentence[mode])
-    return family === 'picture' && (mode === 'listen' || mode === 'translate' || mode === 'oral')
+    return family === 'picture' && (mode === 'listen' || mode === 'oral')
 }
 
 export function supportsPracticePanel(family: PracticeFamily, mode: PracticeMode): boolean {
@@ -401,7 +401,15 @@ function slotItems(
                 {
                     id: 'navigation',
                     label: '切题',
-                    shortcuts: bindings(context, 'question.previous', 'question.next'),
+                    shortcuts:
+                        context.family === 'picture' && context.mode === 'listen'
+                            ? bindings(
+                                  context,
+                                  'question.previous',
+                                  'question.next',
+                                  'practice.contextual',
+                              )
+                            : bindings(context, 'question.previous', 'question.next'),
                     kind: 'hint',
                     size: 'hint',
                 },

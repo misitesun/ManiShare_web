@@ -28,7 +28,7 @@ export interface PracticeCutReadingInput {
     readonly mode: PracticeMode
     /** 当前访问的朗读意图来自局部切读或显式自动播放，不读取全局兼容字段。 */
     readonly enabled: boolean
-    /** 句子／音频阅读没有切读控件，仅显式阅读播放意图可开放本次访问的自动朗读。 */
+    /** 阅读显式播放、看图听力入场／选题可开放本次访问朗读，不伪造切读控件。 */
     readonly sequenceEnabled?: boolean
     readonly ready: boolean
     readonly blocked: boolean
@@ -96,8 +96,8 @@ export function getPracticeCutReadingTransition(
     const source = practiceMediaSource(input.source)
     const allowed =
         (isPracticeCutReadingEnabled(input.family, input.mode, input.enabled) ||
-            (isSentenceGameFamily(input.family) &&
-                input.mode === 'read' &&
+            (((isSentenceGameFamily(input.family) && input.mode === 'read') ||
+                (input.family === 'picture' && input.mode === 'listen')) &&
                 input.enabled &&
                 input.sequenceEnabled === true)) &&
         input.ready &&

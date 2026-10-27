@@ -19,7 +19,7 @@ import playIcon from '../assets/sentence-listening-play.svg'
 import autoNextChapterOnIcon from '../assets/sentence-listening-auto-next-chapter-on.svg'
 
 interface SentenceListeningControlsProps {
-    readonly family?: ImmersiveListeningFamily
+    readonly family?: ImmersiveListeningFamily | 'picture'
     readonly variant?: 'listening' | 'reading'
     readonly children?: ReactNode
     readonly options: SentenceListeningPlaybackOptions
@@ -63,14 +63,20 @@ export function SentenceListeningControls({
         {
             key: 'blind',
             label: '盲听',
-            description: '隐藏逐词解析，保留图片和整句译文',
+            description:
+                family === 'picture'
+                    ? '隐藏音标和单词，保留场景图片和中文'
+                    : '隐藏逐词解析，保留图片和整句译文',
             icon: options.blind ? blindOnIcon.src : blindIcon.src,
             selected: options.blind,
         },
         {
             key: 'autoAdvance',
             label: '自动切题',
-            description: '播放当前句子，播完等待1秒后自动下一题',
+            description:
+                family === 'picture'
+                    ? '朗读当前词条，播完等待1秒后自动下一题'
+                    : '播放当前句子，播完等待1秒后自动下一题',
             icon: options.autoAdvance ? autoAdvanceOnIcon.src : autoAdvanceIcon.src,
             selected: options.autoAdvance,
             preserveColor: options.autoAdvance,
@@ -90,7 +96,9 @@ export function SentenceListeningControls({
             key: 'pause',
             label: paused ? '播放' : '暂停',
             description: paused
-                ? '播放当前句子；暂停后继续播放仍保留手动切题'
+                ? family === 'picture'
+                    ? '朗读当前词条；暂停后继续播放仍保留手动切题'
+                    : '播放当前句子；暂停后继续播放仍保留手动切题'
                 : '暂停当前播放并退出自动切题，保留手动切题和切读',
             icon: paused ? playIcon.src : pauseIcon.src,
             selected: paused,

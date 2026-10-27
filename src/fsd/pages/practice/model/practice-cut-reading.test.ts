@@ -289,3 +289,50 @@ test('进入不支持或未就绪的新访问时先取消旧请求，并保留�
         requestedSource: null,
     })
 })
+
+test('看图听力没有切读开关，显式听力访问只播一次，阻断保留待播资格', (): void => {
+    const picture: PracticeCutReadingInput = {
+        ...input,
+        family: 'picture',
+        mode: 'listen',
+        sequenceEnabled: true,
+        source: '/practice-demo/picture-listening/books.wav',
+    }
+    assert.equal(hasPracticeCutReadingControl('picture', 'listen'), false)
+    const blocked = getPracticeCutReadingTransition(createPracticeCutReadingState(), {
+        ...picture,
+        blocked: true,
+    })
+    assert.equal(blocked.action, 'none')
+    assert.equal(blocked.state.consumed, false)
+    const first = getPracticeCutReadingTransition(blocked.state, picture)
+    assert.equal(first.action, 'play')
+    assert.equal(getPracticeCutReadingTransition(first.state, picture).action, 'none')
+    const selected = getPracticeCutReadingTransition(first.state, {
+        ...picture,
+        visitKey: 'picture-same-word-new-visit',
+    })
+    assert.equal(selected.action, 'play')
+    assert.equal(selected.stopPrevious, true)
+    assert.equal(
+        getPracticeCutReadingTransition(createPracticeCutReadingState(), {
+            ...picture,
+            sequenceEnabled: false,
+        }).action,
+        'none',
+    )
+    assert.equal(
+        getPracticeCutReadingTransition(createPracticeCutReadingState(), {
+            ...picture,
+            mode: 'oral',
+        }).action,
+        'play',
+    )
+    assert.equal(
+        getPracticeCutReadingTransition(createPracticeCutReadingState(), {
+            ...picture,
+            family: 'video',
+        }).action,
+        'none',
+    )
+})

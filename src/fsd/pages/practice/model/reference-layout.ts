@@ -227,7 +227,7 @@ export function getPracticeReference(
     if (mode === 'typing' && family === 'picture')
         return {
             ...base,
-            node: '2651:10404',
+            node: '2651:10363',
             top: 46,
             mediaWidth: 520,
             mediaHeight: 360,
@@ -309,10 +309,11 @@ export function getPracticeReference(
         return {
             ...base,
             node: '2651:10015',
-            top: 185,
-            mediaWidth: 957,
-            mediaHeight: 663,
-            textGap: 0,
+            // 用户改为复用视频中译英的纵向自然流，尺寸覆盖旧左右布局原稿。
+            top: 85,
+            mediaWidth: 760,
+            mediaHeight: 520,
+            textGap: 24,
         }
     if (family === 'picture')
         return {

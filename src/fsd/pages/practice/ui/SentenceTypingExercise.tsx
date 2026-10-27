@@ -29,7 +29,7 @@ interface SentenceTypingStyle extends CSSProperties {
 }
 
 interface SentenceTypingExerciseProps {
-    readonly family?: SentenceGameFamily | 'video' | 'typing'
+    readonly family?: SentenceGameFamily | 'video' | 'typing' | 'picture'
     readonly media?: ReactNode
     readonly question: PracticeQuestion
     readonly phase: PracticePhase
@@ -75,7 +75,7 @@ export function SentenceTypingExercise({
     )
     const standalone = family === 'typing'
     const reference = getPracticeReference(
-        standalone ? 'typing' : family === 'video' ? 'video' : 'word',
+        standalone ? 'typing' : family === 'video' || family === 'picture' ? family : 'word',
         'typing',
         phase,
     )
@@ -98,10 +98,17 @@ export function SentenceTypingExercise({
             data-practice-typing-family={family}
             data-audio-typing-exercise={family === 'audio' || undefined}
             data-video-typing-exercise={family === 'video' || undefined}
+            data-picture-typing-exercise={family === 'picture' || undefined}
             data-standalone-typing-exercise={standalone || undefined}
             data-sentence-typing-exercise
             data-reference-layout={
-                standalone ? 'typing:typing' : family === 'video' ? 'video:typing' : 'word:typing'
+                standalone
+                    ? 'typing:typing'
+                    : family === 'video'
+                      ? 'video:typing'
+                      : family === 'picture'
+                        ? 'picture:typing'
+                        : 'word:typing'
             }
             style={style}
             className={
@@ -149,7 +156,7 @@ export function SentenceTypingExercise({
                         word={question.english}
                         referenceLayout={false}
                         placement="typing"
-                        playLabel="朗读当前句子"
+                        playLabel={family === 'picture' ? '朗读当前词条' : '朗读当前句子'}
                         displayFontSize={displayFontSize}
                         disabled={blocked}
                         onPlay={onPlay}

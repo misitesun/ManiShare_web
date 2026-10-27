@@ -7,7 +7,8 @@ export function isSentenceGameFamily(family: PracticeFamily): family is Sentence
     return family === 'sentence' || family === 'audio'
 }
 
-export function getSentenceGameLabel(family: SentenceGameFamily | 'video'): string {
+export function getSentenceGameLabel(family: SentenceGameFamily | 'video' | 'picture'): string {
     if (family === 'video') return '视频'
+    if (family === 'picture') return '看图学词'
     return family === 'audio' ? '音频' : '句子'
 }

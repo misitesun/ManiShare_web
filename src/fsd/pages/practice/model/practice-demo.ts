@@ -14,6 +14,10 @@ import { videoListeningQuestions } from './video-listening-demo'
 import { typingGameQuestions } from './typing-game-demo'
 import { phoneticsDemoQuestions } from './phonetics-demo'
 import { pictureReaderQuestions } from './picture-reader-demo'
+import { pictureListeningQuestions } from './picture-listening-demo'
+import { pictureTranslationQuestions } from './picture-translation-demo'
+import { pictureTypingQuestions } from './picture-typing-demo'
+import { pictureOralQuestions } from './picture-oral-demo'
 import type { PhoneticsWordContent } from './phonetics-lesson'
 import { editSentenceBlocks, judgeSentenceBlocks } from './sentence-blocks'
 import type { SentenceBlockEdit } from './sentence-blocks'
@@ -422,16 +426,15 @@ export function getDemoQuestions(
     }
     if (family === 'word') return wordSeedQuestions
     if (family === 'picture') {
-        const pictureQuestion =
-            mode === 'listen'
-                ? { english: 'books', translation: '书', phonetic: '/bʊks/' }
-                : mode === 'translate'
-                  ? { english: 'brush teeth', translation: '刷牙', phonetic: '/brʌʃ tiːθ/' }
-                  : {
-                        english: 'Nice to meet you.',
-                        translation: '很高兴见到你。',
-                        phonetic: '/naɪs tə miːt juː/',
-                    }
+        if (mode === 'listen') return pictureListeningQuestions
+        if (mode === 'translate') return pictureTranslationQuestions
+        if (mode === 'typing') return pictureTypingQuestions
+        if (mode === 'oral') return pictureOralQuestions
+        const pictureQuestion = {
+            english: 'Nice to meet you.',
+            translation: '很高兴见到你。',
+            phonetic: '/naɪs tə miːt juː/',
+        }
         return [
             { id: 'picture-example', ...pictureQuestion, tokens: [] },
             { id: 'picture-review', ...pictureQuestion, tokens: [] },

@@ -1,5 +1,9 @@
 # 练习页设计资源
 
+## 看图指法场景（2026-10-26）
+
+`picture-typing-scene.png`通过Figma `z7SIwUb9ep0j0ZaEwFrxJl`／`2651:10419`原始imageRef `1cafbf61c74c7615d7cadab8a264a354b8be07da`下载，原尺寸1313×910，未改像素。由指法与口语共用的 `PictureExerciseCover` 消费，设计槽520×360、圆角20，以 `object-cover`适配；不是整页截图。原图含静态遮罩／紫色框，叠加同一原稿 `2651:10640` 的125×205绿色2px描边，槽内位置(71,155)，按百分比收缩；静态区域不随演示词切换。键盘和手指直接复用现有交互组件，不下载静态键盘图替代；朗读音源同看图听力，不新增音频素材。已核对本地文件和资源调用位置，页面几何及各端效果待用户验收。
+
 ## 句子拼块撤回与清空（2026-10-22，已同步本地main）
 
 `sentence-blocks-undo.svg`来自Figma `z7SIwUb9ep0j0ZaEwFrxJl`／`546:34534`，`sentence-blocks-clear.svg`来自`546:34530`，均通过`download_figma_images`导出并原样保留30×30根尺寸。仅`SentenceBlocksExercise`消费，托盘右上12px、间距10px；图标不随H5／平板的40px触控区域拉伸，沿现有dialog-icon主题filter。设计整页1920×1080导出仅存main ignored `.next/figma-sentence-blocks-20261022`供只读核对，不参与实现。题图、词块主题token和答对后的听力／笔记／口语图标直接复用既有资源；不重画SVG、不新增主题色。两份原SVG已按用户确认定向同步本地main，按用户要求未做运行视觉验收。此记录覆盖下方历史拼块“两题／占位提交／旧结果布局”的描述。
@@ -33,7 +37,7 @@
 
 - word-woman-e23d5f.png：546:31277，原文件2784×1392保持；单词六模式运行时统一在16:9封面容器内以`object-cover`等比裁切，拼读／拼写最大宽500px，其余430px，平板／H5随可用宽度等比缩小。稿面500×281为整数参考，不作为实际显示比例。
 - reading-scene.png：546:33666；句子游戏题图。
-- picture-scene.png：2655:11089；看图听力，原图已含静态遮罩/目标描边。
+- picture-scene.png：2655:11089；看图听力，原图已含静态遮罩/紫色目标描边。2026-10-26的`PictureListeningExercise`十题共用该图，不重复下载；`PictureScene highlight`仅叠加原稿2651:10637的3px绿色目标边框（相对844×565图片的22,0,279,151），不新增动态图块坐标。其他PictureScene消费者默认不叠加该框，原场景信息开关保持。看图中译英的`PictureTranslationCover`同源复用该文件，以760×520／object-cover显示，媒体槽圆角与视频中译英相同，不复制位图或新增区域标注。
 - greeting-scene.png：2651:10419，同2651:10098的浴室场景；文件名沿首次导出，非另造问候题图，原稿指法Nice to meet you与此图是设计占位组合。
 - 纯音频原静态声纹图`546:43542`现由`PureAudioReader`在496×280槽位内复用设置的`LearningAudioWave`，不再保留未引用的`audio-cover.png`；仅保留32px播放图标，暂停使用用户提供的32×32原图`audio-reader/pause.png`，见[audio-reader素材说明](audio-reader/README.md)。
 - picture-reader.png：546:43589；纯图片主体1100×733，`PurePictureReader`已用现有media主题token补齐30%渐变覆盖；左右50px原稿SVG见[picture-reader素材说明](picture-reader/README.md)。其余四张轮播演示图直接复用现有资源，不复制文件。

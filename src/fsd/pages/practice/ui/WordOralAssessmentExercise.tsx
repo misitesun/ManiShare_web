@@ -12,7 +12,7 @@ import wordAsset from '../assets/word-woman-e23d5f.png'
 import sentenceAsset from '../assets/reading-scene.png'
 
 interface WordOralAssessmentExerciseProps {
-    readonly family?: 'word' | 'sentence' | 'audio' | 'video'
+    readonly family?: 'word' | 'sentence' | 'audio' | 'video' | 'picture'
     readonly target: OralAssessmentTarget
     readonly controller: OralAssessmentDemoController
     readonly imageVisible: boolean
@@ -22,7 +22,7 @@ interface WordOralAssessmentExerciseProps {
     readonly wave?: ReactNode
 }
 
-/** 各内容族共用口语正文和阶段；视频只注入自己的媒体及封面排版。 */
+/** 各内容族共用口语正文和阶段；视频和看图只注入各自的媒体。 */
 export function WordOralAssessmentExercise({
     family = 'word',
     target,
@@ -39,6 +39,7 @@ export function WordOralAssessmentExercise({
             data-sentence-oral-assessment-exercise={family === 'sentence' || undefined}
             data-audio-oral-assessment-exercise={family === 'audio' || undefined}
             data-video-oral-assessment-exercise={family === 'video' || undefined}
+            data-picture-oral-assessment-exercise={family === 'picture' || undefined}
             data-stage={controller.stage}
             data-reference-node={
                 family === 'video'
@@ -57,7 +58,7 @@ export function WordOralAssessmentExercise({
         >
             {media ? (
                 <div className="mx-auto flex w-full min-w-0 justify-center">{media}</div>
-            ) : imageVisible && family !== 'video' ? (
+            ) : imageVisible && family !== 'video' && family !== 'picture' ? (
                 <div
                     data-practice-reading-surface
                     className="relative mx-auto aspect-video w-full max-w-[430px] overflow-hidden rounded-[20px]"

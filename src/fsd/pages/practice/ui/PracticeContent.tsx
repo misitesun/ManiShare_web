@@ -46,7 +46,9 @@ import { PracticeReadingOverlay } from './PracticeReadingOverlay'
 import type { PracticeReadingView } from './PracticeReadingOverlay'
 import { hasPracticeCutReadingControl } from '../model/practice-cut-reading'
 import { OralDemoPanel } from './OralDemoPanel'
-import { PictureScene } from './PictureScene'
+import { PictureTranslationCover } from './PictureTranslationCover'
+import { PictureExerciseCover } from './PictureExerciseCover'
+import { PictureListeningExercise } from './PictureListeningExercise'
 import { TypingKeyboard } from './TypingKeyboard'
 import { WordPronunciationDeck } from './WordPronunciationDeck'
 import type { WordCardNavigation, WordPronunciationDeckController } from '../model/word-card-deck'
@@ -230,11 +232,16 @@ export function PracticeContent({
     const isVideoOral = demo.family === 'video' && mode === 'oral'
     const isVideoBlocks = demo.family === 'video' && mode === 'blocks'
     const isVideoTranslation = demo.family === 'video' && mode === 'translate'
+    const isPictureTranslation = demo.family === 'picture' && mode === 'translate'
+    const isPictureTyping = demo.family === 'picture' && mode === 'typing'
+    const isPictureOral = demo.family === 'picture' && mode === 'oral'
     const typingFamily = isStandaloneTyping
         ? 'typing'
         : isVideoTyping
           ? 'video'
-          : sentenceGameFamily
+          : isPictureTyping
+            ? 'picture'
+            : sentenceGameFamily
     const blocksFamily = isVideoBlocks ? 'video' : sentenceGameFamily
     const videoExerciseMedia =
         videoExercisePlayback &&
@@ -262,7 +269,21 @@ export function PracticeContent({
                 onToggle={onReadAloud ?? videoExercisePlayback.toggle}
             />
         ) : undefined
-    const checkFamily = isVideoCheck || isVideoTranslation ? 'video' : sentenceGameFamily
+    const checkFamily =
+        isVideoCheck || isVideoTranslation
+            ? 'video'
+            : isPictureTranslation
+              ? 'picture'
+              : sentenceGameFamily
+    const translationExerciseMedia = isPictureTranslation ? (
+        <PictureTranslationCover
+            reading={reading}
+            blocked={blocked}
+            onToggle={onReadAloud ?? ignoreCardAction}
+        />
+    ) : (
+        videoExerciseMedia
+    )
     const sentenceGameOptions = demo.family === 'audio' ? audioOptions : sentenceOptions
     const sentenceTranslation =
         demo.family === 'sentence' && sentenceOptions && isSentenceToolbarMode(mode)
@@ -291,8 +312,8 @@ export function PracticeContent({
             : undefined
     const inputMode = hasPracticeAnswerInput(mode)
     const answerVisible = isPracticeAnswerVisible(session.phase)
-    const hideAnswerCover =
-        answerVisible &&
+    const hideRevealedCover =
+        session.phase === 'revealed' &&
         ((checkFamily !== undefined && (mode === 'check' || mode === 'translate')) ||
             (blocksFamily !== undefined && mode === 'blocks'))
     const annotated = mode === 'listen' || answerVisible
@@ -320,6 +341,19 @@ export function PracticeContent({
                 blocked={blocked || paused}
                 onSelect={onPictureSelect}
                 onBusyChange={onPictureBusyChange}
+            />
+        )
+    if (demo.family === 'picture' && mode === 'listen')
+        return (
+            <PictureListeningExercise
+                question={question}
+                values={values}
+                blind={listeningBlind}
+                blocked={blocked}
+                reading={reading}
+                onNote={(): void => onNote(question.id)}
+                oralEnabled={oralEnabled}
+                onOral={onOral}
             />
         )
     if (demo.family === 'guess' && mode === 'spell')
@@ -387,18 +421,44 @@ export function PracticeContent({
             />
         )
     if (
-        (demo.family === 'word' || sentenceGameFamily !== undefined || isVideoOral) &&
+        (demo.family === 'word' ||
+            sentenceGameFamily !== undefined ||
+            isVideoOral ||
+            isPictureOral) &&
         mode === 'oral' &&
         oralAssessmentController &&
         oralAssessmentTarget
     )
         return (
             <WordOralAssessmentExercise
-                family={isVideoOral ? 'video' : (sentenceGameFamily ?? 'word')}
+                family={
+                    isPictureOral
+                        ? 'picture'
+                        : isVideoOral
+                          ? 'video'
+                          : (sentenceGameFamily ?? 'word')
+                }
                 target={oralAssessmentTarget}
                 controller={oralAssessmentController}
-                imageVisible={isVideoOral ? false : imageVisible}
-                {...(isVideoOral ? { media: videoExerciseMedia } : {})}
+                imageVisible={isVideoOral || isPictureOral ? false : imageVisible}
+                {...(isPictureOral
+                    ? {
+                          media: (
+                              <PictureExerciseCover
+                                  mode="oral"
+                                  reading={reading}
+                                  blocked={
+                                      blocked ||
+                                      oralAssessmentController.stage === 'recording' ||
+                                      oralAssessmentController.stage === 'evaluating'
+                                  }
+                                  onToggle={onReadAloud ?? ignoreCardAction}
+                              />
+                          ),
+                      }
+                    : isVideoOral
+                      ? { media: videoExerciseMedia }
+                      : {})}
                 translationVisible={additionalTranslation ?? showTranslation}
                 reading={reading}
                 wave={oralAssessmentWave}
@@ -431,12 +491,27 @@ export function PracticeContent({
                 phase={session.phase}
                 input={session.input}
                 blocked={blocked}
-                imageVisible={isVideoTyping || isStandaloneTyping ? false : imageVisible}
-                {...(isVideoTyping ? { media: videoExerciseMedia } : {})}
+                imageVisible={
+                    isVideoTyping || isStandaloneTyping || isPictureTyping ? false : imageVisible
+                }
+                {...(isPictureTyping
+                    ? {
+                          media: (
+                              <PictureExerciseCover
+                                  mode="typing"
+                                  reading={reading}
+                                  blocked={blocked}
+                                  onToggle={onReadAloud ?? ignoreCardAction}
+                              />
+                          ),
+                      }
+                    : isVideoTyping
+                      ? { media: videoExerciseMedia }
+                      : {})}
                 copy={
                     isStandaloneTyping
                         ? true
-                        : isVideoTyping
+                        : isVideoTyping || isPictureTyping
                           ? (additionalOptions?.copy ?? true)
                           : (sentenceGameOptions?.copy ?? true)
                 }
@@ -482,20 +557,36 @@ export function PracticeContent({
         return (
             <SentenceListeningExercise
                 family={
-                    isVideoCheck || isVideoBlocks || isVideoTranslation
-                        ? 'video'
-                        : demo.family === 'audio'
-                          ? 'audio'
-                          : 'sentence'
+                    isPictureTranslation
+                        ? 'picture'
+                        : isVideoCheck || isVideoBlocks || isVideoTranslation
+                          ? 'video'
+                          : demo.family === 'audio'
+                            ? 'audio'
+                            : 'sentence'
                 }
                 annotated={!isVideoBlocks || additionalOptions?.sentenceAnalysisVisible !== false}
                 plainEnglish={mode === 'listen'}
                 blind={listeningBlind}
                 question={question}
                 values={values}
-                imageVisible={imageVisible && !hideAnswerCover}
+                imageVisible={
+                    !isVideoCheck &&
+                    !isVideoBlocks &&
+                    !isVideoTranslation &&
+                    !isPictureTranslation &&
+                    imageVisible &&
+                    !hideRevealedCover
+                }
+                {...(session.phase === 'correct'
+                    ? isPictureTranslation
+                        ? { media: translationExerciseMedia }
+                        : isVideoCheck || isVideoBlocks || isVideoTranslation
+                          ? { media: videoExerciseMedia }
+                          : {}
+                    : {})}
                 translationVisible={
-                    isVideoCheck || isVideoBlocks || isVideoTranslation
+                    isVideoCheck || isVideoBlocks || isVideoTranslation || isPictureTranslation
                         ? (additionalTranslation ?? showTranslation)
                         : showTranslation
                 }
@@ -551,13 +642,19 @@ export function PracticeContent({
                 mode={mode}
                 session={session}
                 values={values}
-                imageVisible={!isVideoTranslation && imageVisible && !hideAnswerCover}
+                imageVisible={
+                    !isVideoTranslation &&
+                    !isPictureTranslation &&
+                    imageVisible &&
+                    !hideRevealedCover
+                }
                 showWordHint={
-                    isVideoTranslation
+                    isVideoTranslation || isPictureTranslation
                         ? (additionalOptions?.copy ?? true)
                         : (sentenceGameOptions?.copy ?? true)
                 }
                 {...(isVideoTranslation ||
+                isPictureTranslation ||
                 sentenceTranslation !== undefined ||
                 audioTranslation !== undefined
                     ? {
@@ -568,8 +665,8 @@ export function PracticeContent({
                 blocked={blocked}
                 reading={reading}
                 {...(isVideoCheck ? { checkMedia: videoExerciseMedia } : {})}
-                {...(isVideoTranslation && !answerVisible
-                    ? { translationMedia: videoExerciseMedia }
+                {...((isVideoTranslation || isPictureTranslation) && !answerVisible
+                    ? { translationMedia: translationExerciseMedia }
                     : {})}
                 onInput={onInput}
                 onSentenceSubmit={onSentenceSubmit}
@@ -619,35 +716,26 @@ export function PracticeContent({
                 />
             </div>
         ) : effectiveImage && demo.family !== 'typing' ? (
-            demo.family === 'picture' && (mode === 'listen' || mode === 'translate') ? (
-                <PictureScene
-                    width={reference.mediaWidth}
-                    height={reference.mediaHeight}
-                    source={mode === 'translate' ? greetingAsset.src : undefined}
-                    reading={reading}
+            <div
+                data-practice-reading-surface
+                className="relative mx-auto w-full max-w-full overflow-hidden rounded-[20px]"
+                style={{ maxWidth: reference.mediaWidth }}
+            >
+                <img
+                    data-practice-media
+                    src={source}
+                    alt={demo.family === 'word' ? '单词 woman 的练习插图' : '本地练习示例插图'}
+                    className="mx-auto block h-auto w-full max-w-full rounded-[20px] object-cover"
+                    style={{
+                        maxWidth: reference.mediaWidth,
+                        aspectRatio:
+                            demo.family === 'word'
+                                ? '16 / 9'
+                                : `${reference.mediaWidth}/${reference.mediaHeight}`,
+                    }}
                 />
-            ) : (
-                <div
-                    data-practice-reading-surface
-                    className="relative mx-auto w-full max-w-full overflow-hidden rounded-[20px]"
-                    style={{ maxWidth: reference.mediaWidth }}
-                >
-                    <img
-                        data-practice-media
-                        src={source}
-                        alt={demo.family === 'word' ? '单词 woman 的练习插图' : '本地练习示例插图'}
-                        className="mx-auto block h-auto w-full max-w-full rounded-[20px] object-cover"
-                        style={{
-                            maxWidth: reference.mediaWidth,
-                            aspectRatio:
-                                demo.family === 'word'
-                                    ? '16 / 9'
-                                    : `${reference.mediaWidth}/${reference.mediaHeight}`,
-                        }}
-                    />
-                    <PracticeReadingOverlay reading={reading} />
-                </div>
-            )
+                <PracticeReadingOverlay reading={reading} />
+            </div>
         ) : null
     if (demo.family === 'word' && mode === 'pronounce')
         return (
@@ -750,22 +838,11 @@ export function PracticeContent({
             }
             style={style}
         >
-            <div
-                className={
-                    demo.family === 'picture' && mode === 'translate'
-                        ? 'mx-auto grid max-w-[1670px] min-w-0 items-center gap-8 xl:grid-cols-[957px_minmax(0,1fr)]'
-                        : 'mx-auto flex w-full min-w-0 flex-col items-center'
-                }
-            >
+            <div className="mx-auto flex w-full min-w-0 flex-col items-center">
                 {media}
                 <div
                     className="flex w-full min-w-0 flex-col items-center text-center"
-                    style={{
-                        marginTop:
-                            demo.family === 'picture' && mode === 'translate'
-                                ? 0
-                                : reference.textGap,
-                    }}
+                    style={{ marginTop: reference.textGap }}
                 >
                     {demo.family === 'phonetics' && (
                         <p className="mb-5 text-[38px] text-brand">
@@ -942,14 +1019,6 @@ export function PracticeContent({
                     </div>
                     <p className="mt-4 text-caption text-secondary">
                         技术片段不含课程语音，暂不演示句子与片段的同步。
-                    </p>
-                </aside>
-            )}
-            {demo.family === 'picture' && mode === 'listen' && (
-                <aside className="mx-auto mt-8 w-full max-w-[844px] rounded-[16px] border border-strong p-4 design:absolute design:right-9 design:top-[70px] design:mt-0 design:w-[294px]">
-                    <h2 className="mb-4 text-[16px] font-medium">播放列表（本地演示）</h2>
-                    <p className="text-caption text-secondary">
-                        场景词条关联待补齐，暂不虚构列表与区域坐标。
                     </p>
                 </aside>
             )}

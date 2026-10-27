@@ -57,13 +57,14 @@ function answerCorrectly(
     )
 }
 
-test('视频三个作答模式与纯指法提供本轮黄晶，初始从0开始', (): void => {
+test('视频三个作答模式、看图中译英／指法与纯指法提供本轮黄晶，初始从0开始', (): void => {
     for (const demo of practiceDemos)
         for (const mode of demo.modes)
             assert.equal(
                 supportsPracticeGameCrystals(demo.family, mode),
                 (demo.family === 'video' && rewardModes.some((candidate) => candidate === mode)) ||
-                    (demo.family === 'typing' && mode === 'typing'),
+                    (demo.family === 'typing' && mode === 'typing') ||
+                    (demo.family === 'picture' && (mode === 'translate' || mode === 'typing')),
             )
     assert.equal(getPracticeGameCrystals(initialPracticeCrystalSession), 0)
 })
@@ -259,3 +260,40 @@ test('纯指法混合单词和句子按独立题目奖励，返回重答去重�
         initialPracticeCrystalSession,
     )
 })
+
+for (const mode of ['translate', 'typing'] as const) {
+    test(`看图${mode}单词和短语均首次答对加10，返题不重复加分，整轮重置清空`, (): void => {
+        const scope = context(mode, 'picture')
+        const first = answerCorrectly(initialPracticeCrystalSession, scope)
+        assert.equal(first.phase, 'correct')
+        assert.equal(getPracticeGameCrystals(first), 10)
+        const phrase = reducePracticeCrystalSession(
+            first,
+            { type: 'move', delta: 4, total: scope.questions.length },
+            scope,
+        )
+        assert.equal(questionAt(phrase, scope).english, 'brush teeth')
+        const second = answerCorrectly(phrase, scope)
+        assert.equal(getPracticeGameCrystals(second), 20)
+        const previous = reducePracticeCrystalSession(
+            second,
+            { type: 'move', delta: -4, total: scope.questions.length },
+            scope,
+        )
+        assert.equal(getPracticeGameCrystals(answerCorrectly(previous, scope)), 20)
+        assert.deepEqual(
+            second.spellingStatistics,
+            mode === 'typing' ? { submissions: 2, correct: 2 } : { submissions: 0, correct: 0 },
+        )
+        assert.equal(
+            getPracticeGameCrystals(reducePracticeCrystalSession(second, { type: 'reset' }, scope)),
+            0,
+        )
+        const revealed = reducePracticeCrystalSession(
+            initialPracticeCrystalSession,
+            { type: 'phase', phase: 'revealed' },
+            scope,
+        )
+        assert.equal(getPracticeGameCrystals(answerCorrectly(revealed, scope)), 0)
+    })
+}

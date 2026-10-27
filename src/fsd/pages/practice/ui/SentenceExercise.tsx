@@ -28,7 +28,7 @@ interface BlockStyle extends CSSProperties {
 }
 
 export interface SentenceExerciseProps {
-    readonly family?: SentenceGameFamily | 'video'
+    readonly family?: SentenceGameFamily | 'video' | 'picture'
     readonly question: PracticeQuestion
     readonly mode: SentenceExerciseMode
     readonly session: PracticeSession
@@ -193,9 +193,12 @@ function SentenceTranslationExercise({
             aria-label={`${getSentenceGameLabel(family)}练习`}
             data-practice-sentence-family={family}
             data-video-translation-exercise={family === 'video' || undefined}
-            data-reference-node={family === 'video' ? undefined : '546:33717'}
+            data-picture-translation-exercise={family === 'picture' || undefined}
+            data-reference-node={
+                family === 'video' || family === 'picture' ? undefined : '546:33717'
+            }
             className={
-                family === 'video'
+                family === 'video' || family === 'picture'
                     ? 'relative mx-auto flex w-full min-w-0 shrink-0 flex-col items-center px-4 pb-12 pt-10 md:px-6 md:pt-12 design:pt-[85px]'
                     : exactLayout
                       ? 'relative mx-auto flex min-w-0 flex-col items-center px-4 pb-12 pt-16 md:px-6 design:min-h-[calc(100svh-175px)] design:pt-[261px]'
@@ -380,6 +383,7 @@ export function SentenceExercise({
     const answerVisible = isPracticeAnswerVisible(session.phase)
     const exactLayout =
         family !== 'video' &&
+        family !== 'picture' &&
         imageVisible &&
         values.fontSize === '默认' &&
         values.grammarFontSize === '默认'

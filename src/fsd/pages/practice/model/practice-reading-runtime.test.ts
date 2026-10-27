@@ -605,3 +605,42 @@ test('手动接管首次切题即按切读朗读，不重复播放，自动推�
         runtime.dispose()
     }
 })
+
+test('看图听力同词跨题与重选隔离旧音频，模态内容关闭不自行恢复旧访问', async (): Promise<void> => {
+    const ended: string[] = []
+    const { runtime, elements } = fixture(undefined, (visit): void => {
+        ended.push(visit)
+    })
+    const picture: PracticeCutReadingInput = {
+        ...initial,
+        family: 'picture',
+        mode: 'listen',
+        sequenceEnabled: true,
+        source: '/practice-demo/picture-listening/books.wav',
+    }
+    runtime.update(picture)
+    await settled()
+    const first = elements[0]
+    assert.equal(first?.playCalls, 1)
+    runtime.update({ ...picture, blocked: true })
+    assert.equal(first?.paused, true)
+    first?.dispatchEvent(new Event('ended'))
+    assert.deepEqual(ended, [])
+    runtime.update(picture)
+    await settled()
+    assert.equal(first?.playCalls, 1)
+    runtime.update({ ...picture, visitKey: 'picture-books-reselected' })
+    await settled()
+    const selected = elements[1]
+    assert.equal(selected?.playCalls, 1)
+    first?.dispatchEvent(new Event('ended'))
+    assert.deepEqual(ended, [])
+    if (selected) {
+        selected.ended = true
+        selected.paused = true
+        selected.dispatchEvent(new Event('ended'))
+    }
+    assert.deepEqual(ended, ['picture-books-reselected'])
+    runtime.dispose()
+    assert.ok(elements.every((element) => element.listeners === 0))
+})

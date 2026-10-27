@@ -25,6 +25,7 @@ import {
 } from '../../../features/practice-mode-selection'
 import { practiceDemos, getPracticeModeLabel, getDemoQuestions } from '../model/practice-demo'
 import { getPictureReaderIndex } from '../model/picture-reader'
+import { getPictureListeningList } from '../model/picture-listening-demo'
 import type {
     PracticeMode,
     PracticeRouteResult,
@@ -186,6 +187,7 @@ interface PracticeStyle extends CSSProperties {
 interface WordRememberAction {
     readonly questionId: string
 }
+type ListeningPlaybackFamily = ImmersiveListeningFamily | 'picture'
 type Overlay =
     | 'mode'
     | 'content'
@@ -210,20 +212,26 @@ export function PracticePage({
     const scope = draftScope ?? (route.kind === 'demo' ? `demo:${route.view.demo.id}` : 'catalog')
     const draft = usePracticeDrafts(scope)
     const [openDraftScope, setOpenDraftScope] = useState<string | null>(null)
-    // 同类下一章保留播放选项；句子与音频各自持有，互不覆盖，不写入本地缓存。
+    // 同类下一章保留播放选项；句子、音频、看图各自持有，互不覆盖，不写入本地缓存。
     const [listeningPlaybacks, setListeningPlaybacks] = useState<
-        Readonly<Record<ImmersiveListeningFamily, SentenceListeningPlaybackOptions>>
+        Readonly<Record<ListeningPlaybackFamily, SentenceListeningPlaybackOptions>>
     >(() => ({
         sentence: createSentenceListeningPlaybackOptions(),
         audio: createSentenceListeningPlaybackOptions(),
+        picture: createSentenceListeningPlaybackOptions(),
     }))
-    const listeningFamily: ImmersiveListeningFamily =
-        route.kind === 'demo' && route.view.demo.family === 'audio' ? 'audio' : 'sentence'
+    const listeningFamily: ListeningPlaybackFamily =
+        route.kind === 'demo' && route.view.demo.family === 'picture'
+            ? 'picture'
+            : route.kind === 'demo' && route.view.demo.family === 'audio'
+              ? 'audio'
+              : 'sentence'
     const [readingPlaybacks, setReadingPlaybacks] = useState<
-        Readonly<Record<ImmersiveListeningFamily, SentenceListeningPlaybackOptions>>
+        Readonly<Record<ListeningPlaybackFamily, SentenceListeningPlaybackOptions>>
     >(() => ({
         sentence: createSentenceListeningPlaybackOptions(),
         audio: createSentenceListeningPlaybackOptions(),
+        picture: createSentenceListeningPlaybackOptions(),
     }))
     const usesReadingPlayback =
         route.kind === 'demo' &&
@@ -364,6 +372,13 @@ function PracticeSession({
     const isArticleReader = demo.family === 'text-reader'
     const isSilentReader = isStaticMediaReader || isPictureReader || isArticleReader
     const isVideoGame = demo.family === 'video'
+    const isPictureListening = demo.family === 'picture' && mode === 'listen'
+    const isPictureTranslation = demo.family === 'picture' && mode === 'translate'
+    const isPictureTyping = demo.family === 'picture' && mode === 'typing'
+    const isPictureOral = demo.family === 'picture' && mode === 'oral'
+    const usesPicturePlaybackList =
+        isPictureListening || isPictureTranslation || isPictureTyping || isPictureOral
+    const usesPlaybackList = isVideoGame || usesPicturePlaybackList
     const isVideoListening = isVideoGame && mode === 'listen'
     const isVideoCheck = isVideoGame && mode === 'check'
     const isVideoTyping = isVideoGame && mode === 'typing'
@@ -413,7 +428,7 @@ function PracticeSession({
         ? videoNavigation.contentOpen
         : fallbackVideoContentOpen
     const videoContentModalOpen =
-        isVideoGame &&
+        usesPlaybackList &&
         (videoContentPlayback
             ? videoNavigation.modalOpen
             : videoCompact && fallbackVideoContentOpen)
@@ -426,12 +441,14 @@ function PracticeSession({
     const isWordDictation = demo.family === 'word' && mode === 'dictate'
     const isWordTyping = demo.family === 'word' && mode === 'typing'
     const isSentenceTyping =
-        (isSentenceGame || isVideoTyping || isStandaloneTyping) && mode === 'typing'
+        (isSentenceGame || isVideoTyping || isStandaloneTyping || isPictureTyping) &&
+        mode === 'typing'
     const isTypingPractice = isWordTyping || isSentenceTyping
     const isWordOral = demo.family === 'word' && mode === 'oral'
     const isSentenceOral = isSentenceGame && mode === 'oral'
-    const isOralExercise = isWordOral || isSentenceOral || isVideoOral
-    const isSentenceTranslation = (isSentenceGame || isVideoTranslation) && mode === 'translate'
+    const isOralExercise = isWordOral || isSentenceOral || isVideoOral || isPictureOral
+    const isSentenceTranslation =
+        (isSentenceGame || isVideoTranslation || isPictureTranslation) && mode === 'translate'
     const isSentenceCheck = (isSentenceGame || isVideoCheck) && mode === 'check'
     const isSentenceInput = isSentenceTranslation || isSentenceTyping || isGuessSpelling
     const isSentenceBlocks = (isSentenceGame || isVideoBlocks) && mode === 'blocks'
@@ -447,7 +464,8 @@ function PracticeSession({
         isWordMeaning ? wordMeaning.variant : undefined,
     )
     const isImmersiveListening =
-        (demo.family === 'sentence' || demo.family === 'audio') && mode === 'listen'
+        (demo.family === 'sentence' || demo.family === 'audio' || demo.family === 'picture') &&
+        mode === 'listen'
     const isAudioListening = demo.family === 'audio' && mode === 'listen'
     const [audioReadingSequence] = useState(createAudioListeningReadingSequence)
     const audioReadingPhase = useSyncExternalStore(
@@ -498,6 +516,7 @@ function PracticeSession({
         isWordAnswerMode ||
         isGuessSpelling ||
         isVideoTranslation ||
+        isPictureTranslation ||
         isTypingPractice ||
         isOralExercise ||
         isImmersiveListening ||
@@ -639,8 +658,8 @@ function PracticeSession({
         text: wordOralQuestion?.english ?? '',
         translation: wordOralQuestion?.translation ?? '',
         kind:
-            isImmersiveListening ||
-            isSentenceInput ||
+            (isImmersiveListening && !isPictureListening) ||
+            (isSentenceInput && !isPictureTranslation && !isPictureTyping) ||
             isSentenceCheck ||
             isSentenceOral ||
             isVideoOral ||
@@ -839,7 +858,8 @@ function PracticeSession({
     const readingEnabled =
         !isSilentReader &&
         !isVideoExercise &&
-        (cutReading ||
+        (isPictureListening ||
+            cutReading ||
             manualReadingRequested ||
             (usesPlaybackControls && listeningPlayback.autoAdvance)) &&
         (!isAudioListening || audioReadingPhase === 'ready')
@@ -886,7 +906,8 @@ function PracticeSession({
         ...(readingSource ? { source: readingSource } : {}),
         enabled: readingEnabled,
         sequenceEnabled:
-            isSentenceReading && (listeningPlayback.autoAdvance || manualReadingRequested),
+            isPictureListening ||
+            (isSentenceReading && (listeningPlayback.autoAdvance || manualReadingRequested)),
         ready: snapshot.ready && toolbarPreferences.ready && Boolean(question),
         blocked:
             blocked ||
@@ -898,7 +919,8 @@ function PracticeSession({
             demo.family === 'sentence' ||
             (demo.family === 'audio' && !isAudioListening) ||
             demo.family === 'word' ||
-            usesGuessAnswer
+            usesGuessAnswer ||
+            usesPicturePlaybackList
                 ? scheduleSentencePlayback
                 : undefined,
     })
@@ -938,6 +960,7 @@ function PracticeSession({
                 isSentenceInput ||
                 isSentenceCheck ||
                 isSentenceOral ||
+                isPictureOral ||
                 isSentenceBlocks) &&
                 (readingAudio.playRequested || readingAudio.status === 'error'))) &&
         snapshot.ready &&
@@ -1035,7 +1058,7 @@ function PracticeSession({
     function open(next: Overlay, questionId?: string): void {
         phoneticsReading.stop()
         if (usesGuessAnswer) setPanelVisible(false)
-        if (isVideoGame && next === 'content') {
+        if (usesPlaybackList && next === 'content') {
             if (videoContentPlayback) videoContentPlayback.toggleContent()
             else setFallbackVideoContentOpen((open) => !open)
             return
@@ -1265,8 +1288,18 @@ function PracticeSession({
         )
             return
         if (videoContentModalOpen) closeVideoContent()
-        // 自查沿原切题／切读规则；听力仍由其播放器的显式选句入口自动播放。
+        // 看图重选也登记新访问；视频自查保留原切读，视频听力由播放器独立选句。
+        if (isPictureListening && index === session.index) {
+            prepareListeningNavigation('manual')
+            listeningAdvance.cancel()
+            readingAudio.stop()
+            setResetRevision((revision) => revision + 1)
+            setMessage('')
+            rootRef.current?.focus({ preventScroll: true })
+            return
+        }
         move(index - session.index)
+        if (isPictureListening) rootRef.current?.focus({ preventScroll: true })
     }
     function reset(): void {
         phoneticsReading.stop()
@@ -1490,7 +1523,11 @@ function PracticeSession({
             if (wordOral.stage === 'recording' || wordOral.stage === 'evaluating') return
             wordOral.pause()
         }
-        if (isSentenceReading || (demo.family === 'sentence' && mode === 'listen')) {
+        if (
+            isSentenceReading ||
+            isPictureListening ||
+            (demo.family === 'sentence' && mode === 'listen')
+        ) {
             if (sentencePlaybackActive) pauseListeningPlayback()
             else playListeningPlayback()
             return
@@ -1653,7 +1690,7 @@ function PracticeSession({
         readingAudio.pause()
         videoExerciseActions.pause()
         // 按段判题，空段和末段多词不能因拼接/trim后文本相同而误判正确。
-        if (isSentenceTyping || isVideoTranslation || isGuessSpelling)
+        if (isSentenceTyping || isVideoTranslation || isPictureTranslation || isGuessSpelling)
             dispatch({
                 type: isSentenceTyping ? 'submit-sentence-typing' : 'submit-sentence-answer',
                 values: submission.values,
@@ -1680,7 +1717,7 @@ function PracticeSession({
     }
     function executeKeyboardCommand(command: PracticeCommand): void {
         const returnToSentence =
-            isSentenceGame &&
+            (isSentenceGame || isPictureListening) &&
             (mode === 'listen' || mode === 'read') &&
             (command === 'question.previous' || command === 'question.next') &&
             snapshot.ready &&
@@ -1761,6 +1798,7 @@ function PracticeSession({
                 if (activeOral.stage === 'result') activeOral.replay()
                 else primary()
             } else if (mode === 'check' || (demo.family === 'guess' && mode === 'guess')) primary()
+            else if (isPictureListening) next()
             else if (isPracticeAnswerVisible(session.phase) || demo.family === 'picture-reader')
                 next()
             else if (
@@ -1815,7 +1853,7 @@ function PracticeSession({
             if (panelVisible) {
                 setPanelVisible(false)
                 restoreGuessSpellingFocus()
-            } else if (isVideoGame && videoContentOpen) closeVideoContent()
+            } else if (usesPlaybackList && videoContentOpen) closeVideoContent()
             else pause.pause()
         }
     }
@@ -1836,25 +1874,21 @@ function PracticeSession({
             ? { '--app-color-practice-muted': appearance.textColor }
             : {}),
     }
-    const typingStatistics =
-        isTypingPractice && !isStandaloneTyping ? (
-            <section
-                aria-label="本轮指法统计"
-                className="mx-auto mb-4 mt-auto flex w-full min-w-0 shrink-0 justify-center px-4 pt-8"
-            >
-                <PracticeAnswerStatistics
-                    variant="typing"
-                    statistics={session.spellingStatistics}
-                />
-            </section>
-        ) : null
+    const wordTypingStatistics = isWordTyping ? (
+        <section
+            aria-label="本轮指法统计"
+            className="mx-auto mb-4 mt-auto flex w-full min-w-0 shrink-0 justify-center px-4 pt-8"
+        >
+            <PracticeAnswerStatistics variant="typing" statistics={session.spellingStatistics} />
+        </section>
+    ) : null
     const practiceFooter = (
         <PracticeFooter
             items={footerItems}
             onAction={executeCommand}
             blocked={blocked || !snapshot.ready || rememberAction !== null}
             floating={usesCardDeck}
-            embedded={isVideoGame}
+            embedded={usesPlaybackList}
             pictureReader={isPictureReader}
             {...(isSentenceReading
                 ? { playback: { active: sentencePlaybackActive, onToggle: readAloud } }
@@ -1885,54 +1919,64 @@ function PracticeSession({
                     inert={blocked}
                     data-word-input-layout={isWordAnswerMode || isWordTyping || undefined}
                     data-practice-four-row-layout={
-                        isVideoTranslation
-                            ? 'video-translate'
-                            : isGuessSpelling
-                              ? 'guess-spelling'
-                              : isImmersiveListening || isSentenceResult
-                                ? isVideoCheck
-                                    ? 'video-check'
-                                    : isVideoBlocks
-                                      ? 'video-blocks'
-                                      : demo.family === 'audio'
-                                        ? 'audio-listening'
-                                        : 'sentence-listening'
-                                : isSentenceBlocks
-                                  ? isVideoBlocks
-                                      ? 'video-blocks'
-                                      : demo.family === 'audio'
-                                        ? 'audio-blocks'
-                                        : 'sentence-blocks'
-                                  : isSentenceCheck
-                                    ? isVideoCheck
-                                        ? 'video-check'
+                        isPictureTranslation
+                            ? 'picture-translate'
+                            : isVideoTranslation
+                              ? 'video-translate'
+                              : isGuessSpelling
+                                ? 'guess-spelling'
+                                : isImmersiveListening || isSentenceResult
+                                  ? isVideoCheck
+                                      ? 'video-check'
+                                      : isVideoBlocks
+                                        ? 'video-blocks'
+                                        : isPictureListening
+                                          ? 'picture-listening'
+                                          : demo.family === 'audio'
+                                            ? 'audio-listening'
+                                            : 'sentence-listening'
+                                  : isSentenceBlocks
+                                    ? isVideoBlocks
+                                        ? 'video-blocks'
                                         : demo.family === 'audio'
-                                          ? 'audio-check'
-                                          : 'sentence-check'
-                                    : isTypingPractice
-                                      ? isStandaloneTyping
-                                          ? 'standalone-typing'
-                                          : isSentenceTyping
-                                            ? isVideoTyping
-                                                ? 'video-typing'
-                                                : demo.family === 'audio'
-                                                  ? 'audio-typing'
-                                                  : 'sentence-typing'
-                                            : 'word-typing'
-                                      : isOralExercise
-                                        ? isVideoOral
-                                            ? 'video-oral'
-                                            : isSentenceOral
-                                              ? demo.family === 'audio'
-                                                  ? 'audio-oral'
-                                                  : 'sentence-oral'
-                                              : 'word-oral'
-                                        : isWordAnswerMode
-                                          ? 'word-input'
-                                          : undefined
+                                          ? 'audio-blocks'
+                                          : 'sentence-blocks'
+                                    : isSentenceCheck
+                                      ? isVideoCheck
+                                          ? 'video-check'
+                                          : demo.family === 'audio'
+                                            ? 'audio-check'
+                                            : 'sentence-check'
+                                      : isTypingPractice
+                                        ? isStandaloneTyping
+                                            ? 'standalone-typing'
+                                            : isSentenceTyping
+                                              ? isVideoTyping
+                                                  ? 'video-typing'
+                                                  : isPictureTyping
+                                                    ? 'picture-typing'
+                                                    : demo.family === 'audio'
+                                                      ? 'audio-typing'
+                                                      : 'sentence-typing'
+                                              : 'word-typing'
+                                        : isOralExercise
+                                          ? isVideoOral
+                                              ? 'video-oral'
+                                              : isPictureOral
+                                                ? 'picture-oral'
+                                                : isSentenceOral
+                                                  ? demo.family === 'audio'
+                                                      ? 'audio-oral'
+                                                      : 'sentence-oral'
+                                                  : 'word-oral'
+                                          : isWordAnswerMode
+                                            ? 'word-input'
+                                            : undefined
                     }
                     className={
-                        isArticleReader || (isVideoGame && !isVideoListening)
+                        isArticleReader ||
+                        usesPicturePlaybackList ||
+                        (isVideoGame && !isVideoListening)
                             ? 'flex h-dvh min-w-0 flex-col overflow-hidden'
                             : isFourRowLayout || isSentenceReading || isGuessReading
                               ? 'flex h-dvh min-w-0 flex-col overflow-hidden pb-[calc(100px+env(safe-area-inset-bottom))]'
@@ -1994,7 +2038,7 @@ function PracticeSession({
                         <PracticeNavigation
                             family={demo.family}
                             draftOpen={draftOpen}
-                            {...(isVideoGame ? { contentOpen: videoContentOpen } : {})}
+                            {...(usesPlaybackList ? { contentOpen: videoContentOpen } : {})}
                             onAction={handleNavigationAction}
                         />
                     </header>
@@ -2051,7 +2095,7 @@ function PracticeSession({
                         data-word-input-scroll={isWordAnswerMode || isWordTyping || undefined}
                         data-practice-content-scroll={isFourRowLayout || undefined}
                         className={
-                            isVideoGame
+                            usesPlaybackList
                                 ? 'relative flex min-h-0 min-w-0 flex-1 flex-col'
                                 : isArticleReader || isSentenceReading || isGuessReading
                                   ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden'
@@ -2129,7 +2173,13 @@ function PracticeSession({
                         )}
                         {usesPlaybackControls && (
                             <SentenceListeningControls
-                                family={demo.family === 'audio' ? 'audio' : 'sentence'}
+                                family={
+                                    isPictureListening
+                                        ? 'picture'
+                                        : demo.family === 'audio'
+                                          ? 'audio'
+                                          : 'sentence'
+                                }
                                 variant={isSentenceReading ? 'reading' : 'listening'}
                                 options={listeningPlayback}
                                 paused={
@@ -2181,11 +2231,14 @@ function PracticeSession({
                             />
                         ) : (
                             <VideoPracticeLayout
-                                enabled={isVideoGame}
-                                variant="exercise"
+                                enabled={usesPlaybackList}
+                                variant={usesPicturePlaybackList ? 'picture' : 'exercise'}
+                                edgeScrollbar={usesPicturePlaybackList}
                                 open={videoContentOpen}
                                 currentIndex={session.index}
-                                segments={videoListeningSegments}
+                                {...(usesPicturePlaybackList
+                                    ? { content: getPictureListeningList(questions, session.index) }
+                                    : { segments: videoListeningSegments })}
                                 onSelect={selectVideoContent}
                                 onClose={closeVideoContent}
                                 onCompactChange={reportVideoCompact}
@@ -2195,17 +2248,19 @@ function PracticeSession({
                                     key={
                                         isSentenceReading
                                             ? 'sentence-reading'
-                                            : isPictureReader
-                                              ? 'picture-reader'
-                                              : isGuessReading
-                                                ? 'guess-reading'
-                                                : demo.family === 'word' && mode === 'pronounce'
-                                                  ? `word-pronunciation:${wordOrderRevision}`
-                                                  : isPhoneticsPronunciation
-                                                    ? 'phonetics-pronunciation'
-                                                    : isWordSpelling
-                                                      ? 'word-spelling'
-                                                      : `${question.id}:${resetRevision}`
+                                            : isPictureListening
+                                              ? 'picture-listening'
+                                              : isPictureReader
+                                                ? 'picture-reader'
+                                                : isGuessReading
+                                                  ? 'guess-reading'
+                                                  : demo.family === 'word' && mode === 'pronounce'
+                                                    ? `word-pronunciation:${wordOrderRevision}`
+                                                    : isPhoneticsPronunciation
+                                                      ? 'phonetics-pronunciation'
+                                                      : isWordSpelling
+                                                        ? 'word-spelling'
+                                                        : `${question.id}:${resetRevision}`
                                     }
                                     demo={demo}
                                     mode={mode}
@@ -2324,10 +2379,9 @@ function PracticeSession({
                                         executeCommand('practice.panel.hide')
                                     }
                                 />
-                                {isVideoTyping && typingStatistics}
                             </VideoPracticeLayout>
                         )}
-                        {!isVideoTyping && typingStatistics}
+                        {wordTypingStatistics}
                         {isWordAnswerMode && (
                             <WordSpellingResult
                                 statistics={isWordSpelling ? session.spellingStatistics : null}
@@ -2367,13 +2421,20 @@ function PracticeSession({
                                 </div>
                             )}
                     </main>
-                    {!isVideoGame && practiceFooter}
+                    {!usesPlaybackList && practiceFooter}
                     <PracticeAnswerPanel
                         portalRoot={rootRef}
                         open={panelVisible && !usesGuessAnswer}
                         phonetics={demo.family === 'phonetics'}
                         sentenceTranslation={isSentenceTranslation && !isTranslationResult}
-                        sentenceAnswer={isSentenceGame || isVideoListening || isVideoExercise}
+                        sentenceAnswer={
+                            isSentenceGame ||
+                            isVideoListening ||
+                            isVideoExercise ||
+                            isPictureTranslation ||
+                            isPictureTyping ||
+                            isPictureOral
+                        }
                         question={question}
                         values={values}
                         blocked={blocked || phoneticsOralBusy}
@@ -2528,7 +2589,7 @@ function PracticeSession({
                     !(overlay === 'note' && usesChapterNotes) &&
                     !(
                         overlay === 'content' &&
-                        (isVideoGame || usesPracticeContentDialog(demo.family, mode))
+                        (usesPlaybackList || usesPracticeContentDialog(demo.family, mode))
                     ) &&
                     !(overlay === 'mode' && isSelectablePracticeFamily(demo.family))
                 }

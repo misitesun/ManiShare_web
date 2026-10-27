@@ -60,11 +60,11 @@ function ShortcutLabels({
     const first = labels[0]
     const second = labels[1]
     const pair =
-        labels.length === 2 &&
+        labels.length >= 2 &&
         first?.endsWith('←') &&
         second?.endsWith('→') &&
         first.slice(0, -1) === second.slice(0, -1)
-            ? `${first}/${second.slice(-1)}`
+            ? [`${first}/${second.slice(-1)}`, ...labels.slice(2)].join(' / ')
             : labels.join(' / ')
     return (
         <kbd className="hidden shrink-0 font-sans font-normal text-practice-control-text md:inline">
